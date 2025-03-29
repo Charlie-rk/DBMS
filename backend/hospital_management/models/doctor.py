@@ -1,5 +1,6 @@
-from django import models
-from models.user import CustomUser
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+from .user import CustomUser
 
 class DoctorProfile(models.Model):
     user = models.OneToOneField(
