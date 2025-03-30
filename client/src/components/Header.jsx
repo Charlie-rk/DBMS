@@ -73,11 +73,10 @@ export default function Header() {
             )}
             <span
               className={`px-3 mx-1 py-2 rounded-lg font-bold 
-              ${
-                theme === "light"
-                  ? "bg-gradient-to-r from-blue-500 via-blue-400 to-blue-400 text-white"
-                  : "bg-gray-900 text-white"
-              } 
+              
+                   bg-gradient-to-r from-blue-500 via-blue-400 to-blue-400 text-white
+                 
+            
               shadow-2xl drop-shadow-lg`}
             >
               We~Go

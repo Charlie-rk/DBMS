@@ -17,14 +17,14 @@ const AdminMenu = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
         {/* Card 1: Total Beds */}
         <Card className="bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700 ">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-8">
             <h3 className="bg-sky-200 dark:bg-sky-600 rounded-lg px-[4px] text-md font-semibold text-gray-800 dark:text-gray-200">
               Total Beds
             </h3>
             <span className="text-sm text-gray-400 dark:text-white">Current</span>
           </div>
           <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-2 mb-8">
+            <div className="flex items-center gap-2 ">
               <Bed size={28} className="text-blue-500" />
               <div>
                 <span className="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -32,6 +32,10 @@ const AdminMenu = () => {
                 </span>
                 <p className="text-sm text-gray-500 dark:text-white">Available</p>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-green-600">44</span>
+              <p className="text-sm text-gray-500 dark:text-white">Occupied</p>
             </div>
           </div>
           <hr className="my-4 border-gray-200 dark:border-gray-700" />
