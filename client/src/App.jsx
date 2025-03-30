@@ -25,6 +25,8 @@ import DischargePage from './pages/DischargePage';
 import DoctorAppDashboard from './pages/DoctorAppDashboard';
 import FDODashboard from './pages/FDODashboard';
 import EDODashboard from './pages/EDODashboard';
+import AllDepartment from './pages/Alldepartment';
+import Alldoctor from './pages/Alldoctor';
 export default function App() {
   return (
     // <div>
@@ -43,7 +45,9 @@ export default function App() {
          <Route path='/discharge' element={<DischargePage/>} />
          <Route path='/doctor_dashboard' element={<DoctorAppDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
-         <Route path="/edo/*" element={<EDODashboard />} />
+         <Route path="/deo/*" element={<EDODashboard />} />
+         <Route path="/admin/*" element={<Dashboard />} />
+         <Route path="/docr" element={<Alldoctor />} />
         
         
          <Route path='/about' element={<About/>} />

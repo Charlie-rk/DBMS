@@ -5,7 +5,7 @@ import FDOMainMenu from '../components/FDOMainMenu';
 
 export default function FDODashboard() {
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900">
       <FDOSidebar />
       <FDOMainMenu />
     </div>

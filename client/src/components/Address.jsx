@@ -11,9 +11,13 @@ const Address = ({ data, setData, errors }) => {
 
   return (
     <form className="space-y-6">
-      <h2 className="text-3xl font-semibold text-blue-900">Address Details</h2>
-      <p className="text-gray-600">Please provide your address information.</p>
-      
+      <h2 className="text-3xl font-semibold text-blue-900 dark:text-blue-300">
+        Address Details
+      </h2>
+      <p className="text-gray-600 dark:text-gray-300">
+        Please provide your address information.
+      </p>
+
       <div>
         <Label htmlFor="pincode" value="Pincode" />
         <TextInput
@@ -22,12 +26,13 @@ const Address = ({ data, setData, errors }) => {
           placeholder="123456"
           value={data.pincode || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
         />
         {errors.pincode && (
           <HelperText color="failure">{errors.pincode}</HelperText>
         )}
       </div>
-      
+
       <div>
         <Label htmlFor="street" value="Street" />
         <TextInput
@@ -36,12 +41,13 @@ const Address = ({ data, setData, errors }) => {
           placeholder="Street name"
           value={data.street || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
         />
         {errors.street && (
           <HelperText color="failure">{errors.street}</HelperText>
         )}
       </div>
-      
+
       <div>
         <Label htmlFor="city" value="City" />
         <TextInput
@@ -50,12 +56,13 @@ const Address = ({ data, setData, errors }) => {
           placeholder="City"
           value={data.city || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
         />
         {errors.city && (
           <HelperText color="failure">{errors.city}</HelperText>
         )}
       </div>
-      
+
       <div>
         <Label htmlFor="state" value="State" />
         <TextInput
@@ -64,12 +71,13 @@ const Address = ({ data, setData, errors }) => {
           placeholder="State"
           value={data.state || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
         />
         {errors.state && (
           <HelperText color="failure">{errors.state}</HelperText>
         )}
       </div>
-      
+
       <div>
         <Label htmlFor="country" value="Country" />
         <TextInput
@@ -78,6 +86,7 @@ const Address = ({ data, setData, errors }) => {
           placeholder="Country"
           value={data.country || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
         />
         {errors.country && (
           <HelperText color="failure">{errors.country}</HelperText>

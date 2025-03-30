@@ -21,24 +21,26 @@ const Summary = ({ data }) => {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <h2 className="text-2xl font-semibold mb-4">Summary</h2>
+      <Card className="p-6 bg-white dark:bg-gray-800">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+          Summary
+        </h2>
         <ul className="space-y-3">
           {summaryItems.map(
             (item, index) =>
               item.value && (
                 <li key={index} className="flex items-center gap-3">
                   {item.icon}
-                  <span className="font-medium">{item.label}:</span>
-                  <span className="text-gray-700">{item.value}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{item.label}:</span>
+                  <span className="text-gray-700 dark:text-gray-300">{item.value}</span>
                 </li>
               )
           )}
           {data.role === "Doctor" && data.specialization && (
             <li className="flex items-center gap-3">
               <Briefcase className="w-5 h-5 text-purple-500" />
-              <span className="font-medium">Specialization:</span>
-              <span className="text-gray-700">{data.specialization}</span>
+              <span className="font-medium text-gray-800 dark:text-gray-200">Specialization:</span>
+              <span className="text-gray-700 dark:text-gray-300">{data.specialization}</span>
             </li>
           )}
         </ul>

@@ -1,154 +1,322 @@
-/* eslint-disable react/no-unescaped-entities */
-import { Alert, Button, Label, Spinner, TextInput } from 'flowbite-react';
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  signInStart,
-  signInSuccess,
-  signInFailure,
-} from '../redux/user/userSlice';
-import OAuth from '../components/OAuth';
-import { ToastContainer, toast } from 'react-toastify';
-  import 'react-toastify/dist/ReactToastify.css';
-  import { FaEye } from "react-icons/fa";
-import { FaEyeSlash } from "react-icons/fa6";
-export default function SignIn() {
+/* eslint-disable no-unused-vars */
+// src/pages/SignUp.jsx
+import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import OAuth from "../components/OAuth";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { HiMail } from "react-icons/hi";
 
-  
-  const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({});
-  const { loading, error: errorMessage } = useSelector((state) => state.user);
-  const dispatch = useDispatch();
+export default function SignUp() {
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    role: "",
+  });
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // OTP related states
+  const [generatedOtp, setGeneratedOtp] = useState(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [otpVerified, setOtpVerified] = useState(false);
+
+  // Secret key state (verified independently)
+  const [secretVerified, setSecretVerified] = useState(false);
+
   const navigate = useNavigate();
-  
-  useEffect(()=>{
-    const notify = () => toast.success("🤗🤗 Welcome to SigIn Page 🤗🤗");
-    notify();
-  },[])
-   // handle toggle
-   const toggle = () => {
-    setOpen(!open);
+  const MySwal = withReactContent(Swal);
+
+  // For non-radio inputs, update using the input id.
+  // For radio (role), update the "role" key and trigger secret key modal.
+  const handleChange = async (e) => {
+    const { type, value, id } = e.target;
+    if (type === "radio") {
+      const selectedRole = value.trim();
+      setFormData({ ...formData, role: selectedRole });
+      await triggerSecretKeyModal(selectedRole);
+    } else {
+      setFormData({ ...formData, [id]: value.trim() });
+    }
   };
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value.trim() });
+
+  const handleOtpChange = (e) => {
+    setOtp(e.target.value.trim());
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.email || !formData.password) {
-      return dispatch(signInFailure('Please fill all the fields'));
+
+  // Generate OTP via backend
+  const generateOtp = async () => {
+    if (!formData.email) {
+      setErrorMessage("Please enter your email first.");
+      return;
+    }
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.message || "Error sending OTP.");
+        return;
+      }
+      // Assume backend returns the OTP in data.otp for demo purposes.
+      setGeneratedOtp(data.otp);
+      setOtpSent(true);
+      setOtpTimer(30);
+    } catch (error) {
+      setErrorMessage("Error sending OTP: " + error.message);
+    }
+  };
+
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    let timer;
+    if (otpTimer > 0) {
+      timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [otpTimer]);
+
+  // Verify OTP using the value from backend
+  const verifyOtp = async () => {
+    if (!otp) {
+      return setErrorMessage("Please enter the OTP.");
     }
     try {
-      dispatch(signInStart());
-      const res = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return setErrorMessage(data.message || "OTP verification failed.");
+      }
+      setOtpVerified(true);
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage("Error verifying OTP: " + error.message);
+    }
+  };
+
+  // Trigger secret key modal when a role is selected (independent of OTP)
+  const triggerSecretKeyModal = async (role) => {
+    setSecretVerified(false);
+    const { value: secretKey } = await MySwal.fire({
+      title: `Enter Secret Key for ${role}`,
+      input: "password",
+      inputPlaceholder: "Enter your secret key",
+      showCancelButton: true,
+      confirmButtonText: "Submit",
+      showLoaderOnConfirm: true,
+    });
+    // Predefined secret keys for each role (demo values)
+    const secretMap = {
+      Admin: "admin123",
+      "Front Desk Operator": "fdo123",
+      "Entry Data Operator": "edo123",
+    };
+    if (secretKey !== secretMap[role]) {
+      MySwal.fire({
+        icon: "error",
+        title: "Wrong Secret Key",
+        text: "Please enter the correct secret key!",
+      });
+      setSecretVerified(false);
+    } else {
+      setSecretVerified(true);
+      MySwal.fire({
+        icon: "success",
+        title: "Secret key verified!",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    console.log(formData)
+    e.preventDefault();
+    if (
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !formData.role
+    ) {
+      return setErrorMessage("Please fill out all fields.");
+    }
+    if (!formData.email.endsWith("@iitbbs.ac.in")) {
+      return setErrorMessage("Please use a valid Institute Email Id.");
+    }
+    if (!otpVerified || !secretVerified) {
+      return setErrorMessage("Please verify your email OTP and secret key.");
+    }
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
       if (data.success === false) {
-        dispatch(signInFailure(data.message));
+        setLoading(false);
+        return setErrorMessage(data.message);
       }
-
+      setLoading(false);
       if (res.ok) {
-        dispatch(signInSuccess(data));
-        navigate('/');
+        navigate("/sign-in");
       }
     } catch (error) {
-      dispatch(signInFailure(error.message));
+      setErrorMessage(error.message);
+      setLoading(false);
     }
   };
+
   return (
-    <div className='min-h-screen mt-20'>
-       <ToastContainer 
-         position='top-center'
-         
-         autoClose={3000}
-        />
-      <div className='flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5'>
-        {/* left */}
-        <div className='flex-1'>
-          <Link to='/' className='font-bold dark:text-white text-4xl'>
-            <span className='px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
-              Swap
+    <div className="min-h-screen mt-20  dark:bg">
+      <div className="shadow-2xl rounded-2xl shadow-slate-600 flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
+        {/* Left Branding */}
+        <div className="flex-1">
+          <Link to="/" className="font-bold dark:text-white text-4xl">
+            <span className="px-2 py-1 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-400 rounded-lg text-white font-bold">
+              We ~ Go
             </span>
-            -simple
+            <br />
+            <br />
+            Where compassion meets innovation.
           </Link>
-          <p className='text-sm mt-5'>
-            This is a demo project. You can sign in with your email and password
-            or with Google.
+          <p className="text-sm mt-5 dark:text-gray-300">
+            Healthcare is the art of compassion, where every touch, every smile,
+            and every heartbeat creates a legacy of hope and healing.
           </p>
         </div>
-        {/* right */}
 
-        <div className='flex-1'>
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+        {/* Right Sign Up Form */}
+        <div className="flex-1">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
-              <Label value='Your email' />
+              <Label value="Your username" />
               <TextInput
-                type='email'
-                placeholder='name@company.com'
-                id='email'
+                type="text"
+                placeholder="Username"
+                id="username"
                 onChange={handleChange}
               />
             </div>
             <div className="relative">
+              <Label value="Your Institute Email id" />
+              <TextInput
+                type="email"
+                placeholder="22cs01**@iitbbs.ac.in"
+                id="email"
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                onClick={generateOtp}
+                className="bg-sky-200 font-semibold rounded-lg px-1  absolute right-2 top-10 text-blue-600 dark:text-white hover:underline dark:bg-slate-400 "
+                disabled={otpTimer > 0}
+              >
+                {otpTimer > 0 ? `Resend OTP (${otpTimer}s)` : "Send OTP"}
+              </button>
+            </div>
+            {otpSent && !otpVerified && (
+              <div>
+                <Label value="Enter OTP" />
+                <TextInput
+                  type="text"
+                  placeholder="Enter OTP"
+                  id="otp"
+                  onChange={handleOtpChange}
+                />
+                <Button
+                  onClick={verifyOtp}
+                  className="mt-2"
+                  gradientDuoTone="purpleToBlue"
+                >
+                  Verify OTP
+                </Button>
+              </div>
+            )}
+            <div>
               <Label value="Your password" />
               <TextInput
-                type={open ? "text" : "password"}
+                type="password"
                 placeholder="Password"
                 id="password"
                 onChange={handleChange}
               />
-              {open ? (
-                <div className="absolute top-1/2 right-2 transform -translate-y-1/2 cursor-pointer">
-                  <FaEyeSlash
-                    onClick={toggle}
-                    className="mt-5 text-2xl font-bold hover:text-black-500 hover:scale-150"
-                  />
-                </div>
-              ) : (
-                <div className="mt-2.5 absolute top-1/2 right-2 transform -translate-y-1/2 cursor-pointer">
-                  <FaEye
-                    onClick={toggle}
-                    className="text-2xl hover:text-black-500 hover:scale-150"
-                  />
-                </div>
-              )}
             </div>
-            {/* <div>
-              <Label value='Your password' />
-              <TextInput
-                type='password'
-                placeholder='**********'
-                id='password'
-                onChange={handleChange}
-              />
-            </div> */}
+            <div className="mb-[-10px]">
+              <p className="font-bold">Role</p>
+            </div>
+            <div className="flex items-start mb-5">
+              <div className="flex items-center h-5">
+                <input
+                  type="radio"
+                  name="role"
+                  value="Front Desk Operator"
+                  onChange={handleChange}
+                  className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
+                  required
+                />
+                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                  Front Desk Operator
+                </label>
+                <input
+                  type="radio"
+                  name="role"
+                  value="Entry Data Operator"
+                  onChange={handleChange}
+                  className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
+                  required
+                />
+                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                   Data Entry Operator
+                </label>
+                <input
+                  type="radio"
+                  name="role"
+                  value="Admin"
+                  onChange={handleChange}
+                  className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
+                  required
+                />
+                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                  Admin
+                </label>
+              </div>
+            </div>
             <Button
-              gradientDuoTone='purpleToPink'
-              type='submit'
+              gradientDuoTone="purpleToBlue"
+              type="submit"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Spinner size='sm' />
-                  <span className='pl-3'>Loading...</span>
+                  <Spinner size="sm" />
+                  <span className="pl-3">Loading...</span>
                 </>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </Button>
-            <OAuth />
+            {/* <OAuth /> */}
           </form>
-          <div className='flex gap-2 text-sm mt-5'>
-            <span>Dont Have an account?</span>
-            <Link to='/sign-up' className='text-blue-500'>
-              Sign Up
-            </Link>
+          <div className="flex gap-2 text-sm mt-5 dark:text-gray-300">
+            <span>Your health, our promise.</span>
           </div>
           {errorMessage && (
-            <Alert className='mt-5' color='failure'>
+            <Alert className="mt-5" color="failure">
               {errorMessage}
             </Alert>
           )}

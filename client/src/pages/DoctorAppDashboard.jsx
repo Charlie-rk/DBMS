@@ -172,17 +172,34 @@ const DoctorAppDashboard = () => {
                   margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
                 >
                   <defs>
-                    <linearGradient id="presentFill" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="presentFill"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor="#6366F1" stopOpacity={0.9} />
-                      <stop offset="100%" stopColor="#6366F1" stopOpacity={0.1} />
+                      <stop
+                        offset="100%"
+                        stopColor="#6366F1"
+                        stopOpacity={0.1}
+                      />
                     </linearGradient>
                     <linearGradient id="lastFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#f87171" stopOpacity={0.9} />
-                      <stop offset="100%" stopColor="#f87171" stopOpacity={0.1} />
+                      <stop
+                        offset="100%"
+                        stopColor="#f87171"
+                        stopOpacity={0.1}
+                      />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" className="text-gray-800 dark:text-gray-200" />
+                  <XAxis
+                    dataKey="month"
+                    className="text-gray-800 dark:text-gray-200"
+                  />
                   <YAxis className="text-gray-800 dark:text-gray-200" />
                   <Tooltip
                     cursor={{ stroke: "#888", strokeWidth: 1 }}
@@ -293,7 +310,7 @@ const DoctorAppDashboard = () => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-               className="border border-gray-300 dark:border-gray-700 p-1 rounded text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800"
+                className="border border-gray-300 dark:border-gray-700 p-1 rounded text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800"
               />
             </div>
             {filteredAppointments.length === 0 ? (
@@ -325,21 +342,29 @@ const DoctorAppDashboard = () => {
             <table className="w-full">
               <thead className="bg-gray-100 dark:bg-gray-700">
                 <tr>
-                  {["Name", "Gender", "Weight", "Condition", "Age", "Status"].map(
-                    (header, index) => (
-                      <th
-                        key={index}
-                        className="p-2 text-left text-gray-800 dark:text-gray-200"
-                      >
-                        {header}
-                      </th>
-                    )
-                  )}
+                  {[
+                    "Name",
+                    "Gender",
+                    "Weight",
+                    "Condition",
+                    "Age",
+                    "Status",
+                  ].map((header, index) => (
+                    <th
+                      key={index}
+                      className="p-2 text-left text-gray-800 dark:text-gray-200"
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {recentPatients.map((patient, index) => (
-                  <tr key={index} className="border-b border-gray-200 dark:border-gray-700">
+                  <tr
+                    key={index}
+                    className="border-b border-gray-200 dark:border-gray-700"
+                  >
                     <td className="p-2 text-gray-800 dark:text-gray-200">
                       {patient.name}
                     </td>
@@ -365,33 +390,47 @@ const DoctorAppDashboard = () => {
           </div>
 
           {/* Income and Misc Stats */}
+          {/* Daily Performance and Metrics */}
+          {/* Daily Performance and Metrics */}
           <div className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700">
             <div className="mb-4">
               <h3 className="font-bold text-gray-800 dark:text-gray-200">
-                Incomes
+                Daily Performance
               </h3>
-              <span className="text-gray-500 dark:text-gray-400">February</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                August 2025
+              </span>
             </div>
             <div className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-              $2,857.15
+              42 Consultations
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded text-center">
-                <div className="text-xl text-gray-800 dark:text-gray-200">18</div>
-                <div className="text-gray-600 dark:text-gray-300">Missed Call</div>
+                <div className="text-xl text-gray-800 dark:text-gray-200">
+                  12
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  New Patients
+                </div>
               </div>
               <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded text-center">
-                <div className="text-xl text-gray-800 dark:text-gray-200">9</div>
-                <div className="text-gray-600 dark:text-gray-300">New Messages</div>
+                <div className="text-xl text-gray-800 dark:text-gray-200">
+                  7
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Treated & Discharged
+                </div>
               </div>
             </div>
-            <div className="mt-4 flex space-x-2">
-              <button className="flex-1 bg-green-400 dark:bg-green-600 text-white p-2 rounded">
-                Send Money
-              </button>
-              <button className="flex-1 bg-gray-200 dark:bg-gray-700 p-2 rounded">
-                Payment Method
-              </button>
+            {/* Additional Info Section */}
+            <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
+              <p>
+                Avg Consultation Time:{" "}
+                <span className="font-bold">15 mins</span>
+              </p>
+              <p>
+                Doctor Efficiency: <span className="font-bold">85%</span>
+              </p>
             </div>
           </div>
         </div>

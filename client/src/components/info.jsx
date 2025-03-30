@@ -11,8 +11,12 @@ const Info = ({ data, setData, errors }) => {
 
   return (
     <form className="space-y-6">
-      <h2 className="text-3xl font-semibold text-blue-900">Basic Info</h2>
-      <p className="text-gray-600">Please provide your basic information.</p>
+      <h2 className="text-3xl font-semibold text-blue-900 dark:text-blue-300">
+        Basic Info
+      </h2>
+      <p className="text-gray-600 dark:text-gray-300">
+        Please provide your basic information.
+      </p>
       
       <div>
         <Label htmlFor="name" value="Name" />
@@ -22,6 +26,7 @@ const Info = ({ data, setData, errors }) => {
           placeholder="John Doe"
           value={data.name || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
         />
         {errors.name && (
           <HelperText color="failure">{errors.name}</HelperText>
@@ -36,6 +41,7 @@ const Info = ({ data, setData, errors }) => {
           placeholder="johndoe"
           value={data.username || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
         />
         {errors.username && (
           <HelperText color="failure">{errors.username}</HelperText>
@@ -51,6 +57,7 @@ const Info = ({ data, setData, errors }) => {
           placeholder="john@example.com"
           value={data.email || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
         />
         {errors.email && (
           <HelperText color="failure">{errors.email}</HelperText>
@@ -64,6 +71,7 @@ const Info = ({ data, setData, errors }) => {
           name="gender"
           value={data.gender || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
         >
           <option value="">Select Gender</option>
           <option value="Male">Male</option>
@@ -83,6 +91,7 @@ const Info = ({ data, setData, errors }) => {
           type="date"
           value={data.dob || ""}
           onChange={handleChange}
+          className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
         />
         {errors.dob && (
           <HelperText color="failure">{errors.dob}</HelperText>

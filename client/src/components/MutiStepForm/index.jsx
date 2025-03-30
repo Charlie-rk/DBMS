@@ -188,7 +188,7 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
             </div>
             <div className="flex justify-end gap-4 mt-4">
               {currentStep > 0 && (
-                  <Button  onClick={handlePrev} outline  className="bg-gradient-to-r  from-slate-900 to-slate-700 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800">
+                  <Button  onClick={handlePrev} outline  className="bg-gradient-to-r dark:from-slate-200 dark:to-slate-600 from-slate-900 to-slate-700 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800">
                    Go Back
           </Button>
         
