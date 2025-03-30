@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import AdminMenu from './AdminMenu'
 import Form from '../pages/Form'
 import Alldepartment from '../pages/Alldepartment'
+import Alldoctor from '../pages/Alldoctor'
 
 export default function AdminMainMenu() {
   return (
@@ -11,6 +12,7 @@ export default function AdminMainMenu() {
            <Route path="/" element={<AdminMenu />} />
            <Route path="/add-user" element={<Form />} />
            <Route path="/all-department" element={<Alldepartment />} />
+           <Route path="/all-doctor" element={<Alldoctor />} />
            {/* <Route path="/all-doctor" element={<AllDoctor />} />
            <Route path="/all-patient" element={<AllPatient />} />
            <Route path="/all-department" element={<AllDepartment />} /> */}

@@ -253,13 +253,13 @@ export default function Alldepartment() {
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-sky-400 transform translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
               {/* Delete Button */}
-              <Button
+              <button
                 color="failure"
                 onClick={() => openDeleteModal(dept)}
-                className="absolute top-2 right-2 z-10"
+                className="absolute top-2 right-2 z-10 bg-red-700 text-white rounded-md p-[1px]"
               >
                 <TrashIcon />
-              </Button>
+              </button>
               {/* Card Content */}
               <div className="relative flex flex-col items-center z-10">
                 {/* Icon in Center */}
