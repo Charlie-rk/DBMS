@@ -44,6 +44,7 @@ export default function App() {
          <Route path='/doctor_dashboard' element={<DoctorAppDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
          <Route path="/edo/*" element={<EDODashboard />} />
+         <Route path="/admin/*" element={<Dashboard />} />
         
         
          <Route path='/about' element={<About/>} />

@@ -23,51 +23,71 @@ import {
   Link2,
   UserPlus,
 } from "lucide-react";
+import { HiMenu } from "react-icons/hi";
+import { Link, useLocation } from "react-router-dom";
 
 // Define sidebar groups with items
 const sidebarGroups = [
   {
     title: null, // no group title for the first group
     items: [
-      { text: "Home", icon: <Home size={20} />, value: "Home" },
-      { text: "Add User", icon: <UserPlus size={20} />, value: "Add User" },
+      { text: "Home",path:"/admin", icon: <Home size={20} />, value: "Home" },
+      { text: "Add User",path:"/admin/add-user", icon: <UserPlus size={20} />, value: "Add User" },
     ],
   },
   {
     title: "Applications",
     items: [
-      { text: "Doctors", icon: <Users size={20} />, value: "Doctors" },
-      { text: "Patients", icon: <User size={20} />, value: "Patients" },
-      { text: "Departments", icon: <List size={20} />, value: "Departments" },
-      { text: "Schedule", icon: <Calendar size={20} />, value: "Schedule" },
-      { text: "Appointment", icon: <ClipboardCheck size={20} />, value: "Appointment" },
-      { text: "Report", icon: <FileText size={20} />, value: "Report" },
-      { text: "Human Resources", icon: <Building size={20} />, value: "Human Resources" },
+      { text: "Doctors",path:"/admin/all-doctor", icon: <Users size={20} />, value: "Doctors" },
+      { text: "Patients",path:"admin/all-patinet", icon: <User size={20} />, value: "Patients" },
+      { text: "Departments",path:"admin/all-patinet", icon: <List size={20} />, value: "Departments" },
+      { text: "Schedule",path:"admin/all-patinet", icon: <Calendar size={20} />, value: "Schedule" },
+      { text: "Appointment",path:"admin/all-patinet", icon: <ClipboardCheck size={20} />, value: "Appointment" },
+      { text: "Report",path:"admin/all-patinet", icon: <FileText size={20} />, value: "Report" },
+      { text: "Human Resources",path:"admin/all-patinet", icon: <Building size={20} />, value: "Human Resources" },
     ],
   },
   {
     title: "Others",
     items: [
-      { text: "Payment", icon: <DollarSign size={20} />, value: "Payment" },
-      { text: "Widgets", icon: <Puzzle size={20} />, value: "Widgets" },
+      { text: "Payment",path:"admin/all-patinet" ,icon: <DollarSign size={20} />, value: "Payment" },
+      { text: "Widgets",path:"admin/all-patinet" ,icon: <Puzzle size={20} />, value: "Widgets" },
     ],
   },
   {
     title: "Support",
     items: [
-      { text: "Settings", icon: <Settings size={20} />, value: "Settings" },
-      { text: "Security", icon: <Shield size={20} />, value: "Security" },
-      { text: "Help", icon: <HelpCircle size={20} />, value: "Help" },
-      { text: "Logout", icon: <LogOut size={20} />, value: "Logout" },
+      { text: "Settings",path:"admin/all-patinet" ,icon: <Settings size={20} />, value: "Settings" },
+      { text: "Security",path:"admin/all-patinet" ,icon: <Shield size={20} />, value: "Security" },
+      { text: "Help",path:"admin/all-patinet" ,icon: <HelpCircle size={20} />, value: "Help" },
+      { text: "Logout",path:"admin/all-patinet" ,icon: <LogOut size={20} />, value: "Logout" },
     ],
   },
 ];
 
-const AdminSidebar = ({ currentTab, setCurrentTab }) => {
+const AdminSidebar = ({ }) => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(true);
   const toggleSidebar = () => setIsOpen(!isOpen);
-
+  const [mobileOpen, setMobileOpen] = useState(false); // For mobile overlay
+  const toggleMobileSidebar = () => setMobileOpen(!mobileOpen);
   return (
+
+    <>
+  <div className="md:hidden p-4 flex ">
+        <button
+          onClick={toggleMobileSidebar}
+          className="text-blue-600 dark:text-blue-400 font-semibold"
+        >
+          <span className="flex ">
+          <HiMenu size={24} />
+          {mobileOpen ? "Close Menu" : " Menu"}
+          </span>
+        </button>
+       
+      </div>
+
+    
     <div
       className={`flex flex-col text-blue-900 dark:text-blue-300 bg-sky-100 dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
         isOpen ? "w-64" : "w-20"
@@ -89,6 +109,7 @@ const AdminSidebar = ({ currentTab, setCurrentTab }) => {
       {/* Menu Items */}
       <nav className="flex-1 overflow-y-auto">
         {sidebarGroups.map((group, groupIndex) => (
+        
           <div key={groupIndex} className="mt-2">
             {isOpen && group.title && (
               <p className="px-4 pt-3 pb-1 text-sm font-semibold text-gray-400 uppercase">
@@ -96,26 +117,21 @@ const AdminSidebar = ({ currentTab, setCurrentTab }) => {
               </p>
             )}
             <div className="">
-              {group.items.map((item, itemIndex) => {
-                const isActive = currentTab === item.value;
+              {group.items.map((item, i) => {
+                const isActive = location.pathname === item.path;
                 return (
-                  <div
-                    key={itemIndex}
-                    onClick={() => setCurrentTab(item.value)}
-                    className={`group relative flex items-center space-x-3 cursor-pointer p-2  ${
-                      isActive
-                        ? "bg-white dark:bg-sky-800  text-blue-900 dark:text-white font-semibold rounded-l-lg ml-2 shadow-2xl shadow-blue-600 dark:shadow-blue-800"
-                        : "hover:bg-blue-300 dark:hover:bg-blue-800"
-                    }`}
-                  >
-                    {item.icon}
-                    {isOpen && <span>{item.text}</span>}
-                    {!isOpen && (
-                      <span className="absolute left-full top-1/2 transform -translate-y-1/2 ml-2 hidden group-hover:block bg-gray-800 dark:bg-gray-600 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
-                        {item.text}
-                      </span>
-                    )}
-                  </div>
+                  <Link
+                  key={i}
+                  to={item.path}
+                  className={`group relative flex items-center space-x-3 p-2 cursor-pointer ${
+                    isActive
+                      ? "bg-white dark:bg-sky-700 text-blue-900 dark:text-white font-semibold rounded-l-lg ml-2 shadow-2xl shadow-blue-600 dark:shadow-sky-600 "
+                      : "hover:bg-blue-300 dark:hover:bg-blue-600"
+                  }`}
+                >
+                  {item.icon}
+                  {isOpen && item.text}
+                </Link>
                 );
               })}
             </div>
@@ -123,6 +139,58 @@ const AdminSidebar = ({ currentTab, setCurrentTab }) => {
         ))}
       </nav>
     </div>
+    {/* Mobile Sidebar Overlay */}
+    {mobileOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            className="fixed inset-0 bg-black opacity-50"
+            onClick={toggleMobileSidebar}
+          ></div>
+          <div className="relative bg-white dark:bg-gray-800 w-64 p-4">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-2">
+                <Link2 size={24} />
+                <span className="text-xl font-semibold">Quick Links</span>
+              </div>
+              <button onClick={toggleMobileSidebar} className="p-1 focus:outline-none">
+                <ChevronLeft size={24} />
+              </button>
+            </div>
+            <nav className="mt-4">
+              {sidebarGroups.map((group, groupIndex) => (
+                <div key={groupIndex} className="mb-4">
+                  {group.title && (
+                    <p className="px-4 pt-3 pb-1 text-sm font-semibold text-gray-400 uppercase">
+                      {group.title}
+                    </p>
+                  )}
+                  <div className="mt-2 space-y-2">
+                    {group.items.map((item, i) => {
+                    const isActive = location.pathname === item.path;
+                      return (
+                        <Link
+                          key={i}
+                          to={item.path}
+                          onClick={toggleMobileSidebar}
+                          className={`group relative flex items-center space-x-3 p-2 cursor-pointer ${
+                            isActive
+                              ? "bg-white dark:bg-sky-700 text-blue-900 dark:text-white font-semibold rounded-l-lg ml-2 shadow-2xl shadow-blue-600 dark:shadow-sky-600"
+                              : "hover:bg-blue-300 dark:hover:bg-blue-600 text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {item.icon}
+                          <span>{item.text}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

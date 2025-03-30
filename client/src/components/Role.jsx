@@ -1,10 +1,8 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-// src/components/Role.jsx
-
 import React from "react";
 import { Label, TextInput, HelperText } from "flowbite-react";
-import { Briefcase, User, Stethoscope, ClipboardList } from "lucide-react"; // Importing icons
+import { Briefcase, User, Stethoscope, ClipboardList } from "lucide-react";
 
 const Role = ({ data, setData, errors }) => {
   const handleChange = (e) => {
@@ -33,7 +31,11 @@ const Role = ({ data, setData, errors }) => {
         <label
           htmlFor={role}
           tabIndex={0}
-          className="flex flex-col items-center p-4 border rounded-lg cursor-pointer transition-all duration-200 peer-checked:bg-blue-100 peer-checked:border-blue-500 shadow-md hover:shadow-lg"
+          className="flex flex-col items-center p-4 border rounded-lg cursor-pointer transition-all duration-200
+            peer-checked:bg-blue-100 dark:peer-checked:bg-blue-800 
+            peer-checked:border-blue-500 dark:peer-checked:border-blue-400
+            shadow-md hover:shadow-lg
+            text-gray-900 dark:text-gray-100"
         >
           {roleIcons[role]}
           <h4 className="text-lg font-medium capitalize mt-2">{role}</h4>
@@ -45,11 +47,13 @@ const Role = ({ data, setData, errors }) => {
               onChange={(e) =>
                 setData((prev) => ({ ...prev, specialization: e.target.value }))
               }
-              className="mt-2 w-full"
+              className="mt-2 w-full dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
             />
           ) : (
             data.role === role && (
-              <p className="text-sm text-gray-600 mt-2">No additional details required</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                No additional details required
+              </p>
             )
           )}
         </label>
@@ -59,8 +63,10 @@ const Role = ({ data, setData, errors }) => {
 
   return (
     <form className="space-y-6">
-      <h2 className="text-3xl font-semibold text-blue-900">Select your role</h2>
-      <p className="text-gray-600">
+      <h2 className="text-3xl font-semibold text-blue-900 dark:text-blue-300">
+        Select your role
+      </h2>
+      <p className="text-gray-600 dark:text-gray-300">
         Please select your role. If you are a doctor, kindly provide your specialization.
       </p>
       <div className="grid grid-cols-2 gap-4">{roles}</div>
