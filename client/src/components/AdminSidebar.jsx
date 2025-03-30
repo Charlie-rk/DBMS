@@ -39,8 +39,8 @@ const sidebarGroups = [
     title: "Applications",
     items: [
       { text: "Doctors",path:"/admin/all-doctor", icon: <Users size={20} />, value: "Doctors" },
-      { text: "Patients",path:"admin/all-patinet", icon: <User size={20} />, value: "Patients" },
-      { text: "Departments",path:"admin/all-patinet", icon: <List size={20} />, value: "Departments" },
+      { text: "Patients",path:"/admin/all-patinet", icon: <User size={20} />, value: "Patients" },
+      { text: "Departments",path:"/admin/all-department", icon: <List size={20} />, value: "Departments" },
       { text: "Schedule",path:"admin/all-patinet", icon: <Calendar size={20} />, value: "Schedule" },
       { text: "Appointment",path:"admin/all-patinet", icon: <ClipboardCheck size={20} />, value: "Appointment" },
       { text: "Report",path:"admin/all-patinet", icon: <FileText size={20} />, value: "Report" },
