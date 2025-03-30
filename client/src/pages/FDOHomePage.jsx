@@ -23,21 +23,21 @@ export default function FDOHomePage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {/* Total Patients */}
-        <div className="shadow-xl shadow-slate-400 bg-blue-100 dark:bg-blue-900 p-4 rounded text-center">
+        <div className="shadow-xl dark:shadow-slate-700 shadow-slate-400 bg-blue-100 dark:bg-blue-900 p-4 rounded text-center">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             Total Patients
           </h3>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">120</p>
         </div>
         {/* Active Admissions */}
-        <div className="shadow-xl shadow-slate-400 bg-green-100 dark:bg-green-900 p-4 rounded text-center">
+        <div className="shadow-xl dark:shadow-slate-700 shadow-slate-400 bg-green-100 dark:bg-green-900 p-4 rounded text-center">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             Active Admissions
           </h3>
           <p className="text-2xl font-bold text-green-600 dark:text-green-300">18</p>
         </div>
         {/* Today's Appointments */}
-        <div className="shadow-xl shadow-slate-400 bg-yellow-100 dark:bg-yellow-900 p-4 rounded text-center">
+        <div className="shadow-xl dark:shadow-slate-700 shadow-slate-400 bg-yellow-100 dark:bg-yellow-900 p-4 rounded text-center">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             Today's Appointments
           </h3>
@@ -46,7 +46,7 @@ export default function FDOHomePage() {
       </div>
 
       {/* Recent Activities */}
-      <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md">
+      <div className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md ">
         <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">Recent Activities</h3>
         <ul className="divide-y divide-gray-300 dark:divide-gray-600">
           {recentActivities.map((activity) => (

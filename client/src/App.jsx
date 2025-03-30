@@ -45,7 +45,7 @@ export default function App() {
          <Route path='/discharge' element={<DischargePage/>} />
          <Route path='/doctor_dashboard' element={<DoctorAppDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
-         <Route path="/edo/*" element={<EDODashboard />} />
+         <Route path="/deo/*" element={<EDODashboard />} />
          <Route path="/admin/*" element={<Dashboard />} />
          <Route path="/docr" element={<Alldoctor />} />
         

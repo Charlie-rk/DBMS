@@ -281,7 +281,7 @@ export default function SignUp() {
                   required
                 />
                 <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Entry Data Operator
+                   Data Entry Operator
                 </label>
                 <input
                   type="radio"
