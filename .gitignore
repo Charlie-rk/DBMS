@@ -1,2 +1,4 @@
 node_modules/
 .env
+dbms_js/node_modules
+dbms_js/.env
