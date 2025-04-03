@@ -1,97 +1,88 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import userRoute from './routes/userRoute.js';
-import authRoute from './routes/authRoute.js';
-import pnrRoute from './routes/pnrRoutes.js';
-import requestRoute from './routes/requestRoute.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-// import { , ,  } from './serverController.js';
-import { restartServer } from './controllers/ServerController.js';
+import { createClient } from '@supabase/supabase-js';
+import pkg from 'pg';
+const { Client } = pkg;
 
 dotenv.config();
-// stopServer
+
 const __dirname = path.resolve();
 const app = express();
-app.use(express.json());
-app.use(express.static(path.join(__dirname,'/client/dist')))
-app.use(cookieParser());
-const url = process.env.MONGO;
 
-mongoose.connect(url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => {
-        console.log("Connected to database");
-    })
-    .catch((err) => {
-        console.error(err);
-    });
-
-    const server = app.listen(3000, () => {
-        console.log("App is listening on port 3000");
-    });
-    
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '/client/dist')));
 app.use(cookieParser());
 
-app.get("/",(req,res)=>{
-    console.log("charlie --- ");
-    res.send("hii i am charlie");
-})
-app.use("/api/user", userRoute);
-app.use("/api/auth", authRoute);
-app.use("/api/pnr", pnrRoute);
-app.use("/api/req", requestRoute);
-app.post("/api/restart-server", restartServer);
+// Supabase configuration
+const supabaseUrl = 'https://tvgasdupkqffhvqzurwy.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+// Use the provided connection string (password URL-encoded)
+const SUPABASE_DB_URL = "postgresql://postgres:Charlie%401275@db.sbpfqvpwpwmbzucacozv.supabase.co:5432/postgres";
+
+// Function to create the users table using pg
+async function createUserTable() {
+  const client = new Client({
+    connectionString: SUPABASE_DB_URL,
   });
 
+  try {
+    await client.connect();
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        profile_picture VARCHAR(255) DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
+        is_admin BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    const result = await client.query(createTableQuery);
+    console.log('Table created or already exists:', result);
+    return result;
+  } catch (err) {
+    console.error('Error creating table:', err);
+    throw err;
+  } finally {
+    await client.end();
+  }
+}
 
-app.use((err, req, res, next) => {
-    const statusCode = err.statusCode || 500;
-    const message = err.message || 'Internal Server Error';
-    res.status(statusCode).json({
-        success: false,
-        statusCode,
-        message,
-    });
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
 });
 
+// Route "/" triggers the table creation process
+app.get('/', async (req, res) => {
+  try {
+    console.log("Received GET request to /");
+    const tableResult = await createUserTable();
+    res.json({ message: 'User table created or already exists', tableResult });
+  } catch (error) {
+    console.error("Error in / route:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// Routes to control server
-// app.post('/start', (req, res) => {
-//     startServer();
-//     res.status(200).send('Server is starting...');
-// });
+// Fallback route for SPA (Single Page Application)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+});
 
-// app.post('/stop', (req, res) => {
-//     stopServer();
-//     res.status(200).send('Server is stopping...');
-// });
-
-// app.post('/restart', (req, res) => {
-//     restartServer();
-//     res.status(200).send('Server is restarting...');
-// });
-
-// // Handle server close signal
-// process.on('SIGTERM', () => {
-//     console.log('SIGTERM signal received: closing HTTP server');
-//     server.close(() => {
-//         console.log('HTTP server closed');
-//         process.exit(0);
-//     });
-// });
-
-// process.on('SIGINT', () => {
-//     console.log('SIGINT signal received: closing HTTP server');
-//     server.close(() => {
-//         console.log('HTTP server closed');
-//         process.exit(0);
-//     });
-// });
+// Error-handling middleware
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message,
+  });
+});

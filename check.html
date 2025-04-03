@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Code Driven Stack</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Include Three.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+  <script>
+    // ----------------------------------------------------
+    // 1) SETUP: Scene, Camera, Renderer
+    // ----------------------------------------------------
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    const camera = new THREE.PerspectiveCamera(
+      60,                                 // Field of View
+      window.innerWidth / window.innerHeight,  // Aspect ratio
+      0.1,                                // Near clipping
+      1000                                // Far clipping
+    );
+    // Position camera so we see the stacked cubes from a slight angle
+    camera.position.set(0, 0, 15);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Handle window resize
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ----------------------------------------------------
+    // 2) HELPER: Create a texture with text
+    // ----------------------------------------------------
+    function createTextTexture(text, fontSize = 60, textColor = '#00ffcc', bgColor = '#000000') {
+      // Make a square canvas
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext('2d');
+      // Fill background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, size, size);
+      // Draw text in the center
+      ctx.fillStyle = textColor;
+      ctx.font = `${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, size / 2, size / 2);
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    // ----------------------------------------------------
+    // 3) CREATE A SINGLE-FACE TEXT CUBE
+    //    - One face has text; other faces are blank/black
+    // ----------------------------------------------------
+    function createSingleFaceCube(text) {
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+      // Create a text material for one face
+      const textMat = new THREE.MeshBasicMaterial({
+        map: createTextTexture(text)
+      });
+      // Blank material for the other five faces
+      const blankMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+      // The BoxGeometry has 6 faces, each face uses one material in this array:
+      //   Order of faces in Three.js: +x, -x, +y, -y, +z, -z
+      // We’ll put the text on the +z face (index 4), for example
+      const materials = [
+        blankMat, // +x
+        blankMat, // -x
+        blankMat, // +y
+        blankMat, // -y
+        textMat,  // +z (text here)
+        blankMat  // -z
+      ];
+
+      return new THREE.Mesh(geometry, materials);
+    }
+
+    // ----------------------------------------------------
+    // 4) CREATE A BUNCH OF CUBES STACKED VERTICALLY
+    // ----------------------------------------------------
+    const cubes = [];
+    const numberOfCubes = 20; // Increase for a larger stack
+    const gap = 1.2;         // Vertical spacing between cubes
+
+    for (let i = 0; i < numberOfCubes; i++) {
+      // Alternate text, or choose randomly
+      // For example: half "CODE", half "DRIVEN"
+      const text = (i % 2 === 0) ? 'CODE' : 'DRIVEN';
+
+      const cube = createSingleFaceCube(text);
+
+      // Position each cube along Y-axis
+      cube.position.y = i * gap - (numberOfCubes * gap) / 2;
+      // Optionally, offset slightly in X to get a stepped shape
+      // cube.position.x = (i % 2 === 0) ? 0.2 : -0.2;
+
+      scene.add(cube);
+      cubes.push(cube);
+    }
+
+    // ----------------------------------------------------
+    // 5) ANIMATE
+    // ----------------------------------------------------
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // We want each cube to rotate in the X-Y plane,
+      // which means rotating around the Z-axis (cube.rotation.z).
+      // We'll vary the speed slightly per cube for a layered effect.
+      cubes.forEach((cube, index) => {
+        const speed = 0.005 + index * 0.0005; // e.g. base speed + small increment
+        cube.rotation.z += speed;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

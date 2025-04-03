@@ -18,21 +18,21 @@ const sidebarGroups = [
   {
     title: null, // No title for the first group
     items: [
-      { text: "Home", path: "/edo", icon: <HiHome size={20} /> },
+      { text: "Home", path: "/deo", icon: <HiHome size={20} /> },
     ],
   },
   {
     title: "Data Entry",
     items: [
-      { text: "Test Entry", path: "/edo/test-entry", icon: <HiClipboardList size={20} /> },
-      { text: "Treatment Entry", path: "/edo/treatment-entry", icon: <HiDocumentText size={20} /> },
+      { text: "Test Entry", path: "/deo/test-entry", icon: <HiClipboardList size={20} /> },
+      { text: "Treatment Entry", path: "/deo/treatment-entry", icon: <HiDocumentText size={20} /> },
     ],
   },
   {
     title: "Reports",
     items: [
-      { text: "Upload Report", path: "/edo/upload-report", icon: <HiUpload size={20} /> },
-      { text: "View Reports", path: "/edo/view-reports", icon: <HiEye size={20} /> },
+      { text: "Upload Report", path: "/deo/upload-report", icon: <HiUpload size={20} /> },
+      { text: "View Reports", path: "/deo/view-reports", icon: <HiEye size={20} /> },
     ],
   },
 ];
