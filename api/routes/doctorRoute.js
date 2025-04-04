@@ -7,5 +7,4 @@ const router = express.Router();
 router.get('/accepted-by-date', fetchAcceptedAppointmentsByDate);
 router.post('/count-monthly-appointments', getMonthlyAcceptedAppointmentsByDoctor);
 router.post('/count-monthly-appointments/new', getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor);
-
 export default router;

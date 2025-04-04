@@ -25,10 +25,13 @@
 
 
 import express from 'express';
-import { fetchUsers } from '../controllers/user.js';
+import { fetchUsers, fetchUser } from '../controllers/userController.js';
 
 const router = express.Router();
+//to get all users, simply use the url
+//to get all users with particular role, use like '/get_all_users?role=doctor'   (say)
+router.get('/get-all-users', fetchUsers);
 
-router.get('/get_all_users', fetchUsers);
+router.post('/get-user', fetchUser);
 
 export default router;
