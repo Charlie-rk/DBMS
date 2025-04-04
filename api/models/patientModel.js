@@ -20,6 +20,7 @@ export async function createPatientTable() {
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS patients (
         id SERIAL PRIMARY KEY,
+        visit_no INT DEFAULT 1,
         name VARCHAR(30) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         gender VARCHAR(10),

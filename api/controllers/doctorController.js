@@ -11,24 +11,115 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
  * Fetch all accepted appointments for a specific date
  */
 export async function fetchAcceptedAppointmentsByDate(req, res, next) {
-  const { date } = req.query;
+    const { date } = req.query;
 
-  if (!date) {
-    return res.status(400).json({ error: 'Date is required in query string (e.g., ?date=2025-04-04)' });
-  }
+    if (!date) {
+        return res.status(400).json({ error: 'Date is required in query string (e.g., ?date=2025-04-04)' });
+    }
 
-  try {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('status', 'accepted')
-      .gte('appointment_date', `${date}T00:00:00Z`)
-      .lte('appointment_date', `${date}T23:59:59Z`);
+    try {
+        const { data, error } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('status', 'accepted')
+            .gte('appointment_date', `${date}T00:00:00Z`)
+            .lte('appointment_date', `${date}T23:59:59Z`);
 
-    if (error) throw error;
+        if (error) throw error;
 
-    res.status(200).json({ appointments: data });
-  } catch (err) {
-    next(err);
-  }
+        res.status(200).json({ appointments: data });
+    } catch (err) {
+        next(err);
+    }
 }
+
+/**
+ * POST: Get number of accepted appointments for a doctor in a given month/year
+ * Body: { doctorId, month, year }
+ */
+export async function getMonthlyAcceptedAppointmentsByDoctor(req, res, next) {
+    const { doctorId, month, year } = req.body;
+
+    if (!doctorId || !month || !year) {
+        return res.status(400).json({ error: 'doctorId, month, and year are required in request body.' });
+    }
+
+    try {
+        // Format: YYYY-MM-DD
+        const startDate = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+        const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59)).toISOString();
+
+        const { count, error } = await supabase
+            .from('appointments')
+            .select('*', { count: 'exact', head: true })
+            .eq('doctor_id', doctorId)
+            .eq('status', 'accepted')
+            .gte('appointment_date', startDate)
+            .lte('appointment_date', endDate);
+
+        if (error) throw error;
+
+        res.status(200).json({
+            doctorId,
+            month,
+            year,
+            acceptedAppointments: count,
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
+
+/**
+ * POST: Get number of accepted appointments for a doctor in a given month/year,
+ * only counting patients who are visiting for the first time.
+ * Body: { doctorId, month, year }
+ */
+export async function getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor(req, res, next) {
+    const { doctorId, month, year } = req.body;
+  
+    if (!doctorId || !month || !year) {
+      return res.status(400).json({ error: 'doctorId, month, and year are required in request body.' });
+    }
+  
+    try {
+      // First & last day of the month in UTC
+      const startDate = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59)).toISOString();
+  
+      // **STEP 1: Get patient IDs where visit_no <= 1**
+      const { data: patients, error: patientError } = await supabase
+        .from('patients')
+        .select('id')
+        .lte('visit_no', 1);
+  
+      if (patientError) throw patientError;
+      if (!patients || patients.length === 0) {
+        return res.status(200).json({ doctorId, month, year, acceptedAppointmentsWithNewPatients: 0 });
+      }
+  
+      const patientIds = patients.map(p => p.id);
+  
+      // **STEP 2: Fetch accepted appointments for those patients**
+      const { count, error } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('status', 'accepted')
+        .gte('appointment_date', startDate)
+        .lte('appointment_date', endDate)
+        .in('patient_id', patientIds); // ✅ Now passing a proper array
+  
+      if (error) throw error;
+  
+      res.status(200).json({
+        doctorId,
+        month,
+        year,
+        acceptedAppointmentsWithNewPatients: count,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
