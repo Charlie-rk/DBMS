@@ -109,6 +109,8 @@ const percentIncrease = Math.round(
 const DoctorAppDashboard = () => {
   // State management
   const [currentTab, setCurrentTab] = useState("Dashboard");
+  // ... inside your DoctorAppDashboard component
+  const [sessionStatus, setSessionStatus] = useState("Offline");
   const maxAppointments = 150;
   const [bookedAppointments, setBookedAppointments] = useState(60);
   const [appointmentRequests, setAppointmentRequests] = useState(
@@ -136,6 +138,26 @@ const DoctorAppDashboard = () => {
     (apt) => apt.date === selectedDate
   );
 
+  const handleStatusToggle = async () => {
+    const newStatus = sessionStatus === "Offline" ? "Live" : "Offline";
+    setSessionStatus(newStatus);
+    try {
+      // Dummy endpoint call
+      const response = await fetch("https://dummy-endpoint.com/updateStatus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (response.ok) {
+        setSessionStatus(newStatus);
+      } else {
+        console.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status", error);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
@@ -144,18 +166,31 @@ const DoctorAppDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 overflow-y-auto">
         {/* Top Header */}
-        <div className="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg mb-6 shadow-xl">
-          <h2 className="text-xl text-gray-800 dark:text-gray-200">
-            Hello Dr. Sumana Maiti
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300">
-            Have a nice working day!
-          </p>
-        </div>
+        <div className="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg mb-6 shadow-xl flex justify-between items-center">
+  <div>
+    <h2 className="text-xl text-gray-800 dark:text-gray-200">
+      Hello Dr. Sumana Maiti
+    </h2>
+    <p className="text-gray-600 dark:text-gray-300">
+      Have a nice working day!
+    </p>
+  </div>
+  <button
+    onClick={handleStatusToggle}
+    className={`px-4 py-2 text-white rounded-lg shadow-2xl ${
+      sessionStatus === "Live"
+        ? "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700"
+        : "bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700"
+    }`}
+  >
+    {sessionStatus === "Live" ? "Go Offline" : "Go Live"}
+  </button>
+</div>
+        
 
         <div className="grid grid-cols-12 gap-6">
           {/* Patient Trend (Area Chart) */}
-          <div className="col-span-9 bg-white dark:bg-gray-800 rounded-lg p-8 shadow-2xl dark:shadow-slate-700">
+          <div className="col-span-9 bg-white dark:bg-gray-800 rounded-lg p-8 shadow-2xl dark:shadow-slate-700 hover:shadow-slate-600 ">
             <div className="flex items-center mb-4">
               <h3 className="font-bold text-gray-800 dark:text-gray-200">
                 Patient Trend
@@ -238,15 +273,15 @@ const DoctorAppDashboard = () => {
           </div>
 
           {/* Profile Card */}
-          <div className="col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow-2xl dark:shadow-slate-700">
-            <Profile_Doctor
+          <div className="col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow-2xl dark:shadow-slate-700 hover:shadow-slate-600">
+            <Profile_Doctor 
               bookedAppointments={bookedAppointments}
               maxAppointments={maxAppointments}
             />
           </div>
 
           {/* Appointment Requests */}
-          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700">
+          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold rounded-lg px-1 py-[2px] bg-sky-400 text-white dark:bg-sky-800">
                 Appointment Requests
@@ -301,7 +336,7 @@ const DoctorAppDashboard = () => {
           </div>
 
           {/* Appointments with Date Filter */}
-          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700">
+          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold bg-sky-400 rounded-lg px-1 py-[2px] text-white dark:bg-sky-800">
                 Appointments
@@ -335,7 +370,7 @@ const DoctorAppDashboard = () => {
           </div>
 
           {/* Recent Patients */}
-          <div className="col-span-8 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700">
+          <div className="col-span-8 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
             <h3 className="font-bold mb-4 text-gray-800 dark:text-gray-200">
               Recent Patients
             </h3>
@@ -392,7 +427,7 @@ const DoctorAppDashboard = () => {
           {/* Income and Misc Stats */}
           {/* Daily Performance and Metrics */}
           {/* Daily Performance and Metrics */}
-          <div className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700">
+          <div className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
             <div className="mb-4">
               <h3 className="font-bold text-gray-800 dark:text-gray-200">
                 Daily Performance

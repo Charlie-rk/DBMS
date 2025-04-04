@@ -2,9 +2,18 @@
 /* eslint-disable react/prop-types */
 import React from "react";
 import { Card } from "flowbite-react";
-import { User, AtSign, Calendar, MapPin, Briefcase, Tag } from "lucide-react";
+import {
+  User,
+  AtSign,
+  Calendar,
+  MapPin,
+  Briefcase,
+  Tag,
+  ClipboardList,
+} from "lucide-react";
 
 const Summary = ({ data }) => {
+  // Base summary items for all users.
   const summaryItems = [
     { label: "Name", value: data.name, icon: <User className="w-5 h-5 text-blue-500" /> },
     { label: "Username", value: data.username, icon: <Tag className="w-5 h-5 text-indigo-500" /> },
@@ -19,6 +28,31 @@ const Summary = ({ data }) => {
     { label: "Role", value: data.role, icon: <Briefcase className="w-5 h-5 text-pink-500" /> },
   ];
 
+  // Add doctor-specific details if applicable.
+  if (data.role === "Doctor") {
+    if (data.department) {
+      summaryItems.push({
+        label: "Department",
+        value: data.department,
+        icon: <Briefcase className="w-5 h-5 text-blue-500" />,
+      });
+    }
+    if (data.specialization) {
+      summaryItems.push({
+        label: "Specialization",
+        value: data.specialization,
+        icon: <Tag className="w-5 h-5 text-indigo-500" />,
+      });
+    }
+    if (data.experience) {
+      summaryItems.push({
+        label: "Years of Experience",
+        value: data.experience,
+        icon: <ClipboardList className="w-5 h-5 text-green-500" />,
+      });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card className="p-6 bg-white dark:bg-gray-800">
@@ -31,17 +65,12 @@ const Summary = ({ data }) => {
               item.value && (
                 <li key={index} className="flex items-center gap-3">
                   {item.icon}
-                  <span className="font-medium text-gray-800 dark:text-gray-200">{item.label}:</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">
+                    {item.label}:
+                  </span>
                   <span className="text-gray-700 dark:text-gray-300">{item.value}</span>
                 </li>
               )
-          )}
-          {data.role === "Doctor" && data.specialization && (
-            <li className="flex items-center gap-3">
-              <Briefcase className="w-5 h-5 text-purple-500" />
-              <span className="font-medium text-gray-800 dark:text-gray-200">Specialization:</span>
-              <span className="text-gray-700 dark:text-gray-300">{data.specialization}</span>
-            </li>
           )}
         </ul>
       </Card>

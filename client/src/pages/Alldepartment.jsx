@@ -186,7 +186,7 @@ export default function Alldepartment() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl">
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Department with Maximum Doctors
           </h2>
@@ -194,7 +194,7 @@ export default function Alldepartment() {
             {metrics.maxDoc ? metrics.maxDoc.name : "N/A"} ({metrics.maxDoc?.doctorCount} doctors)
           </p>
         </Card>
-        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl">
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Department with Minimum Doctors
           </h2>
@@ -202,7 +202,7 @@ export default function Alldepartment() {
             {metrics.minDoc ? metrics.minDoc.name : "N/A"} ({metrics.minDoc?.doctorCount} doctors)
           </p>
         </Card>
-        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl">
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Department with Maximum Rooms
           </h2>
@@ -212,7 +212,7 @@ export default function Alldepartment() {
               : 0} rooms)
           </p>
         </Card>
-        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl">
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Department with Minimum Rooms
           </h2>
@@ -222,7 +222,7 @@ export default function Alldepartment() {
               : 0} rooms)
           </p>
         </Card>
-        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl">
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Department with Maximum Patients
           </h2>
@@ -230,7 +230,7 @@ export default function Alldepartment() {
             {metrics.maxPat ? metrics.maxPat.name : "N/A"} ({metrics.maxPat?.patientCount} patients)
           </p>
         </Card>
-        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl">
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Department with Minimum Patients
           </h2>

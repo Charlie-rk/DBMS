@@ -20,7 +20,7 @@ const COLORS = ['#f87171', '#fbbf24', '#34d399']; // Red, Yellow, Green
 
 export default function ReportCard() {
   return (
-    <Card className="relative p-4 bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700 rounded-lg text-gray-800 dark:text-gray-200">
+    <Card className="relative p-4 bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700 rounded-lg text-gray-800 dark:text-gray-200">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Report</h3>
         <button className="text-sm text-blue-600 dark:text-blue-400 hover:underline">

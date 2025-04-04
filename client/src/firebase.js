@@ -3,23 +3,25 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 // Firebase configuration for the first app
+// Firebase configuration for the first part of your code
 const firebaseConfig1 = {
-  apiKey: "AIzaSyBkcjD98s3GEmuwo7v_d2Hw2ugw_PoXjEI",
-  authDomain: "otp-project-9b8c2.firebaseapp.com",
-  projectId: "otp-project-9b8c2",
-  storageBucket: "otp-project-9b8c2.appspot.com",
-  messagingSenderId: "777108144107",
-  appId: "1:777108144107:web:22b48b9b8fcf7fc4ab63ae"
+  apiKey: "AIzaSyBrR974V6STStiLMb-ZOd1funl8awjNLiY",
+  authDomain: "pdfupload-4e62e.firebaseapp.com",
+  projectId: "pdfupload-4e62e",
+  storageBucket: "pdfupload-4e62e.appspot.com",
+  messagingSenderId: "153819526219",
+  appId: "1:153819526219:web:0fb78764bdd18e88e049ce"
 };
 
 // Initialize the first Firebase app with a custom name
 const app1 = initializeApp(firebaseConfig1, "App1");
 
 // Export the auth object from the first app
-export const auth1 = getAuth(app1);
+// export const auth1 = getAuth(app1);
 
 // Import the second Firebase app
 import { initializeApp as initializeApp2 } from "firebase/app";
+import { getStorage } from "firebase/storage";
 
 // Firebase configuration for the second app
 const firebaseConfig2 = {
@@ -35,3 +37,9 @@ const firebaseConfig2 = {
 export const app2 = initializeApp2(firebaseConfig2, "App2");
 // Export the second app if needed
 export const auth2 = getAuth(app2);
+
+// Initialize Firebase for the first configuration
+// export const app1 = initializeApp(firebaseConfig1);
+const storage1 = getStorage(app1);
+
+export {storage1};
