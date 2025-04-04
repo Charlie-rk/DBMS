@@ -123,3 +123,36 @@ export async function getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor(req,
       next(err);
     }
   }
+
+  export async function changeAppointmentStatus(req, res, next) {
+    let { appointmentId, status } = req.body;
+    console.log(appointmentId);
+    if (!appointmentId || !status) {
+      return res.status(400).json({ error: "Missing appointmentId or status" });
+    }
+  
+    // Convert to lowercase and validate against allowed enum values
+    status = status.toLowerCase();
+    const validStatuses = ['accepted', 'declined', 'pending'];
+  
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+  
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status })
+        .eq('id', appointmentId)
+        .select(); // Optional: include this to return updated record
+  
+      if (error) {
+        return res.status(500).json({ error: error.message });
+      }
+  
+      return res.status(200).json({ message: 'Status updated successfully', data });
+    } catch (err) {
+      next(err); // Or handle error explicitly
+    }
+  }
+  
