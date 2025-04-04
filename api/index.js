@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import pkg from 'pg';
+import authRoute from './routes/authRoute.js';
 const { Client } = pkg;
 
 dotenv.config();
@@ -22,15 +23,41 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Use the provided connection string (password URL-encoded)
 const SUPABASE_DB_URL = "postgresql://postgres:Charlie%401275@db.sbpfqvpwpwmbzucacozv.supabase.co:5432/postgres";
+console.log("Hey !");
+console.log(SUPABASE_DB_URL)
+
+const client = new Client({
+  connectionString: SUPABASE_DB_URL,
+});
+console.log("debguging 2");
+// console.log(client)
+
+
+app.use("/api/auth", authRoute);
+
+
+
+
+
+
 
 // Function to create the users table using pg
+
+
+
+
+
+
 async function createUserTable() {
   const client = new Client({
     connectionString: SUPABASE_DB_URL,
   });
+  console.log("debguging 2");
+  console.log(client)
 
   try {
     await client.connect();
+    // console.l
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,

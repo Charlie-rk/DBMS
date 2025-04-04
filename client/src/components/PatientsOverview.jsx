@@ -37,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const PatientsOverview = () => {
   return (
-    <Card className="w-full max-w-xl p-4 bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700 rounded-lg text-gray-800 dark:text-gray-200">
+    <Card className="w-full max-w-xl p-4 bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700 rounded-lg text-gray-800 dark:text-gray-200">
       {/* Top Row: Title & Main Stat */}
       <div className="flex items-center justify-between mb-4">
         {/* Title + Icon */}

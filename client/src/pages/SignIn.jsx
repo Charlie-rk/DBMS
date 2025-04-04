@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-// src/pages/SignUp.jsx
 import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,6 +5,11 @@ import OAuth from "../components/OAuth";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { HiMail } from "react-icons/hi";
+import { FaCheckCircle } from "react-icons/fa"; // Import verification icon
+import Backdrop from '@mui/material/Backdrop';
+import CircularProgress from '@mui/material/CircularProgress';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -31,8 +34,6 @@ export default function SignUp() {
   const navigate = useNavigate();
   const MySwal = withReactContent(Swal);
 
-  // For non-radio inputs, update using the input id.
-  // For radio (role), update the "role" key and trigger secret key modal.
   const handleChange = async (e) => {
     const { type, value, id } = e.target;
     if (type === "radio") {
@@ -48,13 +49,13 @@ export default function SignUp() {
     setOtp(e.target.value.trim());
   };
 
-  // Generate OTP via backend
   const generateOtp = async () => {
     if (!formData.email) {
       setErrorMessage("Please enter your email first.");
       return;
     }
     setErrorMessage(null);
+    setLoading(true);
     try {
       const res = await fetch("/api/auth/send-otp", {
         method: "POST",
@@ -64,18 +65,20 @@ export default function SignUp() {
       const data = await res.json();
       if (!res.ok) {
         setErrorMessage(data.message || "Error sending OTP.");
+        setLoading(false);
         return;
       }
       // Assume backend returns the OTP in data.otp for demo purposes.
       setGeneratedOtp(data.otp);
       setOtpSent(true);
       setOtpTimer(30);
+      setLoading(false);
     } catch (error) {
       setErrorMessage("Error sending OTP: " + error.message);
+      setLoading(false);
     }
   };
 
-  // Countdown timer for OTP resend
   useEffect(() => {
     let timer;
     if (otpTimer > 0) {
@@ -84,11 +87,11 @@ export default function SignUp() {
     return () => clearTimeout(timer);
   }, [otpTimer]);
 
-  // Verify OTP using the value from backend
   const verifyOtp = async () => {
     if (!otp) {
       return setErrorMessage("Please enter the OTP.");
     }
+    setLoading(true);
     try {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
@@ -97,16 +100,29 @@ export default function SignUp() {
       });
       const data = await res.json();
       if (!res.ok) {
+        setLoading(false);
         return setErrorMessage(data.message || "OTP verification failed.");
       }
       setOtpVerified(true);
+      setLoading(false);
       setErrorMessage(null);
+      MySwal.fire({
+        icon: "success",
+        title: "OTP Verified Successfully!",
+        timer: 1500,
+        showConfirmButton: false,
+      });
     } catch (error) {
+      setLoading(false);
+      MySwal.fire({
+        icon: "error",
+        title: "Error verifying OTP",
+        text: error.message,
+      });
       setErrorMessage("Error verifying OTP: " + error.message);
     }
   };
 
-  // Trigger secret key modal when a role is selected (independent of OTP)
   const triggerSecretKeyModal = async (role) => {
     setSecretVerified(false);
     const { value: secretKey } = await MySwal.fire({
@@ -117,7 +133,6 @@ export default function SignUp() {
       confirmButtonText: "Submit",
       showLoaderOnConfirm: true,
     });
-    // Predefined secret keys for each role (demo values)
     const secretMap = {
       Admin: "admin123",
       "Front Desk Operator": "fdo123",
@@ -142,7 +157,6 @@ export default function SignUp() {
   };
 
   const handleSubmit = async (e) => {
-    console.log(formData)
     e.preventDefault();
     if (
       !formData.username ||
@@ -182,7 +196,16 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen mt-20  dark:bg">
+    <div className="min-h-screen mt-20 dark:bg">
+      {loading && (
+        <Backdrop
+          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={true}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      )}
+
       <div className="shadow-2xl rounded-2xl shadow-slate-600 flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
         {/* Left Branding */}
         <div className="flex-1">
@@ -220,14 +243,21 @@ export default function SignUp() {
                 id="email"
                 onChange={handleChange}
               />
-              <button
-                type="button"
-                onClick={generateOtp}
-                className="bg-sky-200 font-semibold rounded-lg px-1  absolute right-2 top-10 text-blue-600 dark:text-white hover:underline dark:bg-slate-400 "
-                disabled={otpTimer > 0}
-              >
-                {otpTimer > 0 ? `Resend OTP (${otpTimer}s)` : "Send OTP"}
-              </button>
+              {/* Conditionally render based on OTP verification */}
+              {otpVerified ? (
+                <span className="absolute right-2 top-10 text-green-600 px-1 ">
+                  <FaCheckCircle size={24} />
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={generateOtp}
+                  className="bg-sky-200 font-semibold rounded-lg px-1 absolute right-2 top-10 text-blue-600 dark:text-white hover:underline dark:bg-slate-400"
+                  disabled={otpTimer > 0}
+                >
+                  {otpTimer > 0 ? `Resend OTP (${otpTimer}s)` : "Send OTP"}
+                </button>
+              )}
             </div>
             {otpSent && !otpVerified && (
               <div>
@@ -281,7 +311,7 @@ export default function SignUp() {
                   required
                 />
                 <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                   Data Entry Operator
+                  Data Entry Operator
                 </label>
                 <input
                   type="radio"
@@ -310,7 +340,6 @@ export default function SignUp() {
                 "Sign In"
               )}
             </Button>
-            {/* <OAuth /> */}
           </form>
           <div className="flex gap-2 text-sm mt-5 dark:text-gray-300">
             <span>Your health, our promise.</span>

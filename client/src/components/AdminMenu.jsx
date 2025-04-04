@@ -16,7 +16,7 @@ const AdminMenu = () => {
       {/* TOP CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
         {/* Card 1: Total Beds */}
-        <Card className="bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700 ">
+        <Card className="bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700 ">
           <div className="flex items-center justify-between mb-8">
             <h3 className="bg-sky-200 dark:bg-sky-600 rounded-lg px-[4px] text-md font-semibold text-gray-800 dark:text-gray-200">
               Total Beds
@@ -45,7 +45,7 @@ const AdminMenu = () => {
         </Card>
 
         {/* Card 2: Doctors */}
-        <Card className="bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700  ">
+        <Card className="bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700  ">
           <div className="flex items-center justify-between mb-8">
             <h3 className="bg-sky-200 dark:bg-sky-600 rounded-lg px-[4px] text-md font-semibold text-gray-800 dark:text-gray-200">
               Doctors
@@ -74,7 +74,7 @@ const AdminMenu = () => {
         </Card>
 
         {/* Card 3: Patients */}
-        <Card className="bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700 ">
+        <Card className="bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700 ">
           <div className="flex items-center justify-between">
             <h3 className="bg-sky-200 dark:bg-sky-600 rounded-lg px-[4px] text-md font-semibold text-gray-800 dark:text-gray-200">Patient</h3>
             <span className="text-sm text-gray-400 dark:text-white">2019-2020</span>
@@ -121,7 +121,7 @@ const AdminMenu = () => {
         </Card>
 
         {/* Card 4: Daily Patient Flow */}
-        <Card className="bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700">
+        <Card className="bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700">
           <div className="flex items-center justify-between">
             <h3 className="bg-green-200 rounded-lg dark:bg-green-600 px-[4px] text-md font-semibold text-gray-800 dark:text-white">
               Daily Patient Flow
@@ -152,7 +152,7 @@ const AdminMenu = () => {
       </div>
 
       {/* PATIENT DETAILS TABLE */}
-      <Card className="bg-white dark:bg-gray-800 shadow-xl shadow-slate-400 dark:shadow-slate-700">
+      <Card className="bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 dark:shadow-slate-700">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Patients Detail Information
