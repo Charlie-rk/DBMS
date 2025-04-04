@@ -14,7 +14,7 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
   const sendFormData = async (data) => {
     console.log(data);
     try {
-      const response = await fetch("https://example.com/api/submit", {
+      const response = await fetch("/api/admin/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

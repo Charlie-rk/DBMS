@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // src/pages/ViewReportsPage.jsx
 import React from 'react';
 

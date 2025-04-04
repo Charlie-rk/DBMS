@@ -102,6 +102,7 @@ import { createPatientTable } from './models/patientModel.js';
 import { createAppointmentTable } from './models/appointmentModel.js'; // ✅ fixed typo
 import userRoute from './routes/userRoute.js';
 import doctorRoute from './routes/doctorRoute.js';
+import adminRoute  from './routes/adminRoute.js'
 
 dotenv.config();
 
@@ -124,6 +125,7 @@ Promise.all([
 // ✅ Mount routes
 app.use('/api/user', userRoute);
 app.use('/api/doctor', doctorRoute);
+app.use('/api/admin',adminRoute);
 
 // SPA fallback
 app.get('*', (req, res) => {

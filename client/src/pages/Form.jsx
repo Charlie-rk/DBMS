@@ -20,7 +20,11 @@ export default function Form() {
         specialization: "",
       };
       const handleSubmit = (data) => {
+       
+
         console.log("Form Submitted:", data);
+        // post method data in body 
+        // api/admin/register is the end point 
       };
   return (
     <div className="container mx-auto p-4">
