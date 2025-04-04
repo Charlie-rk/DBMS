@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Button } from 'flowbite-react';
 import React, { useState } from 'react';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
