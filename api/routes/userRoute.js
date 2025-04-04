@@ -1,24 +1,34 @@
-import express from 'express';
-import {
-  deleteUser,
-  getUser,
-  getUsers,
-  signout,
-  test,
-  updateUser,
+// import express from 'express';
+// import {
+//   deleteUser,
+//   getUser,
+//   getUsers,
+//   signout,
+//   test,
+//   updateUser,
 
-} from '../controllers/userController.js';
-import { verifyToken } from './../utilis/verifyUser.js';
+// } from '../controllers/userController.js';
+// import { verifyToken } from './../utilis/verifyUser.js';
+
+// const router = express.Router();
+
+// router.get('/test', test);
+// router.put('/update/:userId', verifyToken, updateUser);
+// router.delete('/delete/:userId', verifyToken, deleteUser);
+// router.post('/signout', signout);
+// router.get('/getusers', verifyToken, getUsers);
+// // router.get('/:userId', getUser);
+// // router.get('/:userId/getRequest',getRequest);
+
+
+// export default router;
+
+
+import express from 'express';
+import { fetchUsers } from '../controllers/user.js';
 
 const router = express.Router();
 
-router.get('/test', test);
-router.put('/update/:userId', verifyToken, updateUser);
-router.delete('/delete/:userId', verifyToken, deleteUser);
-router.post('/signout', signout);
-router.get('/getusers', verifyToken, getUsers);
-// router.get('/:userId', getUser);
-// router.get('/:userId/getRequest',getRequest);
-
+router.get('/get_all_users', fetchUsers);
 
 export default router;
