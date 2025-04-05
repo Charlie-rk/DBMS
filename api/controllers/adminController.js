@@ -26,11 +26,14 @@ export async function registerUser(req, res, next) {
       .insert(userData);
     console.log("hii2");
     console.log(data);
+
+    const new_data = await supabase.from('users').select('*').eq('username', userData.username);
+    console.log(new_data);
     if (error) {
       throw error;
     }
     console.log(data);
-    res.status(201).json({ user: data });
+    res.status(201).json({ user: new_data });
   } catch (err) {
     next(err);
   }
