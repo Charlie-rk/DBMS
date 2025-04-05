@@ -255,3 +255,23 @@ export async function fetchUser(req, res, next) {
     }
   }
   
+// controllers/userController.js
+export async function deleteUser(req, res, next) {
+  const { username } = req.body;
+  console.log(username);
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .delete()
+      .eq('username', username);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: 'User deleted successfully', data });
+  } catch (err) {
+    next(err);
+  }
+}

@@ -1,5 +1,5 @@
 import  express from "express";
-import { registerUser, fetchUser, fetchUsers } from "../controllers/adminController.js";
+import { registerUser, fetchUser, fetchUsers, deleteUser } from "../controllers/adminController.js";
 const router=express.Router();
 
 router.post('/register',registerUser);
@@ -9,5 +9,7 @@ router.post('/register',registerUser);
 router.get('/get-all-users', fetchUsers);
 
 router.post('/get-user', fetchUser);
+
+router.delete('/delete-user', deleteUser);
 
 export default router;
