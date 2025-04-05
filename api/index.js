@@ -100,7 +100,7 @@ import path from 'path';
 import { createUserTable } from './models/userModel.js';
 import { createPatientTable } from './models/patientModel.js';
 import { createAppointmentTable } from './models/appointmentModel.js'; // ✅ fixed typo
-import userRoute from './routes/userRoute.js';
+// import userRoute from './routes/userRoute.js';
 import doctorRoute from './routes/doctorRoute.js';
 import adminRoute  from './routes/adminRoute.js'
 
@@ -123,7 +123,7 @@ Promise.all([
   .catch((err) => console.error('🔥 Table creation failed:', err));
 
 // ✅ Mount routes
-app.use('/api/user', userRoute);
+// app.use('/api/user', userRoute);
 app.use('/api/doctor', doctorRoute);
 app.use('/api/admin',adminRoute);
 
