@@ -22,3 +22,18 @@
 
 
 // export default router;
+
+
+import express from 'express';
+import { fetchRecentActivitiesOfUser } from '../controllers/userController.js';
+
+const router = express.Router();
+//Note that limit is a string, not int
+// {
+//     "username": "rustam",
+//     "limit": "2"
+// }
+  
+router.post('/recent-activities', fetchRecentActivitiesOfUser);
+
+export default router;
