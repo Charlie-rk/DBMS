@@ -100,14 +100,21 @@ import path from 'path';
 import { createUserTable } from './models/userModel.js';
 import { createPatientTable } from './models/patientModel.js';
 import { createAppointmentTable } from './models/appointmentModel.js'; // ✅ fixed typo
+import { createTestsTable } from './models/testsModel.js';
+import { createTreatmentsTable } from './models/treatmentsModel.js';
+import { createReportsTable } from './models/reportsModel.js';
+
 import { createAdmissionTable } from './models/admissionModel.js';
 import { createRoomTable } from './models/roomModel.js';
 import { createDepartmentTable } from './models/departmentsModel.js';
+import { createActivityTable } from './models/activityModel.js';
 // import userRoute from './routes/userRoute.js';
 import doctorRoute from './routes/doctorRoute.js';
 import adminRoute  from './routes/adminRoute.js'
 import fdoRoute from './routes/fdoRoute.js';
 import authRoute from './routes/authRoute.js';
+import userRoute from './routes/userRoute.js';
+import deoRoute from './routes/deoRoute.js';
 
 
 dotenv.config();
@@ -124,9 +131,15 @@ Promise.all([
   createUserTable(),
   createPatientTable(),
   createAppointmentTable(),
+
+  //new
+  createTestsTable(),
+  createTreatmentsTable(),
+  createReportsTable(),
   createAdmissionTable(),
   createRoomTable(),
   createDepartmentTable(),
+  createActivityTable(),
 ])
   .then(() => console.log('🚀 User, Patient & Appointment tables ready.'))
   .catch((err) => console.error('🔥 Table creation failed:', err));
@@ -137,6 +150,8 @@ app.use('/api/doctor', doctorRoute);
 app.use('/api/admin',adminRoute);
 app.use('/api/fdo', fdoRoute);
 app.use('/api/auth',authRoute);
+app.use('/api/user',userRoute);
+app.use('/api/deo', deoRoute);
 
 // SPA fallback
 app.get('*', (req, res) => {
