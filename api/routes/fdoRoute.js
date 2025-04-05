@@ -5,7 +5,8 @@ import {
   admitPatient,
   dischargePatient,
   getRoomsSummary,
-  seedRooms
+  seedRooms,
+  seedDepartments
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
@@ -26,6 +27,7 @@ router.post('/discharge', dischargePatient);
 router.get('/rooms-summary', getRoomsSummary);
 
 // New route: Seed rooms data
+router.post('/seed-departments', seedDepartments);
 router.post('/seed-rooms', seedRooms);
 
 export default router;

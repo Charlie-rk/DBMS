@@ -307,4 +307,36 @@ export async function seedRooms(req, res, next) {
   }
 }
 
+/**
+ * Seed Departments Data:
+ * Inserts department data for 10 departments.
+ */
+export async function seedDepartments(req, res, next) {
+  const departmentsData = [
+    { name: 'Cardiology', description: 'Heart related treatments.' },
+    { name: 'Neurology', description: 'Brain and nervous system.' },
+    { name: 'Orthopedics', description: 'Bone and joint treatments.' },
+    { name: 'Pediatrics', description: 'Child health and care.' },
+    { name: 'Oncology', description: 'Cancer diagnosis and treatment.' },
+    { name: 'Gynecology', description: 'Women\'s health care.' },
+    { name: 'Dermatology', description: 'Skin related treatments.' },
+    { name: 'Gastroenterology', description: 'Digestive system treatments.' },
+    { name: 'Pulmonology', description: 'Lung and respiratory treatments.' },
+    { name: 'Urology', description: 'Urinary tract and male reproductive health.' }
+  ];
+
+  try {
+    const { data, error } = await supabase
+      .from('departments')
+      .insert(departmentsData)
+      .select();
+
+    if (error) throw error;
+
+    res.status(200).json({ message: 'Departments seeded successfully.', departments: data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 
