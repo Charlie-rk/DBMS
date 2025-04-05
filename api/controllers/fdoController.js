@@ -17,10 +17,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 ////////done//////////may be we can use sql for age counting////////
 export async function registerPatient(req, res, next) {
-  console.log("regitration")
-  const { name, mobile, dob, address } = req.body;
+  const { name, mobile, gender, dob, address } = req.body;
   
-  if (!name || !mobile || !dob || !address) {
+  if (!name || !mobile || !gender || !dob || !address) {
     return res.status(400).json({ error: 'Name, mobile, DOB, and address are required.' });
   }
   
@@ -44,14 +43,14 @@ export async function registerPatient(req, res, next) {
       patient = existingPatients[0];
       const { error: updateError } = await supabase
         .from('patients')
-        .update({ name, dob, address, age, status: 'registered' })
+        .update({ name, gender, dob, address, age, status: 'registered' })
         .eq('id', patient.id);
       if (updateError) throw updateError;
     } else {
       // Create a new patient record.
       const { data, error: insertError } = await supabase
         .from('patients')
-        .insert([{ name, mobile, dob, address, age, status: 'registered' }])
+        .insert([{ name, mobile, gender, dob, address, age, status: 'registered' }])
         .select();
       if (insertError) throw insertError;
       patient = data[0];
