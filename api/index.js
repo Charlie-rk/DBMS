@@ -106,11 +106,8 @@ import { createDepartmentTable } from './models/departmentsModel.js';
 // import userRoute from './routes/userRoute.js';
 import doctorRoute from './routes/doctorRoute.js';
 import adminRoute  from './routes/adminRoute.js'
-<<<<<<< HEAD
 import fdoRoute from './routes/fdoRoute.js';
-=======
 import authRoute from './routes/authRoute.js';
->>>>>>> c42b7dccf80800c99224a2cc90e0a0ab799bfd94
 
 
 dotenv.config();
@@ -138,11 +135,8 @@ Promise.all([
 // app.use('/api/user', userRoute);
 app.use('/api/doctor', doctorRoute);
 app.use('/api/admin',adminRoute);
-<<<<<<< HEAD
 app.use('/fdo', fdoRoute);
-=======
 app.use('/api/auth',authRoute);
->>>>>>> c42b7dccf80800c99224a2cc90e0a0ab799bfd94
 
 // SPA fallback
 app.get('*', (req, res) => {
