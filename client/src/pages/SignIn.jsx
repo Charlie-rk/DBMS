@@ -199,7 +199,7 @@ export default function SignUp() {
         if(data.role==="Data Entry Operator"){
           navigate("/deo");
         }
-        if(data.role==="admin"){
+        if(data.role==="Admin"){
           navigate("/admin");
         }
         console.log(data);

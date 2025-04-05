@@ -191,7 +191,7 @@ export default function Alldoctor() {
                 e.stopPropagation();
                 openDeleteModal(doc);
               }}
-              className="absolute top-2 right-2 z-10 bg-red-700 text-white p-[2px] rounded-lg"
+              className="absolute top-2 right-2 z-10 bg-slate-500 text-white p-[2px] rounded-lg"
             >
               <TrashIcon />
             </button>

@@ -256,7 +256,7 @@ export default function Alldepartment() {
               <button
                 color="failure"
                 onClick={() => openDeleteModal(dept)}
-                className="absolute top-2 right-2 z-10 bg-red-700 text-white rounded-md p-[1px]"
+                className="absolute top-2 right-2 z-10 bg-slate-500 text-white rounded-md p-[1px]"
               >
                 <TrashIcon />
               </button>
