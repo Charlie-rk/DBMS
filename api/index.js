@@ -105,6 +105,7 @@ import doctorRoute from './routes/doctorRoute.js';
 import adminRoute  from './routes/adminRoute.js'
 import authRoute from './routes/authRoute.js';
 
+
 dotenv.config();
 
 const __dirname = path.resolve();
