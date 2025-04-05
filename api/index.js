@@ -135,7 +135,7 @@ Promise.all([
 // app.use('/api/user', userRoute);
 app.use('/api/doctor', doctorRoute);
 app.use('/api/admin',adminRoute);
-app.use('/fdo', fdoRoute);
+app.use('/api/fdo', fdoRoute);
 app.use('/api/auth',authRoute);
 
 // SPA fallback

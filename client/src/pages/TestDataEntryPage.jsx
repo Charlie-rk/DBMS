@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 export default function TestDataEntryPage() {
   const [formData, setFormData] = useState({
     patientId: '',
+    doctor:'',
     testType: '',
     testResult: '',
     testDate: '',
@@ -34,6 +35,19 @@ export default function TestDataEntryPage() {
             type="text"
             name="patientId"
             value={formData.patientId}
+            onChange={handleChange}
+            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 dark:text-gray-300">
+            Doctor (username):
+          </label>
+          <input
+            type="text"
+            name="doctor"
+            value={formData.doctor}
             onChange={handleChange}
             className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
             required
