@@ -1,5 +1,5 @@
 import express from 'express';
-import { fetchAcceptedAppointmentsByDate, getMonthlyAcceptedAppointmentsByDoctor, getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor } from '../controllers/doctorController.js';
+import { changeAppointmentStatus, fetchAcceptedAppointmentsByDate, getMonthlyAcceptedAppointmentsByDoctor, getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor } from '../controllers/doctorController.js';
 
 const router = express.Router();
 
@@ -7,4 +7,13 @@ const router = express.Router();
 router.get('/accepted-by-date', fetchAcceptedAppointmentsByDate);
 router.post('/count-monthly-appointments', getMonthlyAcceptedAppointmentsByDoctor);
 router.post('/count-monthly-appointments/new', getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor);
+
+
+//route to change appointment status
+// {
+//     "appointmentId": 1,
+//     "status": "Pending"
+// }
+  
+router.post('/change-appointment-status', changeAppointmentStatus);
 export default router;
