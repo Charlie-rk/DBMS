@@ -19,17 +19,17 @@ const Address = ({ data, setData, errors }) => {
       </p>
 
       <div>
-        <Label htmlFor="pincode" value="Pincode" />
+        <Label htmlFor="pin_code" value="Pincode" />
         <TextInput
-          id="pincode"
-          name="pincode"
+          id="pin_code"
+          name="pin_code"
           placeholder="123456"
-          value={data.pincode || ""}
+          value={data.pin_code || ""}
           onChange={handleChange}
           className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
         />
-        {errors.pincode && (
-          <HelperText color="failure">{errors.pincode}</HelperText>
+        {errors.pin_code && (
+          <HelperText color="failure">{errors.pin_code}</HelperText>
         )}
       </div>
 
