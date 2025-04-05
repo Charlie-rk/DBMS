@@ -108,10 +108,7 @@ import doctorRoute from './routes/doctorRoute.js';
 import adminRoute  from './routes/adminRoute.js'
 import fdoRoute from './routes/fdoRoute.js';
 import authRoute from './routes/authRoute.js';
-<<<<<<< HEAD
-=======
 
->>>>>>> dd13ef59a66f0ed04ae055f4e0ce49ed3368c831
 
 dotenv.config();
 
