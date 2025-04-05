@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -166,16 +167,16 @@ export default function SignUp() {
     ) {
       return setErrorMessage("Please fill out all fields.");
     }
-    if (!formData.email.endsWith("@iitbbs.ac.in")) {
-      return setErrorMessage("Please use a valid Institute Email Id.");
-    }
+    // if (!formData.email.endsWith("@iitbbs.ac.in")) {
+    //   return setErrorMessage("Please use a valid Institute Email Id.");
+    // }
     if (!otpVerified || !secretVerified) {
       return setErrorMessage("Please verify your email OTP and secret key.");
     }
     try {
       setLoading(true);
       setErrorMessage(null);
-      const res = await fetch("/api/auth/signup", {
+      const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -187,7 +188,21 @@ export default function SignUp() {
       }
       setLoading(false);
       if (res.ok) {
-        navigate("/sign-in");
+        console.log(res);
+        // navigate("/sign-in");
+        if(data.role==="Front Desk Operator"){
+          navigate("/fdo");
+        }
+        if(data.role==="doctor"){
+          navigate("/doctor_dashboard");
+        }
+        if(data.role==="Data Entry Operator"){
+          navigate("/deo");
+        }
+        if(data.role==="admin"){
+          navigate("/admin");
+        }
+        console.log(data);
       }
     } catch (error) {
       setErrorMessage(error.message);
