@@ -1,5 +1,5 @@
 
-import User from "../models/userModel.js";
+// import User from "../models/userModel.js";
 import bcryptjs from "bcryptjs";
 import crypto from 'crypto';
 import nodemailer from "nodemailer";
@@ -30,8 +30,8 @@ export const sendOtp=async(req,res,next)=>{
   const mailOptions = {
     from: 'rustampavri1275@gmail.com',
     to: email,
-    subject: ' OTP for Signup',
-    text: "Swap-simple",
+    subject: 'OTP for Sign-In - We ~ Go',
+    text: "We ~ Go - Where compassion meets innovation.",
     html:`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,7 +45,7 @@ export const sendOtp=async(req,res,next)=>{
             padding: 20px;
         }
         .otp-box {
-            background-color: black; /* Box background */
+            background-color: #adeaf0; /* Box background */
             color: darkgreen; /* Text color */
             padding: 20px;
             border-radius: 8px;
@@ -74,12 +74,13 @@ export const sendOtp=async(req,res,next)=>{
 
     <div class="otp-box">
         <h2>Your OTP is <strong>${otp}</strong></h2>
-        <p>Please use this to Sign up.</p>
+        <p>Please use this OTP to sign-In to We ~ Go.</p>
     </div>
 
     <div class="thank-you">
-        <p>❤️ Thank you for using our service! ❤️</p>
-        <p>Rustam & Sangam</p>
+        <p>Where compassion meets innovation.</p>
+        <p>Healthcare is the art of compassion, where every touch, every smile, and every heartbeat creates a legacy of hope and healing.</p>
+        <p>Team We ~ Go </p>
     </div>
 
 </body>
