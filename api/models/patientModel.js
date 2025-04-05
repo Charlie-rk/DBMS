@@ -22,14 +22,10 @@ export async function createPatientTable() {
         id SERIAL PRIMARY KEY,
         visit_no INT DEFAULT 1,
         name VARCHAR(30) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
+        mobile VARCHAR(15) NOT NULL,
+        address VARCHAR(255) NOT NULL,
         gender VARCHAR(10),
         dob TIMESTAMP,
-        pin_code VARCHAR(8),
-        street VARCHAR(50),
-        city VARCHAR(50),
-        state_country VARCHAR(50),
-        role VARCHAR(50),
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
