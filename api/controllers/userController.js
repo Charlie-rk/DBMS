@@ -32,3 +32,5 @@ export async function fetchRecentActivitiesOfUser(req, res, next) {
     next(err);
   }
 }
+
+
