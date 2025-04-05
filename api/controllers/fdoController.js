@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 ////////done//////////may be we can use sql for age counting////////
 export async function registerPatient(req, res, next) {
+  console.log("registration");
   const { name, mobile, gender, dob, address } = req.body;
   
   if (!name || !mobile || !gender || !dob || !address) {

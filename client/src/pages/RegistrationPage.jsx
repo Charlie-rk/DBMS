@@ -8,6 +8,7 @@ function RegistrationPage() {
     mobile: '',
     dob: '',
     address: '',
+    gender: '',
     isExisting: false,
   });
 
@@ -79,6 +80,23 @@ function RegistrationPage() {
         </div>
         <div>
           <label className="block text-gray-700 dark:text-gray-300">
+            Gender:
+          </label>
+          <select
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+            required
+          >
+            <option value="">--Select Gender--</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-gray-700 dark:text-gray-300">
             Existing Patient?
           </label>
           <select
@@ -96,9 +114,13 @@ function RegistrationPage() {
             <option value="true">Yes</option>
           </select>
         </div>
-          <Button  outline  className="bg-gradient-to-r  from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800">
+        <Button
+          type="submit"
+          outline
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+        >
           Register
-              </Button>
+        </Button>
       </form>
     </div>
   );

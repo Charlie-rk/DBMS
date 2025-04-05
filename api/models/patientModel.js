@@ -25,7 +25,9 @@ export async function createPatientTable() {
         mobile VARCHAR(15) NOT NULL,
         address VARCHAR(255) NOT NULL,
         gender VARCHAR(10),
+        age INT,
         dob TIMESTAMP,
+        status VARCHAR(20),
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
