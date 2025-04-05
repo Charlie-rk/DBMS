@@ -5,8 +5,8 @@ const { Client } = pkg;
 dotenv.config();
 
 const SUPABASE_DB_URL =
-  process.env.SUPABASE_DB_URL ||
-  "postgresql://postgres:your_password@your_supabase_host:5432/postgres";
+   process.env.SUPABASE_DB_URL ||
+  "postgresql://postgres:Lieu10ants%21@db.tvgasdupkqffhvqzurwy.supabase.co:5432/postgres";
 
 /**
  * Creates the "admissions" table if it doesn't exist.
