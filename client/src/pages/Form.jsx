@@ -11,7 +11,7 @@ export default function Form() {
         email: "",
         gender: "",
         dob: "",
-        pincode: "",
+        pin_code: "",
         street: "",
         city: "",
         state: "",

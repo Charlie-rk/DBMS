@@ -57,8 +57,8 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
       }
     } else if (currentStep === 1) {
       // Address step validation
-      if (!multiStepFormData.pincode) {
-        errs.pincode = "Pincode is required";
+      if (!multiStepFormData.pin_code) {
+        errs.pin_code = "Pincode is required";
       }
       if (!multiStepFormData.street) {
         errs.street = "Street is required";
