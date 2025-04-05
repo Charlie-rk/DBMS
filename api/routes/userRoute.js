@@ -25,7 +25,7 @@
 
 
 import express from 'express';
-import { fetchRecentActivitiesOfUser } from '../controllers/userController.js';
+import { fetchRecentActivitiesOfUser, createActivity } from '../controllers/userController.js';
 
 const router = express.Router();
 //Note that limit is a string, not int
@@ -36,4 +36,17 @@ const router = express.Router();
   
 router.post('/recent-activities', fetchRecentActivitiesOfUser);
 
+
+
+//NO USE ONLY FOR TESTING FUNCTION
+// router.post('/activity', async (req, res, next) => {
+//     try {
+//       const { username, description } = req.body;
+//       const data = await createActivity(username, description);
+//       res.status(201).json({ activity: data });
+//     } catch (error) {
+//       next(error);
+//     }
+//   });
+  
 export default router;

@@ -34,3 +34,23 @@ export async function fetchRecentActivitiesOfUser(req, res, next) {
 }
 
 
+export async function createActivity(username, description) {
+    if (!username) {
+      throw new Error('Username is required');
+    }
+    if (!description) {
+      throw new Error('Description is required');
+    }
+  
+    try {
+      const { data, error } = await supabase
+        .from('activity')
+        .insert([{ username, description }]);
+  
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      throw err;
+    }
+  }
+  
