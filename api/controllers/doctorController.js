@@ -155,4 +155,68 @@ export async function getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor(req,
       next(err); // Or handle error explicitly
     }
   }
+
+
+  //Post: get recent patients within 24hrs
+  
+  export async function fetchRecentPatientsByDoctor(req, res, next) {
+    const { username } = req.body;
+    console.log(username);
+  
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+  
+    try {
+      // Get current and previous day's timestamp (24 hours ago)
+      const currTime = new Date();
+      const prevDayTime = new Date(currTime.getTime() - 24 * 60 * 60 * 1000);
+  
+      // Get doctorId using username
+      console.log(currTime);
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', username)
+        .single();
+  
+      if (doctorError || !doctorData) {
+        return res.status(404).json({ error: 'Doctor not found' });
+      }
+  
+      const doctorId = doctorData.id;
+      console.log(`Doctor ID: ${doctorId}`);
+  
+      // Fetch accepted appointments in last 24 hours for this doctor
+      const { data: appointments, error: appointmentError } = await supabase
+        .from('appointments')
+        .select('patient_id')
+        .eq('doctor_id', doctorId)
+        .eq('status', 'accepted')
+        .gte('appointment_date', prevDayTime.toISOString())
+        .lte('appointment_date', currTime.toISOString());
+  
+      if (appointmentError) throw appointmentError;
+      console.log(appointments);
+  
+      const patientIds = appointments.map(app => app.patient_id);
+  
+      if (patientIds.length === 0) {
+        return res.status(200).json({ patients: [] });
+      }
+  
+      // Fetch patient details using the list of patientIds
+      const { data: patients, error: patientError } = await supabase
+        .from('patients')
+        .select('*')
+        .in('id', patientIds);
+  
+      if (patientError) throw patientError;
+  
+      res.status(200).json({ patients });
+    } catch (err) {
+      console.error('Error fetching recent patients:', err);
+      next(err);
+    }
+  }
   

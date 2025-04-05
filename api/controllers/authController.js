@@ -6,6 +6,21 @@ import nodemailer from "nodemailer";
 
 import { errorHandler } from "./../utilis/error.js";
 import jwt from "jsonwebtoken";
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
+
+
+
+dotenv.config();
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tvgasdupkqffhvqzurwy.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+
+if (!SUPABASE_KEY) {
+  throw new Error('SUPABASE_KEY is not defined in your environment variables.');
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let otpStore = {};
 let otpStore1 = {};
@@ -269,27 +284,37 @@ export const signup = async (req, res, next) => {
 };
 
 export const signin = async (req, res, next) => {
-  // console.log("Hey i am here for you ");
-  const { email, password } = req.body;
-  if (!email || !password || email === "" || password === "") {
-    next(errorHandler(400, "All fields are required"));
+  console.log(req.body);
+  const { username,role,email, password } = req.body;
+
+  console.log(email);
+  console.log(password);
+  if (!email || !password || email.trim() === "" || password.trim() === "") {
+    return next(errorHandler(400, "All fields are required"));
   }
   try {
-    const validUser = await User.findOne({ email });
-    if (!validUser) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single(); // Expecting exactly one user
+
+    if (error || !data) {
       return next(errorHandler(404, "User not found"));
     }
-    const validPassword = bcryptjs.compareSync(password, validUser.password);
-    if (!validPassword) {
-      return next(errorHandler(400, "Invalid password"));
+
+    // If passwords are hashed, use bcryptjs.compareSync(password, data.password)
+    if (data.password !== password||data.role!==role||data.username!==username) {
+      return next(errorHandler(404, "User not found"));
     }
 
     const token = jwt.sign(
-      { id: validUser._id, isAdmin: validUser.isAdmin },
+      { id: data.id, isAdmin: data.is_admin },
       process.env.JWT_SECRET
     );
 
-    const { password: pass, ...rest } = validUser._doc;
+    // Remove password from user data before sending response
+    const { password: removed, ...rest } = data;
 
     res
       .status(200)
@@ -301,6 +326,7 @@ export const signin = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const google = async (req, res, next) => {
   const { email, name, googlPhotoUrl } = req.body;
