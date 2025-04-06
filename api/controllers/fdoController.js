@@ -668,6 +668,26 @@ export async function upsertDepartmentAndRooms(req, res, next) {
   }
 }
 
+/**
+ * Get all registered patients.
+ * This function fetches all records from the "patients" table with status "registered".
+ */
+export async function getAllRegisteredPatients(req, res, next) {
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('status', 'registered');
+      
+    if (error) throw error;
+    
+    res.status(200).json({ patients: data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 
 
 
