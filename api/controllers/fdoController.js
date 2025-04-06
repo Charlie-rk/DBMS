@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 ////////done//////////may be we can use sql for age counting////////
 export async function registerPatient(req, res, next) {
+  console.log("registration");
   const { name, mobile, gender, dob, address } = req.body;
   
   if (!name || !mobile || !gender || !dob || !address) {
@@ -298,6 +299,7 @@ export async function getRoomsSummary(req, res, next) {
  *  - General: total_count = 50
  */
 export async function seedRooms(req, res, next) {
+  console.log("seeding rooms");
   try {
     // Define 10 departments with assumed IDs and names
     const departments = [
@@ -342,6 +344,7 @@ export async function seedRooms(req, res, next) {
  * Inserts department data for 10 departments.
  */
 export async function seedDepartments(req, res, next) {
+  console.log("sedding department ");
   const departmentsData = [
     { name: 'Cardiology', description: 'Heart related treatments.' },
     { name: 'Neurology', description: 'Brain and nervous system.' },

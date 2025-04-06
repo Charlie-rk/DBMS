@@ -74,10 +74,11 @@ const FDOSidebar = () => {
     
      {/* Desktop Sidebar */}
      <div
-        className={`hidden md:flex flex-col text-blue-900 dark:text-blue-300 bg-sky-100 dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
-          isOpen ? "w-64" : "w-20"
-        }`}
-      >
+  className={`flex flex-col h-screen text-blue-900 dark:text-blue-300 bg-sky-100 dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
+    isOpen ? "w-64" : "w-20"
+  } hidden md:flex `}
+>
+
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
           <Link2 size={24} />

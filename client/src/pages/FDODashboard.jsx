@@ -11,3 +11,4 @@ export default function FDODashboard() {
     </div>
   );
 }
+// "min-h-screen flex flex-col md:flex-row"

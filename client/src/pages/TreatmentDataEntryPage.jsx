@@ -42,6 +42,19 @@ export default function TreatmentDataEntryPage() {
         </div>
         <div>
           <label className="block text-gray-700 dark:text-gray-300">
+            Doctor (username):
+          </label>
+          <input
+            type="text"
+            name="doctor"
+            value={formData.doctor}
+            onChange={handleChange}
+            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 dark:text-gray-300">
             Drug Name:
           </label>
           <input
