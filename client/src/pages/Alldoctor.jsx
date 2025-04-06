@@ -1,9 +1,14 @@
 /* eslint-disable react/no-unescaped-entities */
 // src/pages/HospitalDashboard.jsx
 import React, { useState, useMemo } from "react";
-import { Card, Button, Modal, TextInput } from "flowbite-react";
-import { Trash2 as TrashIcon } from "lucide-react";
+import { Card, Button, Modal, TextInput, Textarea } from "flowbite-react";
+import { Trash2 as TrashIcon, MessageCircle as MessageIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { RiMessage2Fill } from "react-icons/ri";
+
+const MySwal = withReactContent(Swal);
 
 // Dummy data for doctors
 const dummyDoctors = [
@@ -14,7 +19,7 @@ const dummyDoctors = [
     specialization: "Interventional Cardiology",
     experience: 12,
     status: "online",
-    image: "https://t4.ftcdn.net/jpg/02/60/04/09/240_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg", // URL to placeholder image
+    image: "https://t4.ftcdn.net/jpg/02/60/04/09/240_F_260040900_oO6YW1sHTnKxby4GcjCvtypUCWjnQRg5.jpg",
     contact: { mobile: "9876543210", email: "nabilla@hospital.com" },
     address: {
       pincode: "123456",
@@ -96,6 +101,12 @@ export default function Alldoctor() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  // States for Message Modal
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageSubject, setMessageSubject] = useState("");
+  const [messageContent, setMessageContent] = useState("");
+
   const [filterDept, setFilterDept] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -122,10 +133,53 @@ export default function Alldoctor() {
     setShowDeleteModal(true);
   };
 
+  // Open message modal and reset fields
+  const openMessageModal = (doc) => {
+    setSelectedDoctor(doc);
+    setMessageSubject("");
+    setMessageContent("");
+    setShowMessageModal(true);
+  };
+
   // Delete doctor handler
   const handleDelete = (docId) => {
     setDoctors(doctors.filter((doc) => doc.id !== docId));
     setShowDeleteModal(false);
+  };
+
+  // Send message handler (simulate API call)
+  const handleSendMessage = async () => {
+    // Simulate endpoint call - replace with your actual API call.
+    try {
+      if(messageSubject==""||messageContent==""){
+        MySwal.fire({
+          icon: "error",
+          title: "Please fill all the Fields",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        return;
+      }
+      // For demonstration, we use a timeout to simulate an API call.
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+      // You can use fetch/axios here to call your endpoint with:
+      // { username: selectedDoctor.name, subject: messageSubject, message: messageContent }
+      
+      MySwal.fire({
+        icon: "success",
+        title: "Message Sent Successfully!",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      setShowMessageModal(false);
+    } catch (error) {
+      MySwal.fire({
+        icon: "error",
+        title: "Message Sending Failed!",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    }
   };
 
   return (
@@ -178,15 +232,12 @@ export default function Alldoctor() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredDoctors.map((doc) => (
           <Card
-          key={doc.id}
-          className="relative bg-sky-50 dark:bg-gray-800 shadow-lg overflow-hidden transition-colors duration-700 ease-in-out group cursor-pointer hover:bg-gradient-to-r hover:from-blue-400 p-2 hover:to-sky-300 h-full shadow-slate-500 dark:shadow-slate-700"
-          onClick={() => openDoctorModal(doc)}
-        >
-            {/* Gradient Overlay for hover */}
-            {/* <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-sky-300 transform translate-y-full group-hover:translate transition-transform duration-700 ease-in-out"></div> */}
+            key={doc.id}
+            className="relative bg-sky-50 dark:bg-gray-800 shadow-lg overflow-hidden transition-colors duration-700 ease-in-out group cursor-pointer hover:bg-gradient-to-r hover:from-blue-400 p-2 hover:to-sky-300 h-full shadow-slate-500 dark:shadow-slate-700"
+            onClick={() => openDoctorModal(doc)}
+          >
             {/* Delete Button */}
             <button
-              color="failure"
               onClick={(e) => {
                 e.stopPropagation();
                 openDeleteModal(doc);
@@ -194,6 +245,16 @@ export default function Alldoctor() {
               className="absolute top-2 right-2 z-10 bg-slate-500 text-white p-[2px] rounded-lg"
             >
               <TrashIcon />
+            </button>
+            {/* Message Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openMessageModal(doc);
+              }}
+              className="absolute top-2 left-2 z-10 text-white p-[2px] rounded-lg"
+            >
+              <RiMessage2Fill  className="text-slate-600 text-3xl"/>
             </button>
             {/* Card Content */}
             <div className="relative flex flex-col items-center z-10">
@@ -252,7 +313,9 @@ export default function Alldoctor() {
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">Contact Information</h3>
+                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                  Contact Information
+                </h3>
                 <p className="text-gray-700 dark:text-gray-300">
                   Mobile: {selectedDoctor.contact.mobile}
                 </p>
@@ -261,14 +324,22 @@ export default function Alldoctor() {
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">Address</h3>
+                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                  Address
+                </h3>
                 <p className="text-gray-700 dark:text-gray-300">
-                  {selectedDoctor.address.street}, {selectedDoctor.address.city}, {selectedDoctor.address.pincode}
+                  {selectedDoctor.address.street},{" "}
+                  {selectedDoctor.address.city},{" "}
+                  {selectedDoctor.address.pincode}
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">Salary</h3>
-                <p className="text-gray-700 dark:text-gray-300">{selectedDoctor.salary}</p>
+                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                  Salary
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300">
+                  {selectedDoctor.salary}
+                </p>
               </div>
             </div>
           )}
@@ -300,27 +371,47 @@ export default function Alldoctor() {
           </div>
         </Modal.Body>
       </Modal>
+
+      {/* Message Modal */}
+      <Modal
+        show={showMessageModal}
+        onClose={() => setShowMessageModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          {selectedDoctor && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                Send Message to {selectedDoctor.name}
+              </h2>
+              <div>
+                <TextInput
+                  id="subject"
+                  placeholder="Subject"
+                  value={messageSubject}
+                  onChange={(e) => setMessageSubject(e.target.value)}
+                  className="mb-4"
+                />
+                <Textarea
+                  id="message"
+                  placeholder="Type your message here..."
+                  value={messageContent}
+                  onChange={(e) => setMessageContent(e.target.value)}
+                  rows={4}
+                />
+              </div>
+              <div className="flex justify-end gap-4">
+                <Button color="gray" onClick={() => setShowMessageModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSendMessage}>Send</Button>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
-
-// function TrashIcon() {
-//   return (
-//     <svg
-//       className="w-5 h-5"
-//       fill="none"
-//       stroke="currentColor"
-//       viewBox="0 0 24 24"
-//       xmlns="http://www.w3.org/2000/svg"
-//     >
-//       <path
-//         strokeLinecap="round"
-//         strokeLinejoin="round"
-//         strokeWidth="2"
-//         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"
-//       />
-//     </svg>
-//   );
-// }
-
-// export default DepartmentsPage;
