@@ -101,6 +101,7 @@ export async function createUserTable() {
         specialisation VARCHAR(50),
         yoe INT,
         department VARCHAR(50),
+        salary INT DEFAULT 100000,
         password VARCHAR(255) NOT NULL,
         profile_picture VARCHAR(255) DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
         is_admin BOOLEAN DEFAULT false,

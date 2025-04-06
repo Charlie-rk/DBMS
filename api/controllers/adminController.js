@@ -131,6 +131,93 @@ function generateRandomPassword(length) {
  * Controller to register a new user
  */
 export async function registerUser(req, res, next) {
+  const {
+    name,
+    username,
+    email,
+    gender,
+    mobile,
+    dob,
+    pin_code,
+    street,
+    city,
+    state,
+    country,
+    role,
+    specialization,
+    department,
+    experience
+  } = req.body;
+
+  console.log("Received:");
+  console.log(req.body);
+
+  try {
+    console.log("Processing registration...");
+
+    // Set salary based on role
+    let salary;
+    switch (role) {
+      case 'Doctor':
+        salary = 100000;
+        break;
+      case 'Front Desk Operator':
+        salary = 50000;
+        break;
+      case 'Data Entry Operator':
+        salary = 30000;
+        break;
+      default:
+        salary = 20000;
+        break;
+    }
+
+    const newUser = {
+      name,
+      username,
+      email,
+      gender: gender.toLowerCase(),
+      mobile,
+      dob: new Date(dob).toISOString(),
+      pin_code,
+      street,
+      city,
+      state,
+      country,
+      role,
+      specialisation: specialization,
+      yoe: Number(experience),
+      department,
+      salary,
+      password: generateRandomPassword(6),
+      profile_picture: "https://example.com/profile.png",
+      is_admin: false
+    };
+
+    console.log("Registering user with transformed data:", newUser);
+    sendWelcomeEmail(newUser, "Secret123");
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert(newUser)
+      .select('*');
+
+    if (error) {
+      throw error;
+    }
+
+    sendWelcomeEmail(data, "Secret123");
+    console.log("Insertion result:", data);
+    res.status(201).json({ user: data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Controller to register a new user
+ */
+export async function registerUserf(req, res, next) {
   // Destructure all required fields from the request body including role.
   const {
     name,
@@ -194,12 +281,97 @@ export async function registerUser(req, res, next) {
     }
     sendWelcomeEmail(data,"Secret123");
     console.log("Insertion result:", data);
-    res.status(201).json({ user: new_data });
+    res.status(201).json({ user: data });
   } catch (err) {
     next(err);
   }
 }
 
+
+/**
+ * Controller to register a new user
+ */
+export async function registerUserdfdx(req, res, next) {
+  const {
+    name,
+    username,
+    email,
+    gender,
+    mobile,
+    dob,
+    pin_code,
+    street,
+    city,
+    state,
+    country,
+    role,
+    specialization,
+    department,
+    experience
+  } = req.body;
+
+  console.log("Received:");
+  console.log(req.body);
+
+  try {
+    console.log("Processing registration...");
+
+    const newUser = {
+      name,
+      username,
+      email,
+      gender: gender.toLowerCase(),
+      mobile,
+      dob: new Date(dob).toISOString(),
+      pin_code,
+      street,
+      city,
+      state,
+      country,
+      role,
+      specialisation: specialization,
+      yoe: Number(experience),
+      department,
+      password: generateRandomPassword(6),
+      profile_picture: "https://example.com/profile.png",
+      is_admin: role === 'Admin'
+    };
+
+    // Set salary based on role
+    switch (role) {
+      case 'Doctor':
+        salary = 100000;
+        break;
+      case 'Front Desk Operator':
+        salary = 50000;
+        break;
+      case 'Data Entry Operator':
+        salary = 30000;
+        break;
+      default:
+        salary = 20000;
+        break;
+    }
+
+    console.log("Registering user with transformed data:", newUser);
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert(newUser)
+      .select('*');
+
+    if (error) {
+      throw error;
+    }
+
+    sendWelcomeEmail(data[0], "Secret123");
+
+    console.log("Insertion result:", data);
+    res.status(201).json({ user: data[0] });
+  } catch (err) {
+    next(err);
+  }
+}
 
 
 /**
