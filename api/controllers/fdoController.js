@@ -76,33 +76,63 @@ export async function scheduleAppointment(req, res, next) {
   const { patientId, doctorId, appointmentDate, appointmentTime, condition } = req.body;
   
   if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition) {
-    return res.status(400).json({ error: 'All fields are required.' });
+    return res.status(400).json({ error: 'All appointment fields are required.' });
   }
   
   try {
-    // Combine date and time into a proper ISO string.
+    // Combine date and time into an ISO string for appointment_date.
     const appointmentDateTime = new Date(`${appointmentDate}T${appointmentTime}:00Z`).toISOString();
     
-    // Insert the new appointment with status set as 'scheduled'.
-    const { data, error } = await supabase
+    // TODO: Run algorithm to determine the best available slot and send notifications.
+    
+    // Insert the new appointment into the "appointments" table.
+    const { data: appointmentData, error: insertError } = await supabase
       .from('appointments')
-      .insert([{ 
-        patient_id: patientId, 
-        doctor_id: doctorId, 
-        appointment_date: appointmentDateTime, 
-        condition, 
-        status: 'scheduled' 
+      .insert([{
+        patient_id: patientId,
+        doctor_id: doctorId,
+        appointment_date: appointmentDateTime,
+        reason: condition,
+        status: 'sheduled'
       }])
       .select();
-    if (error) throw error;
+    if (insertError) throw insertError;
     
-    // TODO: Run algorithm to determine the best available slot & send notifications if needed.
+    // Retrieve the doctor's department.
+    const { data: doctorData, error: doctorError } = await supabase
+      .from('users')
+      .select('department')
+      .eq('id', doctorId)
+      .single();
+    if (doctorError) throw doctorError;
+    const doctorDepartment = doctorData.department;
     
-    res.status(200).json({ message: 'Appointment scheduled successfully.', appointment: data[0] });
+    // Fetch current patient_count for this department from the departments table.
+    const { data: deptData, error: deptError } = await supabase
+      .from('departments')
+      .select('patient_count')
+      .eq('name', doctorDepartment)
+      .single();
+    if (deptError) throw deptError;
+    
+    const newPatientCount = deptData.patient_count + 1;
+    
+    // Update the department's patient_count.
+    const { error: updateError } = await supabase
+      .from('departments')
+      .update({ patient_count: newPatientCount })
+      .eq('name', doctorDepartment);
+    if (updateError) throw updateError;
+    
+    res.status(200).json({
+      message: 'Appointment scheduled successfully and department patient count updated.',
+      appointment: appointmentData[0],
+    });
   } catch (err) {
     next(err);
   }
 }
+
 
 /**
  * 3. Admit Patient
@@ -341,5 +371,298 @@ export async function seedDepartments(req, res, next) {
     next(err);
   }
 }
+
+// Example function to add a new doctor and update the department's doctor_count
+export async function addDoctor(req, res, next) {
+  // Assume the request body includes: name, username, email, department, etc.
+  const { name, username, email, department, ...otherDetails } = req.body;
+  
+  if (!name || !username || !email || !department) {
+    return res.status(400).json({ error: 'Missing required doctor fields.' });
+  }
+  
+  try {
+    // Insert the doctor record into the "users" table.
+    const { data: doctorData, error: insertError } = await supabase
+      .from('users')
+      .insert([{ name, username, email, department, ...otherDetails }])
+      .select();
+    if (insertError) throw insertError;
+    
+    // Fetch current doctor_count from the departments table for this department.
+    const { data: deptData, error: deptError } = await supabase
+      .from('departments')
+      .select('doctor_count')
+      .eq('name', department)
+      .single();
+    if (deptError) throw deptError;
+    
+    const newDoctorCount = deptData.doctor_count + 1;
+    
+    // Update the department's doctor_count.
+    const { error: updateError } = await supabase
+      .from('departments')
+      .update({ doctor_count: newDoctorCount })
+      .eq('name', department);
+    if (updateError) throw updateError;
+    
+    res.status(200).json({
+      message: 'Doctor added successfully and department count updated.',
+      doctor: doctorData[0],
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Delete a doctor (user) and update the department's doctor_count.
+ * Expects doctorId as a URL parameter.
+ */
+export async function deleteDoctor(req, res, next) {
+  const { doctorId } = req.params;
+  if (!doctorId) {
+    return res.status(400).json({ error: 'doctorId is required.' });
+  }
+  try {
+    // Get the doctor's department.
+    const { data: doctorData, error: doctorError } = await supabase
+      .from('users')
+      .select('department')
+      .eq('id', doctorId)
+      .single();
+    if (doctorError) throw doctorError;
+    const department = doctorData.department;
+    
+    // Delete the doctor.
+    const { error: deleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', doctorId);
+    if (deleteError) throw deleteError;
+    
+    // Fetch current doctor_count for the department.
+    const { data: deptData, error: deptError } = await supabase
+      .from('departments')
+      .select('doctor_count')
+      .eq('name', department)
+      .single();
+    if (deptError) throw deptError;
+    
+    // Decrement the count.
+    const newDoctorCount = Math.max(0, deptData.doctor_count - 1);
+    const { error: updateError } = await supabase
+      .from('departments')
+      .update({ doctor_count: newDoctorCount })
+      .eq('name', department);
+    if (updateError) throw updateError;
+    
+    res.status(200).json({
+      message: 'Doctor deleted and department doctor count updated.',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Delete a patient and update the department's patient_count.
+ * Expects patientId as a URL parameter.
+ * This function deletes the patient record and associated appointments,
+ * then for each distinct department (derived from the doctor of the appointment),
+ * decrements the patient_count by 1.
+ */
+export async function deletePatient(req, res, next) {
+  const { patientId } = req.params;
+  if (!patientId) {
+    return res.status(400).json({ error: 'patientId is required.' });
+  }
+  try {
+    // Get all appointments for this patient.
+    const { data: appointments, error: appError } = await supabase
+      .from('appointments')
+      .select('doctor_id')
+      .eq('patient_id', patientId);
+    if (appError) throw appError;
+    
+    // Gather distinct departments for these appointments.
+    const departmentSet = new Set();
+    for (const appointment of appointments) {
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('users')
+        .select('department')
+        .eq('id', appointment.doctor_id)
+        .single();
+      if (doctorError) throw doctorError;
+      if (doctorData && doctorData.department) {
+        departmentSet.add(doctorData.department);
+      }
+    }
+    
+    // Delete appointments for the patient.
+    const { error: deleteAppsError } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('patient_id', patientId);
+    if (deleteAppsError) throw deleteAppsError;
+    
+    // Delete the patient record.
+    const { error: deletePatientError } = await supabase
+      .from('patients')
+      .delete()
+      .eq('id', patientId);
+    if (deletePatientError) throw deletePatientError;
+    
+    // For each department, decrement the patient_count by 1.
+    for (const dept of departmentSet) {
+      const { data: deptData, error: fetchError } = await supabase
+        .from('departments')
+        .select('patient_count')
+        .eq('name', dept)
+        .single();
+      if (fetchError) throw fetchError;
+      const newPatientCount = Math.max(0, deptData.patient_count - 1);
+      const { error: updateError } = await supabase
+        .from('departments')
+        .update({ patient_count: newPatientCount })
+        .eq('name', dept);
+      if (updateError) throw updateError;
+    }
+    
+    res.status(200).json({
+      message: 'Patient deleted and department patient counts updated.',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Delete a department and update related information if needed.
+ * Expects departmentId as a URL parameter.
+ */
+export async function deleteDepartment(req, res, next) {
+  const { departmentId } = req.params;
+  if (!departmentId) {
+    return res.status(400).json({ error: 'departmentId is required.' });
+  }
+  try {
+    // Optionally, you could check if there are any doctors or appointments associated with this department.
+    // For now, we attempt the deletion directly.
+    const { error } = await supabase
+      .from('departments')
+      .delete()
+      .eq('id', departmentId);
+    if (error) throw error;
+    
+    res.status(200).json({
+      message: 'Department deleted successfully.'
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Upsert a department and its related room data.
+ * Input (JSON body):
+ *  - departmentName: string
+ *  - doctorCount: number
+ *  - patientCount: number
+ *  - premiumRoomCount: number
+ *  - executiveRoomCount: number
+ *  - basicRoomCount: number
+ */
+export async function upsertDepartmentAndRooms(req, res, next) {
+  const { departmentName, doctorCount, patientCount, premiumRoomCount, executiveRoomCount, basicRoomCount } = req.body;
+
+  if (
+    !departmentName ||
+    doctorCount === undefined ||
+    patientCount === undefined ||
+    premiumRoomCount === undefined ||
+    executiveRoomCount === undefined ||
+    basicRoomCount === undefined
+  ) {
+    return res.status(400).json({ error: 'Missing required fields.' });
+  }
+
+  try {
+    // Upsert the department: check if it exists by its unique name.
+    let departmentId;
+    const { data: existingDept, error: deptError } = await supabase
+      .from('departments')
+      .select('*')
+      .eq('name', departmentName)
+      .single();
+
+    if (deptError && existingDept === null) {
+      // If error and no department found, we'll insert new below.
+      // (We assume error here means no record found; adjust if needed.)
+    }
+
+    if (existingDept) {
+      // Update the department's doctor and patient counts.
+      const { error: updateDeptError } = await supabase
+        .from('departments')
+        .update({ doctor_count: doctorCount, patient_count: patientCount })
+        .eq('name', departmentName);
+      if (updateDeptError) throw updateDeptError;
+      departmentId = existingDept.id;
+    } else {
+      // Insert new department.
+      const { data: newDept, error: insertDeptError } = await supabase
+        .from('departments')
+        .insert([{ name: departmentName, doctor_count: doctorCount, patient_count: patientCount }])
+        .select();
+      if (insertDeptError) throw insertDeptError;
+      departmentId = newDept[0].id;
+    }
+
+    // Define room types and their respective counts.
+    const roomTypes = [
+      { roomType: 'Premium', total_count: premiumRoomCount },
+      { roomType: 'Executive', total_count: executiveRoomCount },
+      { roomType: 'Basic', total_count: basicRoomCount },
+    ];
+
+    // Upsert room records for each room type in the given department.
+    for (const room of roomTypes) {
+      const { data: existingRoom } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('department_id', departmentId)
+        .eq('room_type', room.roomType)
+        .single();
+
+      if (existingRoom) {
+        // Update the room's total_count.
+        const { error: updateRoomError } = await supabase
+          .from('rooms')
+          .update({ total_count: room.total_count })
+          .eq('department_id', departmentId)
+          .eq('room_type', room.roomType);
+        if (updateRoomError) throw updateRoomError;
+      } else {
+        // Insert new room record with occupied_count = 0.
+        const { error: insertRoomError } = await supabase
+          .from('rooms')
+          .insert([{
+            department_id: departmentId,
+            room_type: room.roomType,
+            total_count: room.total_count,
+            occupied_count: 0
+          }]);
+        if (insertRoomError) throw insertRoomError;
+      }
+    }
+
+    res.status(200).json({ message: "Department and room data upserted successfully." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 
 

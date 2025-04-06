@@ -6,7 +6,12 @@ import {
   dischargePatient,
   getRoomsSummary,
   seedRooms,
-  seedDepartments
+  seedDepartments,
+  addDoctor,
+  deleteDoctor,
+  deletePatient,
+  deleteDepartment,
+  upsertDepartmentAndRooms
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
@@ -23,8 +28,21 @@ router.post('/admit', admitPatient);
 // Input: { patientId, dischargeDate, remarks }
 router.post('/discharge', dischargePatient);
 
-
+//to get number of room of particular type per derpartment.
 router.get('/rooms-summary', getRoomsSummary);
+
+// Doctor-related routes
+router.post('/add-doctor', addDoctor);
+router.delete('/delete-doctor/:doctorId', deleteDoctor);
+
+// Patient deletion route
+router.delete('/delete-patient/:patientId', deletePatient);
+
+// Department deletion route
+router.delete('/delete-department/:departmentId', deleteDepartment);
+
+// New route: Upsert department and update rooms.
+router.post('/upsert-department', upsertDepartmentAndRooms);
 
 // New route: Seed rooms data
 router.post('/seed-departments', seedDepartments);

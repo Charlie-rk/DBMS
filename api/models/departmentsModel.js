@@ -22,6 +22,8 @@ export async function createDepartmentTable() {
         id SERIAL PRIMARY KEY,
         name VARCHAR(50) UNIQUE NOT NULL,
         description TEXT,
+        doctor_count INT DEFAULT 0,
+        patient_count INT DEFAULT 0,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
