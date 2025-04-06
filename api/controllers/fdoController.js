@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { createActivity } from './userController.js';
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 ////////done//////////may be we can use sql for age counting////////
 export async function registerPatient(req, res, next) {
   console.log("registration");
-  const { name, mobile, gender, dob, address } = req.body;
+  const {fdo, name, mobile, gender, dob, address } = req.body;
   
   if (!name || !mobile || !gender || !dob || !address) {
     return res.status(400).json({ error: 'Name, mobile, DOB, and address are required.' });
@@ -56,6 +57,7 @@ export async function registerPatient(req, res, next) {
       if (insertError) throw insertError;
       patient = data[0];
     }
+    createActivity(fdo,`Patient ${name} registered successfully. `);
     
     res.status(200).json({ message: 'Patient registered successfully.', patient });
   } catch (err) {
@@ -124,6 +126,9 @@ export async function scheduleAppointment(req, res, next) {
       .eq('name', doctorDepartment);
     if (updateError) throw updateError;
     
+
+    createActivity(fdo,`Appointment scheduled successfully  ${name} registered successfully. `);
+
     res.status(200).json({
       message: 'Appointment scheduled successfully and department patient count updated.',
       appointment: appointmentData[0],

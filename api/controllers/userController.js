@@ -42,7 +42,9 @@ export async function createActivity(username, description) {
     if (!description) {
       throw new Error('Description is required');
     }
-  
+   console.log("creating activity");
+   console.log(username);
+   console.log(description);
     try {
       const { data, error } = await supabase
         .from('activity')
