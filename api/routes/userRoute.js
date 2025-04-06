@@ -25,7 +25,9 @@
 
 
 import express from 'express';
-import { fetchRecentActivitiesOfUser, createActivity } from '../controllers/userController.js';
+import { fetchRecentActivitiesOfUser, createActivity, updateUser, signout } from '../controllers/userController.js';
+import { verifyToken } from '../utilis/verifyUser.js';
+
 
 const router = express.Router();
 //Note that limit is a string, not int
@@ -35,6 +37,8 @@ const router = express.Router();
 // }
   
 router.post('/recent-activities', fetchRecentActivitiesOfUser);
+router.put('/update/:userId',verifyToken,updateUser);
+router.post('/signout', signout);
 
 
 

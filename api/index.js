@@ -115,6 +115,7 @@ import fdoRoute from './routes/fdoRoute.js';
 import authRoute from './routes/authRoute.js';
 import userRoute from './routes/userRoute.js';
 import deoRoute from './routes/deoRoute.js';
+// import { verifyToken } from './utilis/verifyUser';
 
 
 dotenv.config();
