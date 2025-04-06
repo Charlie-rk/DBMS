@@ -137,6 +137,7 @@ export async function registerUser(req, res, next) {
     username,
     email,
     gender,
+    mobile,
     dob,
     pin_code,
     street,
@@ -151,7 +152,7 @@ export async function registerUser(req, res, next) {
   
   console.log("Received:");
   console.log(req.body);
-  
+  // return;
   try {
     console.log("Processing registration...");
 
@@ -161,6 +162,7 @@ export async function registerUser(req, res, next) {
       email,
       // Standardize gender to lowercase
       gender: gender.toLowerCase(),
+      mobile,
       // Convert to ISO format
       dob: new Date(dob).toISOString(),
       pin_code,

@@ -90,6 +90,7 @@ export async function createUserTable() {
         username VARCHAR(255) UNIQUE,
         email VARCHAR(255) UNIQUE NOT NULL,
         gender VARCHAR(10),
+        mobile VARCHAR(10),
         dob TIMESTAMP,
         pin_code VARCHAR(8),
         street VARCHAR(50),

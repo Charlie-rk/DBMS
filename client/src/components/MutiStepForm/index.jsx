@@ -52,6 +52,9 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
       } else if (!/^\S+@\S+\.\S+$/.test(multiStepFormData.email)) {
         errs.email = "Email is invalid";
       }
+      if (!multiStepFormData.mobile) {
+        errs.gender = "Please Provide Contact no.";
+      }
       if (!multiStepFormData.gender) {
         errs.gender = "Select a gender";
       }

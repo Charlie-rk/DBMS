@@ -63,6 +63,21 @@ const Info = ({ data, setData, errors }) => {
           <HelperText color="failure">{errors.email}</HelperText>
         )}
       </div>
+      <div>
+        <Label htmlFor="mobile" value="Contact no" />
+        <TextInput
+          id="mobile"
+          name="mobile"
+          // type="email"
+          placeholder="9897.."
+          value={data.mobile || ""}
+          onChange={handleChange}
+          className="dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"
+        />
+        {errors.mobile && (
+          <HelperText color="failure">{errors.mobile}</HelperText>
+        )}
+      </div>
 
       <div>
         <Label htmlFor="gender" value="Gender" />

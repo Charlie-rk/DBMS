@@ -63,11 +63,11 @@ export default function App() {
     <BackToTop/>
     <Routes>  
          {/* <Route path='/' element={<Home/>} /> */}
-         {/* <Route path='/form' element={<Form/>} />
+         <Route path='/form' element={<Form/>} />
          <Route path='/doctor_dashboard' element={<DoctorAppDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
          <Route path="/deo/*" element={<EDODashboard />} />
-         <Route path="/admin/*" element={<Dashboard />} /> */}
+         <Route path="/admin/*" element={<Dashboard />} />
          {/* <Route path="/profile" element={<Profile />} /> */}
 
 
