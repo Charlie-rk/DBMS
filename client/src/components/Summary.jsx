@@ -11,6 +11,7 @@ import {
   Tag,
   ClipboardList,
 } from "lucide-react";
+import { AiTwotonePhone } from "react-icons/ai";
 
 const Summary = ({ data }) => {
   // Base summary items for all users.
@@ -18,6 +19,7 @@ const Summary = ({ data }) => {
     { label: "Name", value: data.name, icon: <User className="w-5 h-5 text-blue-500" /> },
     { label: "Username", value: data.username, icon: <Tag className="w-5 h-5 text-indigo-500" /> },
     { label: "Email", value: data.email, icon: <AtSign className="w-5 h-5 text-green-500" /> },
+    { label: "Mobile", value: data.mobile, icon: <AiTwotonePhone className="w-5 h-5 text-green-400" /> },
     { label: "Gender", value: data.gender, icon: <User className="w-5 h-5 text-purple-500" /> },
     { label: "Date of Birth", value: data.dob, icon: <Calendar className="w-5 h-5 text-red-500" /> },
     { label: "Pincode", value: data.pincode, icon: <MapPin className="w-5 h-5 text-orange-500" /> },

@@ -124,7 +124,7 @@ export default function Header() {
                   label={
                     <Avatar
                       alt="user"
-                      img={currentUser.profilePicture}
+                      img={currentUser.profile_picture}
                       rounded
                     />
                   }
@@ -137,7 +137,7 @@ export default function Header() {
                       {currentUser.email}
                     </span>
                   </Dropdown.Header>
-                  <Link to={"/dashboard?tab=profile"}>
+                  <Link to={"/profile"}>
                     <Dropdown.Item>Profile</Dropdown.Item>
                   </Link>
                   <Dropdown.Divider />

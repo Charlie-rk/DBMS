@@ -7,12 +7,24 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { HiMail } from "react-icons/hi";
 import { FaCheckCircle } from "react-icons/fa"; // Import verification icon
-import Backdrop from '@mui/material/Backdrop';
-import CircularProgress from '@mui/material/CircularProgress';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import CustomSpinner from "../components/CustomSpinner";
 
-export default function SignUp() {
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  signInStart,
+  signInSuccess,
+  signInFailure,
+  signoutSuccess,
+} from '../redux/user/userSlice';
+
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+export default function SignIn() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -21,6 +33,7 @@ export default function SignUp() {
   });
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+
 
   // OTP related states
   const [generatedOtp, setGeneratedOtp] = useState(null);
@@ -33,6 +46,7 @@ export default function SignUp() {
   const [secretVerified, setSecretVerified] = useState(false);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const MySwal = withReactContent(Swal);
 
   const handleChange = async (e) => {
@@ -49,6 +63,11 @@ export default function SignUp() {
   const handleOtpChange = (e) => {
     setOtp(e.target.value.trim());
   };
+  
+  useEffect(()=>{
+    const notify = () => toast.success("🤗🤗 Welcome to SigIn Page 🤗🤗");
+    notify();
+  },[])
 
   const generateOtp = async () => {
     if (!formData.email) {
@@ -190,16 +209,18 @@ export default function SignUp() {
       if (res.ok) {
         console.log(res);
         // navigate("/sign-in");
-        if(data.role==="Front Desk Operator"){
+        dispatch(signoutSuccess())
+        dispatch(signInSuccess(data));
+        if (data.role === "Front Desk Operator") {
           navigate("/fdo");
         }
-        if(data.role==="doctor"){
+        if (data.role === "doctor") {
           navigate("/doctor_dashboard");
         }
-        if(data.role==="Data Entry Operator"){
+        if (data.role === "Data Entry Operator") {
           navigate("/deo");
         }
-        if(data.role==="Admin"){
+        if (data.role === "Admin") {
           navigate("/admin");
         }
         console.log(data);
@@ -217,11 +238,12 @@ export default function SignUp() {
           sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
           open={true}
         >
-          <CircularProgress color="inherit" />
+          {/* <CircularProgress color="inherit" /> */}
+          <CustomSpinner />
         </Backdrop>
       )}
 
-      <div className="shadow-2xl rounded-2xl shadow-slate-600 flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
+      <div className="shadow-2xl rounded-2xl shadow-slate-800 flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
         {/* Left Branding */}
         <div className="flex-1">
           <Link to="/" className="font-bold dark:text-white text-4xl">

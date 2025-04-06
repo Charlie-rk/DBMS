@@ -14,6 +14,7 @@ const Success = ({ resetForm }) => {
         Thanks for confirming your submission! Your information has been submitted successfully.
         We hope you enjoy using our platform.
       </p>
+      
       <Button
         outline
         onClick={resetForm}

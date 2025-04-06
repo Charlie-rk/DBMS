@@ -27,7 +27,32 @@ import FDODashboard from './pages/FDODashboard';
 import EDODashboard from './pages/EDODashboard';
 import AllDepartment from './pages/Alldepartment';
 import Alldoctor from './pages/Alldoctor';
+import Spinner from './components/CustomSpinner';
+import { useSelector } from 'react-redux';
+import AdminRoute from './components/AdminRoute';
+import FDORoute from './components/FDORoute';
+import DoctorRoute from './components/DcotorRoute';
+import DEORoute from './components/DEORoute';
+import Profile from './pages/Profile';
 export default function App() {
+  const { currentUser } = useSelector((state) => state.user);
+  console.log(currentUser)
+  const getDashboardComponent = () => {
+    if (!currentUser) return null;
+    switch (currentUser.role) {
+      case 'Front Desk Operator':
+        return <FDODashboard />;
+      case 'Doctor':
+        return <DoctorAppDashboard />;
+      case 'Data Entry Operator':
+        return <EDODashboard />;
+      case 'Admin':
+        return <Dashboard />;
+      default:
+        return <SignIn />; // Fallback to a default dashboard if role is not recognized
+    }
+  };
+ 
   return (
     // <div>
     //   App
@@ -39,40 +64,28 @@ export default function App() {
     <Routes>  
          {/* <Route path='/' element={<Home/>} /> */}
          <Route path='/form' element={<Form/>} />
-         <Route path='/register' element={<RegistrationPage/>} />
-         <Route path='/appoint' element={<AppointmentPage/>} />
-         <Route path='/admission' element={<AdmissionPage/>} />
-         <Route path='/discharge' element={<DischargePage/>} />
          <Route path='/doctor_dashboard' element={<DoctorAppDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
          <Route path="/deo/*" element={<EDODashboard />} />
          <Route path="/admin/*" element={<Dashboard />} />
-         <Route path="/docr" element={<Alldoctor />} />
+         {/* <Route path="/profile" element={<Profile />} /> */}
+
+
         
-        
+        <Route path="/" element={ currentUser ? getDashboardComponent() : <SignIn /> } />
          <Route path='/about' element={<About/>} />
          <Route path='/help' element={<Help/>} />
          <Route path='/sign-in' element={<SignIn/>} />
-         {/* <Route path='/sign-up' element={<SignUp/>} /> */}
          
          <Route element={<PrivateRoute />}>
-         {/* <Route path='/notification' element={<NotificationPage/>}/> */}
+          {/* Admin Route */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path='/admin/*' element={<AdminRoute />} />
+          <Route path='/fdo/*' element={<FDORoute />} />
+          <Route path='/doctor_dashboard' element={<DoctorRoute />} />
+          <Route path='/deo/*' element={<DEORoute />} />
         </Route>
-         <Route element={<PrivateRoute />}>
-         {/* <Route path='/request' element={<Projects/>} /> */}
-        </Route>
-         <Route element={<PrivateRoute />}>
-          <Route path='/dashboard' element={<Dashboard />} />
-        </Route>
-      
-         <Route element={<PrivateRoute />}>
-          {/* <Route path='/swap-request/:pnrNumber' element={<SeatSelectionForm />} /> */}
-        </Route>
-        <Route element={<PrivateRoute />}>
-          {/* <Route path='/SwapResults/:pnrNumber' element={<SwapResults />} /> */}
-        </Route>
-         {/* <Route path='/swap-request/:pnrNumber' element={<SeatSelectionForm/>} />
-         <Route  path="/SwapResults"   element={  <SwapResults /> }  /> */}
+
     </Routes>
     <Footer/>
     </BrowserRouter>

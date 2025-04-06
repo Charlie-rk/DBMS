@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-
+import { errorHandler } from '../utilis/error.js'; 
 dotenv.config();
+
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tvgasdupkqffhvqzurwy.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -53,4 +54,77 @@ export async function createActivity(username, description) {
       throw err;
     }
   }
+  export async function updateUser(req, res, next) {
+    // Ensure that the authenticated user is updating their own account
+    console.log("updating");
+    console.log(req.user.id);
+    console.log(req.params.userId);
+    console.log(typeof req.user.id);
+    console.log(typeof req.params.userId);
+    console.log(req.body);
   
+    if (!req.user) {
+      return next(errorHandler(403, 'Unauthorized'));
+    }
+    if (String(req.user.id) !== String(req.params.userId)) {
+      return next(errorHandler(403, 'You are not allowed to update this user'));
+    }
+  
+    // Prepare the update object
+    const updateData = {};
+  
+    // Validate and update the password if provided
+    if (req.body.password) {
+      if (req.body.password.length < 6) {
+        return next(errorHandler(400, 'Password must be at least 6 characters'));
+      }
+      updateData.password = req.body.password;
+    }
+  
+    // Update email if provided
+    if (req.body.email) {
+      updateData.email = req.body.email;
+    }
+  
+    // Update profile picture URL if provided
+    if (req.body.profilePicture) {
+      updateData.profile_picture = req.body.profilePicture;
+    }
+    console.log(updateData);
+  
+    try {
+      // Use Supabase's update syntax and chain .select() to return the updated row
+      const { data, error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', req.params.userId)
+        .select();
+  
+      console.log("data", data);
+      console.log("error", error);
+      if (error) {
+        return next(errorHandler(500, error.message));
+      }
+  
+      // Remove the password field before sending the response
+      const updatedUser = data[0];
+      delete updatedUser.password;
+      console.log("done");
+  
+      res.status(200).json(updatedUser);
+    } catch (err) {
+      next(err);
+    }
+  }
+  
+
+  export const signout = (req, res, next) => {
+    try {
+      res
+        .clearCookie('access_token')
+        .status(200)
+        .json('User has been signed out');
+    } catch (error) {
+      next(error);
+    }
+  };

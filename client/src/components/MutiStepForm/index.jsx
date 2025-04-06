@@ -1,14 +1,17 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 // src/components/MultiStepForm/index.jsx
+import { Backdrop } from "@mui/material";
 import { Button } from "flowbite-react";
 import React, { useState } from "react";
+import CustomSpinner from "../CustomSpinner";
 
 const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [multiStepFormData, setMultiStepFormData] = useState(initialValue || {});
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
   // Dummy function to send form data to a backend endpoint
   const sendFormData = async (data) => {
@@ -48,6 +51,9 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
         errs.email = "Email is required";
       } else if (!/^\S+@\S+\.\S+$/.test(multiStepFormData.email)) {
         errs.email = "Email is invalid";
+      }
+      if (!multiStepFormData.mobile) {
+        errs.gender = "Please Provide Contact no.";
       }
       if (!multiStepFormData.gender) {
         errs.gender = "Select a gender";
@@ -158,6 +164,17 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
   return (
     <div className="max-w-4xl mx-auto p-4 rounded-lg shadow-2xl shadow-blue-500 grid grid-cols-1 md:grid-cols-3 h-[700px] overflow-hidden">
       {/* Sidebar with background image and gradient overlay */}
+
+      {loading && (
+        <Backdrop
+          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={true}
+          
+        >
+          {/* <CircularProgress color="inherit" /> */}
+          <CustomSpinner  />
+        </Backdrop>
+      )}
       <aside
         className="md:col-span-1 relative p-4 bg-cover bg-center rounded-lg shadow-2xl shadow-slate-700 h-full overflow-hidden"
         style={{
