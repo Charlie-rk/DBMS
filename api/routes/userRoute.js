@@ -26,6 +26,7 @@
 
 import express from 'express';
 import { fetchRecentActivitiesOfUser, createActivity, updateUser, signout } from '../controllers/userController.js';
+import { fetchNotifications, sendNotification, markNotificationAsSeen, markNotificationAsUnseen } from '../controllers/notificationController.js';
 import { verifyToken } from '../utilis/verifyUser.js';
 
 
@@ -39,6 +40,10 @@ const router = express.Router();
 router.post('/recent-activities', fetchRecentActivitiesOfUser);
 router.put('/update/:userId',verifyToken,updateUser);
 router.post('/signout', signout);
+router.post('/get-all-notifications', fetchNotifications);             // Get notifications for a user
+router.post('/send-notification', sendNotification);                // Send a notification
+router.post('/mark-notification-seen', markNotificationAsSeen);     // Mark a notification as seen
+router.post('/mark-notification-unseen', markNotificationAsUnseen); // Mark a notification as unseen
 
 
 
