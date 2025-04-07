@@ -703,9 +703,6 @@ export async function getAllRegisteredPatients(req, res, next) {
 }
 
 
-
-
-
 export async function getSlotDistributionByDate(req, res, next) {
   const { doctorId, date } = req.body;
   console.log(req.body);
@@ -758,3 +755,138 @@ export async function getSlotDistributionByDate(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Get full history for a patient including basic info, appointments, admissions, tests, treatments, and reports.
+ * Expects a patientId as a URL parameter.
+ */
+export async function getPatientHistory(req, res, next) {
+  const { patientId } = req.params;
+  if (!patientId) {
+    return res.status(400).json({ error: 'patientId is required.' });
+  }
+  
+  try {
+    // 1. Get basic patient details.
+    const { data: patient, error: patientError } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('id', patientId)
+      .single();
+    if (patientError) throw patientError;
+    
+    // 2. Get appointments for this patient with doctor details.
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        doctor:users (
+          id,
+          name,
+          username,
+          email,
+          department,
+          specialisation
+        )
+      `)
+      .eq('patient_id', patientId);
+    if (appointmentsError) throw appointmentsError;
+    
+    // 3. Get admissions for this patient with room details.
+    const { data: admissions, error: admissionsError } = await supabase
+      .from('admissions')
+      .select(`
+        *,
+        room:rooms (
+          id,
+          department_id,
+          room_type,
+          total_count,
+          occupied_count
+        )
+      `)
+      .eq('patient_id', patientId);
+    if (admissionsError) throw admissionsError;
+    
+    // 4. Get tests for this patient.
+    const { data: tests, error: testsError } = await supabase
+      .from('Tests')
+      .select('*')
+      .eq('patient_id', patientId);
+    if (testsError) throw testsError;
+    
+    // 5. Get treatments for this patient.
+    const { data: treatments, error: treatmentsError } = await supabase
+      .from('Treatments')
+      .select('*')
+      .eq('patient_id', patientId);
+    if (treatmentsError) throw treatmentsError;
+    
+    // 6. Get reports for this patient.
+    const { data: reports, error: reportsError } = await supabase
+      .from('Reports')
+      .select('*')
+      .eq('patient_id', patientId);
+    if (reportsError) throw reportsError;
+    
+    // Aggregate all data into a single object.
+    const history = {
+      patient,
+      appointments,
+      admissions,
+      tests,
+      treatments,
+      reports
+    };
+    
+    res.status(200).json({ history });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get FDO Home Page Statistics:
+ * - Total Patients Registered
+ * - Total Active Admissions (admissions where discharge_date is null)
+ * - Total Appointments for today (with status either 'pending' or 'accepted')
+ */
+export async function getFdoHomeStats(req, res, next) {
+  try {
+    // Count all patients in the "patients" table.
+    const { count: totalPatients, error: patientsError } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true });
+    if (patientsError) throw patientsError;
+    
+    // Count active admissions: discharge_date is null.
+    const { count: activeAdmissions, error: admissionsError } = await supabase
+      .from('admissions')
+      .select('*', { count: 'exact', head: true })
+      .is('discharge_date', null);
+    if (admissionsError) throw admissionsError;
+    
+    // Get today's start and end times (UTC)
+    const today = new Date();
+    const startOfDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).toISOString();
+    const endOfDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999)).toISOString();
+    
+    // Count appointments for today where status is either 'pending' or 'accepted'.
+    const { count: totalAppointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending', 'accepted'])
+      .gte('appointment_date', startOfDay)
+      .lte('appointment_date', endOfDay);
+    if (appointmentsError) throw appointmentsError;
+    
+    res.status(200).json({
+      totalPatients,
+      activeAdmissions,
+      totalAppointments
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
