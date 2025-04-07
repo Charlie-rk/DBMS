@@ -15,6 +15,8 @@ import {
   getAllRegisteredPatients,
   getSlotDistributionByDate,
   fetchDoctorByPatient
+  getPatientHistory,
+  getFdoHomeStats
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
@@ -35,5 +37,8 @@ router.post('/seed-rooms', seedRooms);
 router.get('/all-patients', getAllRegisteredPatients);
 router.post('/get-slot-distribution', getSlotDistributionByDate);
 router.post('/appointment-doctor-patientID',fetchDoctorByPatient);
+router.get('/patient-history/:patientId', getPatientHistory);
+router.get('/home-stats', getFdoHomeStats);
+
 
 export default router;

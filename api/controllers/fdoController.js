@@ -147,219 +147,6 @@ export async function scheduleAppointment(req, res, next) {
   }
 }
 
-
-export async function scheduleAppointment_modified(req, res, next) {
-  const { patientId, doctorId, appointmentDate, appointmentTime, condition, slot } = req.body;
-  
-  if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition || !slot) {
-    return res.status(400).json({ error: 'All appointment fields are required.' });
-  }
-  
-  try {
-    console.log("Starting appointment scheduling...");
-    console.log({ patientId, doctorId, appointmentDate, slot });
-    console.log("Counting existing appointments...");
-
-    // Use allowed status 'pending' instead of 'scheduled'
-    const { count, error: countError } = await supabase
-      .from('appointments')
-      .select('id', { count: 'exact', head: true })
-      .eq('doctor_id', doctorId)
-      .eq('slot', slot)
-      .eq('status', 'pending')
-      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
-      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
-    
-    if (countError) {
-      console.error("Error during count query:", countError);
-      throw countError;
-    }
-    
-    const acceptedCount = count ?? 0;
-    console.log("Accepted count:", acceptedCount);
-    
-    if (acceptedCount >= 10) {
-      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
-    }
-    
-    // Determine base time based on slot.
-    let baseHour;
-    if (slot === 1) {
-      baseHour = 9;
-    } else if (slot === 2) {
-      baseHour = 14;
-    } else if (slot === 3) {
-      baseHour = 18;
-    } else {
-      return res.status(400).json({ error: 'Invalid slot provided.' });
-    }
-    
-    let baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
-    let newAppointmentDateTime = new Date(baseTime.getTime() + (acceptedCount * 15 * 60 * 1000)).toISOString();
-    console.log("Calculated appointment time:", newAppointmentDateTime);
-    
-    // Insert the new appointment using status 'pending'
-    const { data: appointmentData, error: insertError } = await supabase
-      .from('appointments')
-      .insert([{
-        patient_id: patientId,
-        doctor_id: doctorId,
-        appointment_date: newAppointmentDateTime,
-        reason: condition,
-        slot,
-        status: 'pending'
-      }])
-      .select();
-    
-    if (insertError) {
-      console.error("Error during insert query:", insertError);
-      throw insertError;
-    }
-    console.log("Inserted appointment data:", appointmentData);
-    
-    // Retrieve doctor's department.
-    const { data: doctorData, error: doctorError } = await supabase
-      .from('users')
-      .select('department, name')
-      .eq('id', doctorId)
-      .single();
-    if (doctorError) {
-      console.error("Error fetching doctor data:", doctorError);
-      throw doctorError;
-    }
-    const doctorDepartment = doctorData.department;
-    
-    // Update department's patient count.
-    const { data: deptData, error: deptError } = await supabase
-      .from('departments')
-      .select('patient_count')
-      .eq('name', doctorDepartment)
-      .single();
-    if (deptError) {
-      console.error("Error fetching department data:", deptError);
-      throw deptError;
-    }
-    
-    const newPatientCount = (deptData.patient_count || 0) + 1;
-    const { error: updateError } = await supabase
-      .from('departments')
-      .update({ patient_count: newPatientCount })
-      .eq('name', doctorDepartment);
-    if (updateError) {
-      console.error("Error updating department patient count:", updateError);
-      throw updateError;
-    }
-    
-    res.status(200).json({
-      message: 'Appointment scheduled successfully and department patient count updated.',
-      appointment: appointmentData[0],
-      scheduledTime: newAppointmentDateTime
-    });
-  } catch (err) {
-    console.error("Error in scheduleAppointment_modified:", err);
-    next(err);
-  }
-}
-
-
-export async function scheduleAppointment_modifiejhjhd(req, res, next) {
-  console.log(req.body);
-  const { patientId, doctorId, appointmentDate, appointmentTime, condition, slot } = req.body;
-
-  if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition || !slot) {
-    return res.status(400).json({ error: 'All appointment fields are required.' });
-  }
-
-  try {
-    // STEP 1: Count the number of appointments already scheduled in the given slot on the appointment date.
-    const { count, error: countError } = await supabase
-      .from('appointments')
-      .select('*', { count: 'exact', head: true })
-      .eq('doctor_id', doctorId)
-      .eq('slot', slot)
-      .eq('status', 'scheduled')
-      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
-      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
-      console.log(count);
-
-    if (countError) throw countError;
-
-    // Maximum allowed appointments per slot is 10.
-    if (count >= 10) {
-      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
-    }
-
-    // STEP 2: Determine the base time for the requested slot.
-    let baseHour;
-    if (slot === 1) {
-      baseHour = 9;
-    } else if (slot === 2) {
-      baseHour = 14;
-    } else if (slot === 3) {
-      baseHour = 18;
-    } else {
-      return res.status(400).json({ error: 'Invalid slot provided.' });
-    }
-
-    // Calculate new appointment time: new time = base time + (count * 15 minutes)
-    // If no appointments yet (count = 0), new appointment time equals base time.
-    let baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
-    let newAppointmentDateTime = new Date(baseTime.getTime() + (count * 15 * 60 * 1000)).toISOString();
-
-    // STEP 3: Insert the new appointment into the appointments table.
-    const { data: appointmentData, error: insertError } = await supabase
-      .from('appointments')
-      .insert([{
-        patient_id: patientId,
-        doctor_id: doctorId,
-        appointment_date: newAppointmentDateTime,
-        reason: condition,
-        slot,
-        status: 'scheduled'
-      }])
-      .select();
-
-    if (insertError) throw insertError;
-
-    // STEP 4: Retrieve the doctor's department.
-    const { data: doctorData, error: doctorError } = await supabase
-      .from('users')
-      .select('department, name')
-      .eq('id', doctorId)
-      .single();
-    if (doctorError) throw doctorError;
-    const doctorDepartment = doctorData.department;
-
-    // STEP 5: Update the department's patient count.
-    const { data: deptData, error: deptError } = await supabase
-      .from('departments')
-      .select('patient_count')
-      .eq('name', doctorDepartment)
-      .single();
-    if (deptError) throw deptError;
-
-    const newPatientCount = (deptData.patient_count || 0) + 1;
-    const { error: updateError } = await supabase
-      .from('departments')
-      .update({ patient_count: newPatientCount })
-      .eq('name', doctorDepartment);
-    if (updateError) throw updateError;
-
-    // Optional: Create an activity log (if you have a createActivity function defined)
-    createActivity('fdo', `Appointment scheduled successfully for ${doctorData.name}.`);
-
-    // Return the scheduled appointment details along with the calculated appointment time.
-    res.status(200).json({
-      message: 'Appointment scheduled successfully and department patient count updated.',
-      appointment: appointmentData[0],
-      scheduledTime: newAppointmentDateTime
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-
 /**
  * 3. Admit Patient
  * - Creates an admission record linking the patient to a room.
@@ -919,9 +706,6 @@ export async function getAllRegisteredPatients(req, res, next) {
 }
 
 
-
-
-
 export async function getSlotDistributionByDate(req, res, next) {
   const { doctorId, date } = req.body;
   console.log(req.body);
@@ -1014,3 +798,137 @@ export async function fetchDoctorByPatient(req, res, next) {
     next(err);
   }
 }
+/**
+ * Get full history for a patient including basic info, appointments, admissions, tests, treatments, and reports.
+ * Expects a patientId as a URL parameter.
+ */
+export async function getPatientHistory(req, res, next) {
+  const { patientId } = req.params;
+  if (!patientId) {
+    return res.status(400).json({ error: 'patientId is required.' });
+  }
+  
+  try {
+    // 1. Get basic patient details.
+    const { data: patient, error: patientError } = await supabase
+      .from('patients')
+      .select('*')
+      .eq('id', patientId)
+      .single();
+    if (patientError) throw patientError;
+    
+    // 2. Get appointments for this patient with doctor details.
+    const { data: appointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        doctor:users (
+          id,
+          name,
+          username,
+          email,
+          department,
+          specialisation
+        )
+      `)
+      .eq('patient_id', patientId);
+    if (appointmentsError) throw appointmentsError;
+    
+    // 3. Get admissions for this patient with room details.
+    const { data: admissions, error: admissionsError } = await supabase
+      .from('admissions')
+      .select(`
+        *,
+        room:rooms (
+          id,
+          department_id,
+          room_type,
+          total_count,
+          occupied_count
+        )
+      `)
+      .eq('patient_id', patientId);
+    if (admissionsError) throw admissionsError;
+    
+    // 4. Get tests for this patient.
+    const { data: tests, error: testsError } = await supabase
+      .from('Tests')
+      .select('*')
+      .eq('patient_id', patientId);
+    if (testsError) throw testsError;
+    
+    // 5. Get treatments for this patient.
+    const { data: treatments, error: treatmentsError } = await supabase
+      .from('Treatments')
+      .select('*')
+      .eq('patient_id', patientId);
+    if (treatmentsError) throw treatmentsError;
+    
+    // 6. Get reports for this patient.
+    const { data: reports, error: reportsError } = await supabase
+      .from('Reports')
+      .select('*')
+      .eq('patient_id', patientId);
+    if (reportsError) throw reportsError;
+    
+    // Aggregate all data into a single object.
+    const history = {
+      patient,
+      appointments,
+      admissions,
+      tests,
+      treatments,
+      reports
+    };
+    
+    res.status(200).json({ history });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Get FDO Home Page Statistics:
+ * - Total Patients Registered
+ * - Total Active Admissions (admissions where discharge_date is null)
+ * - Total Appointments for today (with status either 'pending' or 'accepted')
+ */
+export async function getFdoHomeStats(req, res, next) {
+  try {
+    // Count all patients in the "patients" table.
+    const { count: totalPatients, error: patientsError } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true });
+    if (patientsError) throw patientsError;
+    
+    // Count active admissions: discharge_date is null.
+    const { count: activeAdmissions, error: admissionsError } = await supabase
+      .from('admissions')
+      .select('*', { count: 'exact', head: true })
+      .is('discharge_date', null);
+    if (admissionsError) throw admissionsError;
+    
+    // Get today's start and end times (UTC)
+    const today = new Date();
+    const startOfDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).toISOString();
+    const endOfDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999)).toISOString();
+    
+    // Count appointments for today where status is either 'pending' or 'accepted'.
+    const { count: totalAppointments, error: appointmentsError } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending', 'accepted'])
+      .gte('appointment_date', startOfDay)
+      .lte('appointment_date', endOfDay);
+    if (appointmentsError) throw appointmentsError;
+    
+    res.status(200).json({
+      totalPatients,
+      activeAdmissions,
+      totalAppointments
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
