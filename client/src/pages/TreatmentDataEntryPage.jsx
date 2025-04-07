@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { Button } from 'flowbite-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -18,8 +18,11 @@ export default function TreatmentDataEntryPage() {
     treatmentDate: '',
     remarks: '',
   });
+  const [doctors, setDoctors] = useState([]);
+  const [isManualDoctor, setIsManualDoctor] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Handle form field changes.
   const handleChange = (e) => {
     setFormData({ 
       ...formData, 
@@ -27,10 +30,60 @@ export default function TreatmentDataEntryPage() {
     });
   };
 
+  // When patientId is entered, fetch the associated doctor details.
+  useEffect(() => {
+    async function fetchDoctorsForPatient() {
+      if (formData.patientId && !isNaN(formData.patientId)) {
+        try {
+          const response = await fetch('/api/fdo/appointment-doctor-patientID', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patientId: formData.patientId })
+          });
+          const data = await response.json();
+          if (!response.ok || !data.doctors || data.doctors.length === 0) {
+            MySwal.fire({
+              icon: "error",
+              title: data.error || "No doctor data found for this patient",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+            setDoctors([]);
+          } else {
+            setDoctors(data.doctors);
+            // Automatically set the doctor field to the first doctor's username.
+            setFormData(prev => ({ ...prev, doctor: data.doctors[0].username }));
+            setIsManualDoctor(false);
+          }
+        } catch (error) {
+          MySwal.fire({
+            icon: "error",
+            title: "Failed to fetch doctor data for the patient",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          setDoctors([]);
+        }
+      }
+    }
+    fetchDoctorsForPatient();
+  }, [formData.patientId]);
+
+  // Handle selection of a doctor from the dropdown.
+  const handleDoctorSelection = (e) => {
+    const value = e.target.value;
+    if (value === 'manual') {
+      setIsManualDoctor(true);
+      setFormData(prev => ({ ...prev, doctor: '' }));
+    } else {
+      setIsManualDoctor(false);
+      setFormData(prev => ({ ...prev, doctor: value }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic validation for required fields
+    // Validate required fields.
     if (
       !formData.patientId ||
       !formData.doctor ||
@@ -47,7 +100,6 @@ export default function TreatmentDataEntryPage() {
     }
 
     setLoading(true);
-
     try {
       const numericPatientId = Number(formData.patientId);
       const response = await fetch('/api/deo/treatment-entry', {
@@ -58,8 +110,8 @@ export default function TreatmentDataEntryPage() {
         body: JSON.stringify({
           deo: formData.deo,
           patientId: numericPatientId,
+          drug: formData.drugName,
           dosage: formData.dosage,
-          drug:formData.drugName,
           treatmentDate: formData.treatmentDate,
           prescribedBy: formData.doctor,
           remarks: formData.remarks
@@ -82,7 +134,7 @@ export default function TreatmentDataEntryPage() {
           timer: 1500,
           showConfirmButton: false,
         });
-        // Reset the form after successful submission
+        // Reset the form after a successful submission.
         setFormData({
           deo: currentUser.username,
           patientId: '',
@@ -92,6 +144,8 @@ export default function TreatmentDataEntryPage() {
           treatmentDate: '',
           remarks: '',
         });
+        setDoctors([]);
+        setIsManualDoctor(false);
       }
     } catch (error) {
       MySwal.fire({
@@ -128,14 +182,42 @@ export default function TreatmentDataEntryPage() {
           <label className="block text-gray-700 dark:text-gray-300">
             Doctor (username):
           </label>
-          <input
-            type="text"
-            name="doctor"
-            value={formData.doctor}
-            onChange={handleChange}
-            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
-            required
-          />
+          {doctors.length > 0 ? (
+            <select
+              value={isManualDoctor ? 'manual' : formData.doctor}
+              onChange={handleDoctorSelection}
+              className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+            >
+              {doctors.map((doc) => (
+                <option key={doc.id} value={doc.username}>
+                  {doc.username} ({doc.department})
+                </option>
+              ))}
+              <option value="manual">Other (Manual Input)</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              name="doctor"
+              value={formData.doctor}
+              onChange={handleChange}
+              className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+              required
+            />
+          )}
+          {isManualDoctor && (
+            <div className="mt-2">
+              <input
+                type="text"
+                name="doctor"
+                placeholder="Enter doctor username manually"
+                value={formData.doctor}
+                onChange={handleChange}
+                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+                required
+              />
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-gray-700 dark:text-gray-300">

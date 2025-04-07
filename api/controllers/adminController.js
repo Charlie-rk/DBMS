@@ -222,7 +222,8 @@ export async function registerUser(req, res, next) {
  */
 export async function fetchUsers(req, res, next) {
   const { role } = req.query;
-
+  console.log("role");
+  console.log(role)
   try {
     let query = supabase.from('users').select('*');
 
@@ -287,6 +288,123 @@ export async function deleteUser(req, res, next) {
     }
 
     res.status(200).json({ message: 'User deleted successfully', data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+
+export async function seedDoctor(req, res, next) {
+  // Unique departments (first 9 of 10)
+  const departments = [
+    "Cardiology",
+    "Neurology",
+    "Orthopedics",
+    "Pediatrics",
+    "Oncology",
+    "Gynecology",
+    "Dermatology",
+    "Gastroenterology",
+    "Pulmonology"
+  ];
+
+  // Map department to specialization
+  const specializationMap = {
+    "Cardiology": "Interventional Cardiology",
+    "Neurology": "Neurocritical Care",
+    "Orthopedics": "Joint Replacement",
+    "Pediatrics": "Neonatology",
+    "Oncology": "Medical Oncology",
+    "Gynecology": "Reproductive Endocrinology",
+    "Dermatology": "Cosmetic Dermatology",
+    "Gastroenterology": "Hepatology",
+    "Pulmonology": "Critical Care Pulmonology"
+  };
+
+  // Doctor seed data mapping email, username, and name.
+  const doctors = [
+    { email: "rustampavri1275@gmail.com", username: "rutsam", name: "rutsam" },
+    { email: "charlie62042@gmail.com", username: "charlie", name: "charlie" },
+    { email: "22cs01047@iitbbs.ac.in", username: "Rustam", name: "Rustam" },
+    { email: "22cs01048@iitbbs.ac.in", username: "Dangi", name: "Dangi" },
+    { email: "22cs01073@iitbbs.ac.in", username: "Parth", name: "Parth" },
+    { email: "22cs01075@iitbbs.ac.in", username: "Utkarsh", name: "Utkarsh" },
+    { email: "22cs01071@iitbbs.ac.in", username: "Sangam", name: "Sangam" },
+    { email: "sangamkr.mishra@gmail.com", username: "Ssangam", name: "Ssangam" },
+    { email: "hexcodesih@gmail.com", username: "hexcode", name: "hexcode" }
+  ];
+
+  // Map each doctor with additional fields so nothing is null.
+  const rowsToInsert = doctors.map((doctor, index) => {
+    // Select department for the doctor (based on index)
+    const department = departments[index];
+    // Generate sample values
+    const gender = "male";
+    // Generate a sample mobile number (10 digits)
+    const mobile = `90000000${(index + 10).toString().padStart(2, '0')}`;
+    // Generate a date of birth based on index (e.g., starting from 1975)
+    const year = 1975 + index;
+    const dob = new Date(year, 0, 1).toISOString();
+    // Generate a sample pin code (as a string)
+    const pin_code = `5600${(index + 100).toString()}`;
+    // Generate a sample street address and city information
+    const street = `123 Main St Apt ${index + 1}`;
+    const city = "Metropolis";
+    const state = "StateName";
+    const country = "USA";
+    // Years of experience can vary by doctor
+    const yoe = 5 + index;
+    // Determine specialization based on department
+    const specialisation = specializationMap[department] || department;
+
+    return {
+      name: doctor.name,
+      username: doctor.username,
+      email: doctor.email,
+      gender,
+      mobile,
+      dob,
+      pin_code,
+      street,
+      city,
+      state,
+      country,
+      role: 'doctor',
+      specialisation,
+      yoe,
+      department,
+      password: 'doctor123'
+      // The fields salary, profile_picture, is_admin, created_at, and updated_at will use their defaults.
+    };
+  });
+
+  try {
+    // Insert doctor records using Supabase and ignore duplicates
+    const { data, error } = await supabase
+      .from('users')
+      .insert(rowsToInsert, { ignoreDuplicates: true });
+
+    if (error) throw error;
+
+    res.status(200).json({ message: "Doctors seeded successfully", data });
+  } catch (err) {
+    console.error('Error seeding doctors:', err);
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function deleteAllUser(req,res,next){
+  try {
+    // Delete all rows where id > 0 (which effectively deletes all rows)
+    const { data, error } = await supabase
+      .from('users')
+      .delete()
+      .gt('id', 0);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: 'All users deleted successfully', data });
   } catch (err) {
     next(err);
   }

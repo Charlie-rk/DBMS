@@ -1,29 +1,87 @@
 /* eslint-disable no-unused-vars */
-// src/pages/TestDataEntryPage.jsx
 import { Button } from 'flowbite-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
+
 export default function TestDataEntryPage() {
   const { currentUser } = useSelector((state) => state.user);
   const [formData, setFormData] = useState({
-    deo:currentUser.username,
+    deo: currentUser.username,
     patientId: '',
-    doctor:'',
+    doctor: '',
     testType: '',
     testResult: '',
     testDate: '',
   });
+  const [doctors, setDoctors] = useState([]);
+  const [isManualDoctor, setIsManualDoctor] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async(e) => {
-    // const numericPatientId = Number(formData.patientId);
+  // When patientId is entered, fetch doctor details for that patient.
+  useEffect(() => {
+    async function fetchDoctorsForPatient() {
+      // Only run if patientId is provided and is numeric.
+      if (formData.patientId && !isNaN(formData.patientId)) {
+        try {
+          const response = await fetch('/api/fdo/appointment-doctor-patientID', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patientId: formData.patientId })
+          });
+          const data = await response.json();
+          if (!response.ok || !data.doctors || data.doctors.length === 0) {
+            MySwal.fire({
+              icon: "error",
+              title: data.error || "No doctor data found for this patient",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+            setDoctors([]);
+          } else {
+            setDoctors(data.doctors);
+            // Automatically set the doctor field to the first doctor's username.
+            setFormData(prev => ({ ...prev, doctor: data.doctors[0].username }));
+            setIsManualDoctor(false);
+          }
+        } catch (error) {
+          MySwal.fire({
+            icon: "error",
+            title: "Failed to fetch doctor data for the patient",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          setDoctors([]);
+        }
+      }
+    }
+    fetchDoctorsForPatient();
+  }, [formData.patientId]);
+
+  // Handle doctor selection from dropdown.
+  const handleDoctorSelection = (e) => {
+    const value = e.target.value;
+    if (value === 'manual') {
+      setIsManualDoctor(true);
+      // Clear doctor field so user can type.
+      setFormData(prev => ({ ...prev, doctor: '' }));
+    } else {
+      setIsManualDoctor(false);
+      setFormData(prev => ({ ...prev, doctor: value }));
+    }
+  };
+
+  
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Basic validation: ensure all fields are filled.
     if (
@@ -84,6 +142,8 @@ export default function TestDataEntryPage() {
           testResult: '',
           testDate: '',
         });
+        setDoctors([]);
+        setIsManualDoctor(false);
       }
     } catch (error) {
       MySwal.fire({
@@ -120,14 +180,42 @@ export default function TestDataEntryPage() {
           <label className="block text-gray-700 dark:text-gray-300">
             Doctor (username):
           </label>
-          <input
-            type="text"
-            name="doctor"
-            value={formData.doctor}
-            onChange={handleChange}
-            className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
-            required
-          />
+          {doctors.length > 0 ? (
+            <select
+              value={isManualDoctor ? 'manual' : formData.doctor}
+              onChange={handleDoctorSelection}
+              className="w-full border border-gray-300 dark:border-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+            >
+              {doctors.map((doc) => (
+                <option key={doc.id} value={doc.username}>
+                  {doc.username} ({doc.department})
+                </option>
+              ))}
+              <option value="manual">Other (Manual Input)</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              name="doctor"
+              value={formData.doctor}
+              onChange={handleChange}
+              className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+              required
+            />
+          )}
+          {isManualDoctor && (
+            <div className="mt-2">
+              <input
+                type="text"
+                name="doctor"
+                placeholder="Enter doctor username manually"
+                value={formData.doctor}
+                onChange={handleChange}
+                className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
+                required
+              />
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-gray-700 dark:text-gray-300">

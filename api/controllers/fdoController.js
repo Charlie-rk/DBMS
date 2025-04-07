@@ -80,7 +80,9 @@ export async function registerPatient(req, res, next) {
 
 //////////algorithm reamining & doctor's appointment information also //////////////
 export async function scheduleAppointment(req, res, next) {
+  console.log("Scheduling");
   const { fdo, patientId, doctorId, appointmentDate, slot, condition } = req.body;
+  console.log(req.body);
   
   if (!fdo || !patientId || !doctorId || !appointmentDate || !slot || !condition) {
     return res.status(400).json({ error: 'All appointment fields are required.' });
@@ -131,7 +133,8 @@ export async function scheduleAppointment(req, res, next) {
 
     // Log activity
     await createActivity(fdo, `Appointment Scheduled for Patient ID: ${patientId}`);
-
+  console.log("Scheduling Done");
+   
     res.status(200).json({
       message: 'Appointment scheduled successfully and department patient count updated.',
       appointment: appointmentData[0],
@@ -968,6 +971,46 @@ export async function getSlotDistributionByDate(req, res, next) {
     res.status(200).json(distribution);
   } catch (err) {
     console.error('Error in getSlotDistributionByDate:', err);
+    next(err);
+  }
+}
+
+
+
+export async function fetchDoctorByPatient(req, res, next) {
+  const { patientId } = req.body;
+  console.log("fetching patiend doctor data");
+
+  if (!patientId) {
+    return res.status(400).json({ error: 'Patient ID is required in the URL parameters.' });
+  }
+
+  try {
+    // Fetch all appointments for the given patient
+    const { data: appointments, error: appointmentError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('patient_id', patientId);
+
+    if (appointmentError) throw appointmentError;
+
+    if (!appointments || appointments.length === 0) {
+      return res.status(404).json({ error: 'No appointments found for the given patient ID.' });
+    }
+
+    // Extract unique doctor IDs from the appointments
+    const doctorIds = [...new Set(appointments.map(appointment => appointment.doctor_id))];
+    console.log(doctorIds);
+    // Fetch doctor details from the users table
+    const { data: doctors, error: doctorError } = await supabase
+      .from('users')
+      .select('id, name, username, email, department, specialisation, mobile, profile_picture')
+      .in('id', doctorIds);
+
+    if (doctorError) throw doctorError;
+
+    res.status(200).json({ appointments, doctors });
+  } catch (err) {
     next(err);
   }
 }

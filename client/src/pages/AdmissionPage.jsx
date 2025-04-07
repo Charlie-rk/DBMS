@@ -13,7 +13,8 @@ const MySwal = withReactContent(Swal);
 function AdmissionPage() {
   const [roomSummary, setRoomSummary] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
-  const [departmentFilter, setDepartmentFilter] = useState("All");
+  // Initially, no department is selected so nothing shows.
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [admissionData, setAdmissionData] = useState({
     patientId: '',
@@ -22,7 +23,8 @@ function AdmissionPage() {
   });
   const [admitting, setAdmitting] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
-  // Fetch room summary on mount
+
+  // Fetch room summary on mount (all departments are fetched but not shown until filter is set)
   useEffect(() => {
     async function fetchRoomSummary() {
       setLoadingRooms(true);
@@ -44,6 +46,44 @@ function AdmissionPage() {
     fetchRoomSummary();
   }, []);
 
+  // When patientId is entered, fetch doctor's info and set department filter automatically.
+  useEffect(() => {
+    async function fetchDoctorDepartment() {
+      if (admissionData.patientId && !isNaN(admissionData.patientId)) {
+        try {
+          const response = await fetch('/api/fdo/appointment-doctor-patientID', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ patientId: admissionData.patientId })
+          });
+          const data = await response.json();
+          if (!response.ok || !data.doctors || data.doctors.length === 0) {
+            MySwal.fire({
+              icon: "error",
+              title: data.error || "No doctor data found for this patient",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          } else {
+            // Assume the first doctor’s department is used for filtering.
+            const doctorDept = data.doctors[0].department;
+            setDepartmentFilter(doctorDept);
+          }
+        } catch (error) {
+          MySwal.fire({
+            icon: "error",
+            title: "Failed to fetch doctor data for the patient",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+        }
+      }
+    }
+    fetchDoctorDepartment();
+  }, [admissionData.patientId]);
+
   // Handle changes in admission form fields
   const handleAdmissionChange = (e) => {
     setAdmissionData({
@@ -52,7 +92,7 @@ function AdmissionPage() {
     });
   };
 
-  // Handle department filter changes
+  // Handle department filter changes manually
   const handleDepartmentFilterChange = (e) => {
     setDepartmentFilter(e.target.value);
   };
@@ -130,27 +170,27 @@ function AdmissionPage() {
     }
   };
 
-  // Filter rooms based on selected department
+  // Filter rooms based on selected department.
+  // If no department is selected, do not display any rooms.
   const filteredRooms =
-    departmentFilter === "All"
-      ? roomSummary
-      : roomSummary.filter(room => room.department_name === departmentFilter);
+    departmentFilter && departmentFilter !== "All"
+      ? roomSummary.filter(room => room.department_name === departmentFilter)
+      : [];
 
-  // Get unique department names for the dropdown filter
+  // Get unique department names for the dropdown filter from roomSummary data.
   const departments = Array.from(new Set(roomSummary.map(room => room.department_name)));
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Patient Admission</h2>
       {admitting && (
-                <Backdrop
-                  sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                  open={true}
-                >
-                  {/* <CircularProgress color="inherit" /> */}
-                  <CustomSpinner />
-                </Backdrop>
-              )}
+        <Backdrop
+          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={true}
+        >
+          <CustomSpinner />
+        </Backdrop>
+      )}
       {/* Room Summary Section */}
       <div className="mb-6">
         <h3 className="text-xl font-semibold mb-2">Room Summary</h3>
@@ -161,33 +201,41 @@ function AdmissionPage() {
             onChange={handleDepartmentFilterChange}
             className="border border-gray-300 dark:border-gray-700 p-2 rounded"
           >
-            <option value="All">All Departments</option>
+            <option value="">Select Department</option>
             {departments.map((dept, index) => (
               <option key={index} value={dept}>{dept}</option>
             ))}
           </select>
         </div>
-        {loadingRooms ? (
-          <p>Loading room summary...</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredRooms.map((room) => (
-              <div key={room.room_id} className="p-4 border border-gray-300 dark:border-gray-700 rounded shadow">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">{room.department_name}</span>
-                  <span className="text-sm text-gray-600">{room.room_type}</span>
-                </div>
-                <div className="text-sm">
-                  <p>Total Rooms: {room.total_count}</p>
-                  <p>Occupied: {room.occupied_count}</p>
-                  <p>Available: {room.available_rooms}</p>
-                </div>
-                <Button onClick={() => handleSelectRoom(room)} className="mt-2" outline>
-                  Select Room
-                </Button>
+        {departmentFilter ? (
+          loadingRooms ? (
+            <p>Loading room summary...</p>
+          ) : (
+            filteredRooms.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredRooms.map((room) => (
+                  <div key={room.room_id} className="p-4 border border-gray-300 dark:border-gray-700 rounded shadow">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">{room.department_name}</span>
+                      <span className="text-sm text-gray-600">{room.room_type}</span>
+                    </div>
+                    <div className="text-sm">
+                      <p>Total Rooms: {room.total_count}</p>
+                      <p>Occupied: {room.occupied_count}</p>
+                      <p>Available: {room.available_rooms}</p>
+                    </div>
+                    <Button onClick={() => handleSelectRoom(room)} className="mt-2" outline>
+                      Select Room
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            ) : (
+              <p>No rooms available for the selected department.</p>
+            )
+          )
+        ) : (
+          <p>Please select a department (or enter a valid Patient ID) to view available rooms.</p>
         )}
       </div>
 

@@ -276,4 +276,21 @@ export async function fetchRecentPatientsByDoctor(req, res, next) {
     next(err);
   }
 }
+export async function getAllAppointmentsByDoctor(req, res, next) {
+  const { doctorId } = req.body;
+  console.log(doctorId);
+  try {
+    const { data, error, count } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact' })
+      .eq('doctor_id', doctorId);
 
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.status(200).json({ appointments: data, count });
+  } catch (err) {
+    next(err);
+  }
+}

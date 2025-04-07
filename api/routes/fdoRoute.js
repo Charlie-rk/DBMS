@@ -13,7 +13,8 @@ import {
   deleteDepartment,
   upsertDepartmentAndRooms,
   getAllRegisteredPatients,
-  getSlotDistributionByDate
+  getSlotDistributionByDate,
+  fetchDoctorByPatient
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
@@ -33,5 +34,6 @@ router.post('/seed-departments', seedDepartments);
 router.post('/seed-rooms', seedRooms);
 router.get('/all-patients', getAllRegisteredPatients);
 router.post('/get-slot-distribution', getSlotDistributionByDate);
+router.post('/appointment-doctor-patientID',fetchDoctorByPatient);
 
 export default router;

@@ -87,7 +87,7 @@ export default function App() {
           <Route path='/admin/*' element={<AdminRoute />} />
           <Route path='/fdo/*' element={<FDORoute />} />
           <Route path='/doctor_dashboard' element={<DoctorRoute />} />
-          <Route path='/deo/*' element={<DEORoute />} />
+          {/* <Route path='/deo/*' element={<DEORoute />} /> */}
         </Route>
 
     </Routes>
