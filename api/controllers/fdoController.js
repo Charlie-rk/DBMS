@@ -21,8 +21,8 @@ export async function registerPatient(req, res, next) {
   console.log("registration");
   const {fdo, name, mobile, gender, dob, address } = req.body;
   
-  if (!name || !mobile || !gender || !dob || !address) {
-    return res.status(400).json({ error: 'Name, mobile, DOB, and address are required.' });
+  if (!fdo || !name || !mobile || !gender || !dob || !address) {
+    return res.status(400).json({ error: 'Name, mobile, gender, DOB, and address are required.' });
   }
   
   try {
@@ -57,7 +57,8 @@ export async function registerPatient(req, res, next) {
       if (insertError) throw insertError;
       patient = data[0];
     }
-    createActivity(fdo,`Patient ${name} registered successfully. `);
+    // Create an activity for patient registration.
+    await createActivity(fdo, `Patient Registered: ${name}`);
     
     res.status(200).json({ message: 'Patient registered successfully.', patient });
   } catch (err) {
@@ -75,9 +76,9 @@ export async function registerPatient(req, res, next) {
 
 //////////algorithm reamining & doctor's appointment information also //////////////
 export async function scheduleAppointment(req, res, next) {
-  const { patientId, doctorId, appointmentDate, appointmentTime, condition } = req.body;
+  const { fdo, patientId, doctorId, appointmentDate, appointmentTime, condition } = req.body;
   
-  if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition) {
+  if (!fdo || !patientId || !doctorId || !appointmentDate || !appointmentTime || !condition) {
     return res.status(400).json({ error: 'All appointment fields are required.' });
   }
   
@@ -126,6 +127,9 @@ export async function scheduleAppointment(req, res, next) {
       .eq('name', doctorDepartment);
     if (updateError) throw updateError;
     
+
+    // Create an activity for appointment scheduling.
+    await createActivity(fdo, `Appointment Scheduled for Patient ID: ${patientId}`);
       // let fdo='rustam';
     await createActivity(fdo,`Appointment scheduled successfully registered successfully. `);
 
@@ -363,9 +367,9 @@ export async function scheduleAppointment_modifiejhjhd(req, res, next) {
  */
 ////part of room updation and type of rooms needed///////
 export async function admitPatient(req, res, next) {
-  const { patientId, roomId, admissionDate, notes } = req.body;
+  const { fdo, patientId, roomId, admissionDate, notes } = req.body;
   
-  if (!patientId || !roomId || !admissionDate) {
+  if (!fdo || !patientId || !roomId || !admissionDate) {
     return res.status(400).json({ error: 'patientId, roomId, and admissionDate are required.' });
   }
   
@@ -398,6 +402,9 @@ export async function admitPatient(req, res, next) {
       .update({ occupied_count: newOccupiedCount })
       .eq('id', roomId);
     if (roomUpdateError) throw roomUpdateError;
+
+        // Create an activity for admission.
+        await createActivity(fdo, `Patient ID: ${patientId} admitted in Room ID: ${roomId}`);
     
     res.status(200).json({ message: 'Patient admitted successfully.', admission: admissionData[0] });
   } catch (err) {
@@ -413,9 +420,9 @@ export async function admitPatient(req, res, next) {
  */
 //done////////////////
 export async function dischargePatient(req, res, next) {
-  const { patientId, dischargeDate, remarks } = req.body;
+  const { fdo, patientId, dischargeDate, remarks } = req.body;
   
-  if (!patientId || !dischargeDate) {
+  if (!fdo || !patientId || !dischargeDate) {
     return res.status(400).json({ error: 'patientId and dischargeDate are required.' });
   }
   
@@ -455,6 +462,9 @@ export async function dischargePatient(req, res, next) {
       .update({ occupied_count: newOccupiedCount })
       .eq('id', roomId);
     if (roomUpdateError) throw roomUpdateError;
+
+    // Create an activity for discharge.
+    await createActivity(fdo_username, `Patient ID: ${patientId} discharged on ${dischargeDate}`);
     
     res.status(200).json({ message: 'Patient discharged successfully.', admission: admissionRecord });
   } catch (err) {
