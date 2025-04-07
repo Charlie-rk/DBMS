@@ -123,39 +123,96 @@ export async function getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor(req,
       next(err);
     }
   }
-
   export async function changeAppointmentStatus(req, res, next) {
     let { appointmentId, status } = req.body;
-    console.log(appointmentId);
     if (!appointmentId || !status) {
       return res.status(400).json({ error: "Missing appointmentId or status" });
     }
   
-    // Convert to lowercase and validate against allowed enum values
+    // Normalize and validate status
     status = status.toLowerCase();
     const validStatuses = ['accepted', 'declined', 'pending'];
-  
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status value" });
     }
   
     try {
-      const { data, error } = await supabase
+      // Update the appointment's status
+      const { data: updatedAppointment, error: updateError } = await supabase
         .from('appointments')
         .update({ status })
         .eq('id', appointmentId)
-        .select(); // Optional: include this to return updated record
+        .select();
   
-      if (error) {
-        return res.status(500).json({ error: error.message });
+      if (updateError) {
+        return res.status(500).json({ error: updateError.message });
       }
   
-      return res.status(200).json({ message: 'Status updated successfully', data });
+      // If status is not 'accepted', skip patient count update
+      if (status !== 'accepted') {
+        return res.status(200).json({ message: 'Status updated successfully', data: updatedAppointment });
+      }
+  
+      // Fetch the doctor_id for this appointment
+      const { data: appointmentData, error: fetchAppointmentError } = await supabase
+        .from('appointments')
+        .select('doctor_id')
+        .eq('id', appointmentId)
+        .single();
+  
+      if (fetchAppointmentError) {
+        return res.status(500).json({ error: fetchAppointmentError.message });
+      }
+  
+      const doctorId = appointmentData.doctor_id;
+  
+      // Retrieve the doctor's department
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('users')
+        .select('department')
+        .eq('id', doctorId)
+        .single();
+  
+      if (doctorError) {
+        return res.status(500).json({ error: doctorError.message });
+      }
+  
+      const doctorDepartment = doctorData.department;
+  
+      // Get current patient_count for the department
+      const { data: deptData, error: deptError } = await supabase
+        .from('departments')
+        .select('patient_count')
+        .eq('name', doctorDepartment)
+        .single();
+  
+      if (deptError) {
+        return res.status(500).json({ error: deptError.message });
+      }
+  
+      const newPatientCount = (deptData.patient_count || 0) + 1;
+  
+      // Update the department's patient_count
+      const { error: updateDeptError } = await supabase
+        .from('departments')
+        .update({ patient_count: newPatientCount })
+        .eq('name', doctorDepartment);
+  
+      if (updateDeptError) {
+        return res.status(500).json({ error: updateDeptError.message });
+      }
+  
+      return res.status(200).json({
+        message: 'Status updated and department patient count incremented.',
+        data: updatedAppointment
+      });
+  
     } catch (err) {
-      next(err); // Or handle error explicitly
+      console.error("Error in changeAppointmentStatus:", err);
+      next(err);
     }
   }
-
+  
 
   //Post: get recent patients within 24hrs
   

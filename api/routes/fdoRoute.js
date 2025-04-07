@@ -13,13 +13,14 @@ import {
   deleteDepartment,
   upsertDepartmentAndRooms,
   getAllRegisteredPatients,
-  scheduleAppointment_modified
+  scheduleAppointment_modified,
+  scheduleAppointment_new
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
 
 router.post('/register-patient', registerPatient);
-router.post('/schedule-appointment', scheduleAppointment);
+router.post('/schedule-appointment', scheduleAppointment_new);
 router.post('/admit', admitPatient);
 router.post('/discharge', dischargePatient);
 router.get('/rooms-summary', getRoomsSummary);

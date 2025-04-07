@@ -96,7 +96,7 @@ export async function scheduleAppointment(req, res, next) {
         doctor_id: doctorId,
         appointment_date: appointmentDateTime,
         reason: condition,
-        status: 'accepted'
+        status: 'pending'
       }])
       .select();
     if (insertError) throw insertError;
@@ -128,10 +128,9 @@ export async function scheduleAppointment(req, res, next) {
     if (updateError) throw updateError;
     
 
+    let fdo='rustam';
     // Create an activity for appointment scheduling.
     await createActivity(fdo, `Appointment Scheduled for Patient ID: ${patientId}`);
-      // let fdo='rustam';
-    await createActivity(fdo,`Appointment scheduled successfully registered successfully. `);
 
     res.status(200).json({
       message: 'Appointment scheduled successfully and department patient count updated.',
@@ -142,11 +141,72 @@ export async function scheduleAppointment(req, res, next) {
   }
 }
 
+export async function scheduleAppointment_new(req, res, next) {
+  const { fdo, patientId, doctorId, appointmentDate, slot, condition } = req.body;
+  
+  if (!fdo || !patientId || !doctorId || !appointmentDate || !slot || !condition) {
+    return res.status(400).json({ error: 'All appointment fields are required.' });
+  }
 
-export async function scheduleAppointment_new(req, res, next)
-{
+  try {
+    // Count existing pending appointments for the doctor in the same slot and date
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('doctor_id', doctorId)
+      .eq('slot', slot)
+      .neq('status', 'declined')
+      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
+      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
+    
+    if (countError) throw countError;
 
+    const totalCount = count ?? 0;
+    if (totalCount >= 10) {
+      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
+    }
+
+    // Determine base time based on slot
+    let baseHour;
+    if (slot === 1) baseHour = 9;
+    else if (slot === 2) baseHour = 14;
+    else if (slot === 3) baseHour = 18;
+    else return res.status(400).json({ error: 'Invalid slot provided.' });
+
+    const baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
+    const appointmentDateTime = new Date(baseTime.getTime() + (totalCount * 15 * 60 * 1000)).toISOString();
+
+    // Insert the new appointment
+    const { data: appointmentData, error: insertError } = await supabase
+      .from('appointments')
+      .insert([{
+        patient_id: patientId,
+        doctor_id: doctorId,
+        appointment_date: appointmentDateTime,
+        reason: condition,
+        slot,
+        status: 'pending'
+      }])
+      .select();
+
+    if (insertError) throw insertError;
+
+    // Log activity
+    await createActivity(fdo, `Appointment Scheduled for Patient ID: ${patientId}`);
+
+    res.status(200).json({
+      message: 'Appointment scheduled successfully and department patient count updated.',
+      appointment: appointmentData[0],
+      scheduledTime: appointmentDateTime
+    });
+
+  } catch (err) {
+    console.error("Error in scheduleAppointment_new:", err);
+    next(err);
+  }
 }
+
+
 export async function scheduleAppointment_modified(req, res, next) {
   const { patientId, doctorId, appointmentDate, appointmentTime, condition, slot } = req.body;
   
