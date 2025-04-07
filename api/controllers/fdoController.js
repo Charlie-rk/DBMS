@@ -911,3 +911,55 @@ export async function getAllRegisteredPatients(req, res, next) {
 
 
 
+export async function getSlotDistributionByDate(req, res, next) {
+  const { doctorId, date } = req.body;
+  console.log(req.body);
+  if (!doctorId || !date) {
+    return res.status(400).json({ error: 'doctorId and date are required in request body (format: YYYY-MM-DD)' });
+  }
+
+  const totalPerSlot = 10;
+
+  try {
+    const slots = [1, 2, 3];
+    const distribution = {};
+
+    for (const slot of slots) {
+      // Count accepted appointments for this slot
+      const { count: acceptedCount, error: acceptedError } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .eq('status', 'accepted');
+
+      if (acceptedError) throw acceptedError;
+
+      // Count pending appointments for this slot
+      const { count: pendingCount, error: pendingError } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .eq('status', 'pending');
+
+      if (pendingError) throw pendingError;
+
+      const accepted = acceptedCount || 0;
+      const pending = pendingCount || 0;
+      const available = Math.max(0, totalPerSlot - accepted - pending);
+
+      distribution[`slot${slot}`] = {
+        total: totalPerSlot,
+        accepted,
+        pending,
+        available,
+      };
+    }
+
+    res.status(200).json(distribution);
+  } catch (err) {
+    console.error('Error in getSlotDistributionByDate:', err);
+    next(err);
+  }
+}
