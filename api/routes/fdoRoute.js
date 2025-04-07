@@ -12,7 +12,8 @@ import {
   deletePatient,
   deleteDepartment,
   upsertDepartmentAndRooms,
-  getAllRegisteredPatients
+  getAllRegisteredPatients,
+  scheduleAppointment_modified
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
