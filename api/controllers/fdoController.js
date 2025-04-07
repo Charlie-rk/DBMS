@@ -20,6 +20,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 export async function registerPatient(req, res, next) {
   console.log("registration");
   const {fdo, name, mobile, gender, dob, address } = req.body;
+  console.log(req.body);
   
   if (!fdo || !name || !mobile || !gender || !dob || !address) {
     return res.status(400).json({ error: 'Name, mobile, gender, DOB, and address are required.' });
@@ -27,11 +28,15 @@ export async function registerPatient(req, res, next) {
   
   try {
     // Check for an existing patient by mobile number.
-    const { data: existingPatients, error: fetchError } = await supabase
+    const { existingPatients, error: fetchError } = await supabase
       .from('patients')
       .select('*')
       .eq('mobile', mobile);
+
+
+    // console.log(error);
     if (fetchError) throw fetchError;
+    // console.log("Exisiting",data);
     
     // Calculate age from DOB.
     const birthDate = new Date(dob);
@@ -57,8 +62,7 @@ export async function registerPatient(req, res, next) {
       if (insertError) throw insertError;
       patient = data[0];
     }
-    // Create an activity for patient registration.
-    await createActivity(fdo, `Patient Registered: ${name}`);
+    createActivity(fdo,`Patient ${name} registered successfully. `);
     
     res.status(200).json({ message: 'Patient registered successfully.', patient });
   } catch (err) {
@@ -148,17 +152,20 @@ export async function scheduleAppointment(req, res, next) {
  */
 ////part of room updation and type of rooms needed///////
 export async function admitPatient(req, res, next) {
-  const { fdo, patientId, roomId, admissionDate, notes } = req.body;
+  const { patientId, roomId, admissionDate, notes } = req.body;
   
-  if (!fdo || !patientId || !roomId || !admissionDate) {
+  if (!patientId || !roomId || !admissionDate) {
     return res.status(400).json({ error: 'patientId, roomId, and admissionDate are required.' });
   }
+  
+  // Convert patientId to a number since the table uses a numeric id.
+  const numericPatientId = Number(patientId);
   
   try {
     // Insert a new admission record.
     const { data: admissionData, error: admissionError } = await supabase
       .from('admissions')
-      .insert([{ patient_id: patientId, room_id: roomId, admission_date: admissionDate, notes }])
+      .insert([{ patient_id: numericPatientId, room_id: roomId, admission_date: admissionDate, notes }])
       .select();
     if (admissionError) throw admissionError;
     
@@ -166,8 +173,10 @@ export async function admitPatient(req, res, next) {
     const { error: patientError } = await supabase
       .from('patients')
       .update({ status: 'admitted' })
-      .eq('id', patientId);
+      .eq('id', numericPatientId);  // Now comparing numbers
     if (patientError) throw patientError;
+
+    console.log("hii1");
     
     // Update room occupancy: increment occupied_count.
     const { data: roomData, error: roomFetchError } = await supabase
@@ -183,15 +192,13 @@ export async function admitPatient(req, res, next) {
       .update({ occupied_count: newOccupiedCount })
       .eq('id', roomId);
     if (roomUpdateError) throw roomUpdateError;
-
-        // Create an activity for admission.
-        await createActivity(fdo, `Patient ID: ${patientId} admitted in Room ID: ${roomId}`);
     
     res.status(200).json({ message: 'Patient admitted successfully.', admission: admissionData[0] });
   } catch (err) {
     next(err);
   }
 }
+
 
 /**
  * 4. Discharge Patient
@@ -201,9 +208,9 @@ export async function admitPatient(req, res, next) {
  */
 //done////////////////
 export async function dischargePatient(req, res, next) {
-  const { fdo, patientId, dischargeDate, remarks } = req.body;
+  const { patientId, dischargeDate, remarks } = req.body;
   
-  if (!fdo || !patientId || !dischargeDate) {
+  if (!patientId || !dischargeDate) {
     return res.status(400).json({ error: 'patientId and dischargeDate are required.' });
   }
   
@@ -219,6 +226,7 @@ export async function dischargePatient(req, res, next) {
     if (!admissionData || admissionData.length === 0) {
       return res.status(404).json({ error: 'Active admission record not found for this patient.' });
     }
+    console.log(admissionData[0]);
     const admissionRecord = admissionData[0];
     
     // Update the patient's status to 'discharged'.
@@ -243,9 +251,6 @@ export async function dischargePatient(req, res, next) {
       .update({ occupied_count: newOccupiedCount })
       .eq('id', roomId);
     if (roomUpdateError) throw roomUpdateError;
-
-    // Create an activity for discharge.
-    await createActivity(fdo_username, `Patient ID: ${patientId} discharged on ${dischargeDate}`);
     
     res.status(200).json({ message: 'Patient discharged successfully.', admission: admissionRecord });
   } catch (err) {
@@ -265,6 +270,7 @@ export async function dischargePatient(req, res, next) {
  */
 
 export async function getRoomsSummary(req, res, next) {
+  console.log("Room Summary");
   try {
     // We assume that each room row represents a unique department & room type combination.
     // Optionally, you can use a join to fetch department name from the departments table.
@@ -375,11 +381,14 @@ export async function seedDepartments(req, res, next) {
       .from('departments')
       .insert(departmentsData)
       .select();
-
+     console.log("hii");
+     console.log(error);
     if (error) throw error;
+    console.log("byee")
 
     res.status(200).json({ message: 'Departments seeded successfully.', departments: data });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 }
@@ -683,8 +692,7 @@ export async function getAllRegisteredPatients(req, res, next) {
   try {
     const { data, error } = await supabase
       .from('patients')
-      .select('*')
-      .eq('status', 'registered');
+      .select('*');
       
     if (error) throw error;
     
@@ -698,3 +706,55 @@ export async function getAllRegisteredPatients(req, res, next) {
 
 
 
+export async function getSlotDistributionByDate(req, res, next) {
+  const { doctorId, date } = req.body;
+  console.log(req.body);
+  if (!doctorId || !date) {
+    return res.status(400).json({ error: 'doctorId and date are required in request body (format: YYYY-MM-DD)' });
+  }
+
+  const totalPerSlot = 10;
+
+  try {
+    const slots = [1, 2, 3];
+    const distribution = {};
+
+    for (const slot of slots) {
+      // Count accepted appointments for this slot
+      const { count: acceptedCount, error: acceptedError } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .eq('status', 'accepted');
+
+      if (acceptedError) throw acceptedError;
+
+      // Count pending appointments for this slot
+      const { count: pendingCount, error: pendingError } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .eq('status', 'pending');
+
+      if (pendingError) throw pendingError;
+
+      const accepted = acceptedCount || 0;
+      const pending = pendingCount || 0;
+      const available = Math.max(0, totalPerSlot - accepted - pending);
+
+      distribution[`slot${slot}`] = {
+        total: totalPerSlot,
+        accepted,
+        pending,
+        available,
+      };
+    }
+
+    res.status(200).json(distribution);
+  } catch (err) {
+    console.error('Error in getSlotDistributionByDate:', err);
+    next(err);
+  }
+}

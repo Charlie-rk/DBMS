@@ -1,24 +1,108 @@
-// src/pages/TreatmentDataEntryPage.jsx
+/* eslint-disable no-unused-vars */
 import { Button } from 'flowbite-react';
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+
+const MySwal = withReactContent(Swal);
 
 export default function TreatmentDataEntryPage() {
+  const { currentUser } = useSelector((state) => state.user);
   const [formData, setFormData] = useState({
+    deo: currentUser.username,
     patientId: '',
+    doctor: '',
     drugName: '',
     dosage: '',
     treatmentDate: '',
     remarks: '',
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ 
+      ...formData, 
+      [e.target.name]: e.target.value 
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Call API to update treatment data
-    console.log('Treatment Data Submitted:', formData);
+
+    // Basic validation for required fields
+    if (
+      !formData.patientId ||
+      !formData.doctor ||
+      !formData.dosage ||
+      !formData.treatmentDate
+    ) {
+      MySwal.fire({
+        icon: "error",
+        title: "Please fill all required fields.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const numericPatientId = Number(formData.patientId);
+      const response = await fetch('/api/deo/treatment-entry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          deo: formData.deo,
+          patientId: numericPatientId,
+          dosage: formData.dosage,
+          drug:formData.drugName,
+          treatmentDate: formData.treatmentDate,
+          prescribedBy: formData.doctor,
+          remarks: formData.remarks
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        MySwal.fire({
+          icon: "error",
+          title: data.error || "Failed to submit treatment data.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        MySwal.fire({
+          icon: "success",
+          title: data.message || "Treatment data entered successfully.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        // Reset the form after successful submission
+        setFormData({
+          deo: currentUser.username,
+          patientId: '',
+          doctor: '',
+          drugName: '',
+          dosage: '',
+          treatmentDate: '',
+          remarks: '',
+        });
+      }
+    } catch (error) {
+      MySwal.fire({
+        icon: "error",
+        title: "Network error. Please try again later.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,7 +147,6 @@ export default function TreatmentDataEntryPage() {
             value={formData.drugName}
             onChange={handleChange}
             className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
-            required
           />
         </div>
         <div>
@@ -104,10 +187,14 @@ export default function TreatmentDataEntryPage() {
             className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
           ></textarea>
         </div>
-       
-         <Button  outline  className="bg-gradient-to-r  from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800">
-         Submit Treatment Data
-                              </Button>
+        <Button
+          type="submit"
+          outline
+          disabled={loading}
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+        >
+          {loading ? 'Submitting...' : 'Submit Treatment Data'}
+        </Button>
       </form>
     </div>
   );

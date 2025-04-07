@@ -22,6 +22,7 @@ export async function createTreatmentsTable() {
         id SERIAL PRIMARY KEY,
         patient_id INTEGER NOT NULL,
         dosage TEXT NOT NULL,
+        drug TEXT NOT NULL,
         treatment_date TIMESTAMPTZ NOT NULL,
         prescribed_by TEXT NOT NULL,
         remarks TEXT,

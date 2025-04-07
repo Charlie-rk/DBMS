@@ -35,6 +35,7 @@ import DoctorRoute from './components/DcotorRoute';
 import DEORoute from './components/DEORoute';
 import Profile from './pages/Profile';
 import Medication from './pages/Medication';
+import Message from './pages/Message';
 export default function App() {
   const { currentUser } = useSelector((state) => state.user);
   console.log(currentUser)
@@ -70,6 +71,7 @@ export default function App() {
          <Route path="/deo/*" element={<EDODashboard />} />
          <Route path="/admin/*" element={<Dashboard />} />
          <Route path="/medication" element={<Medication />} />
+         <Route path="/mess" element={<Message />} />
          {/* <Route path="/profile" element={<Profile />} /> */}
 
 

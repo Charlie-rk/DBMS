@@ -22,6 +22,7 @@ export async function createReportsTable() {
         id SERIAL PRIMARY KEY,
         patient_id INTEGER NOT NULL,
         report_link TEXT NOT NULL,
+        title TEXT NOT NULL,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
