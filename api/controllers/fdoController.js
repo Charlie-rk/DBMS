@@ -800,7 +800,7 @@ export async function fetchDoctorByPatient(req, res, next) {
 }
 /**
  * Get full history for a patient including basic info, appointments, admissions, tests, treatments, and reports.
- * Expects a patientId as a URL parameter.
+ * Expects a patientId as a URL parameter. getPatientHistory
  */
 export async function getPatientHistory(req, res, next) {
   const { patientId } = req.params;
