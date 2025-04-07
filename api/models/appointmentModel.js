@@ -36,6 +36,7 @@ export async function createAppointmentTable() {
         patient_id INTEGER NOT NULL,
         appointment_date TIMESTAMPTZ NOT NULL,
         reason TEXT,
+        slot INT,
         status appointment_status DEFAULT 'pending',
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

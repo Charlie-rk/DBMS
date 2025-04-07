@@ -22,8 +22,8 @@ export async function registerPatient(req, res, next) {
   const {fdo, name, mobile, gender, dob, address } = req.body;
   console.log(req.body);
   
-  if (!name || !mobile || !gender || !dob || !address) {
-    return res.status(400).json({ error: 'Name, mobile, DOB, and address are required.' });
+  if (!fdo || !name || !mobile || !gender || !dob || !address) {
+    return res.status(400).json({ error: 'Name, mobile, gender, DOB, and address are required.' });
   }
   
   try {
@@ -63,9 +63,6 @@ export async function registerPatient(req, res, next) {
       patient = data[0];
     }
     createActivity(fdo,`Patient ${name} registered successfully. `);
-    console.log("Sending");
-    console.log(patient);
-
     
     res.status(200).json({ message: 'Patient registered successfully.', patient });
   } catch (err) {
@@ -83,19 +80,41 @@ export async function registerPatient(req, res, next) {
 
 //////////algorithm reamining & doctor's appointment information also //////////////
 export async function scheduleAppointment(req, res, next) {
-  const { patientId, doctorId, appointmentDate, appointmentTime, condition } = req.body;
+  const { fdo, patientId, doctorId, appointmentDate, slot, condition } = req.body;
   
-  if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition) {
+  if (!fdo || !patientId || !doctorId || !appointmentDate || !slot || !condition) {
     return res.status(400).json({ error: 'All appointment fields are required.' });
   }
-  
+
   try {
-    // Combine date and time into an ISO string for appointment_date.
-    const appointmentDateTime = new Date(`${appointmentDate}T${appointmentTime}:00Z`).toISOString();
+    // Count existing pending appointments for the doctor in the same slot and date
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('doctor_id', doctorId)
+      .eq('slot', slot)
+      .neq('status', 'declined')
+      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
+      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
     
-    // TODO: Run algorithm to determine the best available slot and send notifications.
-    
-    // Insert the new appointment into the "appointments" table.
+    if (countError) throw countError;
+
+    const totalCount = count ?? 0;
+    if (totalCount >= 10) {
+      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
+    }
+
+    // Determine base time based on slot
+    let baseHour;
+    if (slot === 1) baseHour = 9;
+    else if (slot === 2) baseHour = 14;
+    else if (slot === 3) baseHour = 18;
+    else return res.status(400).json({ error: 'Invalid slot provided.' });
+
+    const baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
+    const appointmentDateTime = new Date(baseTime.getTime() + (totalCount * 15 * 60 * 1000)).toISOString();
+
+    // Insert the new appointment
     const { data: appointmentData, error: insertError } = await supabase
       .from('appointments')
       .insert([{
@@ -103,43 +122,234 @@ export async function scheduleAppointment(req, res, next) {
         doctor_id: doctorId,
         appointment_date: appointmentDateTime,
         reason: condition,
-        status: 'sheduled'
+        slot,
+        status: 'pending'
       }])
       .select();
+
     if (insertError) throw insertError;
+
+    // Log activity
+    await createActivity(fdo, `Appointment Scheduled for Patient ID: ${patientId}`);
+
+    res.status(200).json({
+      message: 'Appointment scheduled successfully and department patient count updated.',
+      appointment: appointmentData[0],
+      scheduledTime: appointmentDateTime
+    });
+
+  } catch (err) {
+    console.error("Error in scheduleAppointment_new:", err);
+    next(err);
+  }
+}
+
+
+export async function scheduleAppointment_modified(req, res, next) {
+  const { patientId, doctorId, appointmentDate, appointmentTime, condition, slot } = req.body;
+  
+  if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition || !slot) {
+    return res.status(400).json({ error: 'All appointment fields are required.' });
+  }
+  
+  try {
+    console.log("Starting appointment scheduling...");
+    console.log({ patientId, doctorId, appointmentDate, slot });
+    console.log("Counting existing appointments...");
+
+    // Use allowed status 'pending' instead of 'scheduled'
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('doctor_id', doctorId)
+      .eq('slot', slot)
+      .eq('status', 'pending')
+      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
+      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
     
-    // Retrieve the doctor's department.
+    if (countError) {
+      console.error("Error during count query:", countError);
+      throw countError;
+    }
+    
+    const acceptedCount = count ?? 0;
+    console.log("Accepted count:", acceptedCount);
+    
+    if (acceptedCount >= 10) {
+      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
+    }
+    
+    // Determine base time based on slot.
+    let baseHour;
+    if (slot === 1) {
+      baseHour = 9;
+    } else if (slot === 2) {
+      baseHour = 14;
+    } else if (slot === 3) {
+      baseHour = 18;
+    } else {
+      return res.status(400).json({ error: 'Invalid slot provided.' });
+    }
+    
+    let baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
+    let newAppointmentDateTime = new Date(baseTime.getTime() + (acceptedCount * 15 * 60 * 1000)).toISOString();
+    console.log("Calculated appointment time:", newAppointmentDateTime);
+    
+    // Insert the new appointment using status 'pending'
+    const { data: appointmentData, error: insertError } = await supabase
+      .from('appointments')
+      .insert([{
+        patient_id: patientId,
+        doctor_id: doctorId,
+        appointment_date: newAppointmentDateTime,
+        reason: condition,
+        slot,
+        status: 'pending'
+      }])
+      .select();
+    
+    if (insertError) {
+      console.error("Error during insert query:", insertError);
+      throw insertError;
+    }
+    console.log("Inserted appointment data:", appointmentData);
+    
+    // Retrieve doctor's department.
     const { data: doctorData, error: doctorError } = await supabase
       .from('users')
-      .select('department')
+      .select('department, name')
+      .eq('id', doctorId)
+      .single();
+    if (doctorError) {
+      console.error("Error fetching doctor data:", doctorError);
+      throw doctorError;
+    }
+    const doctorDepartment = doctorData.department;
+    
+    // Update department's patient count.
+    const { data: deptData, error: deptError } = await supabase
+      .from('departments')
+      .select('patient_count')
+      .eq('name', doctorDepartment)
+      .single();
+    if (deptError) {
+      console.error("Error fetching department data:", deptError);
+      throw deptError;
+    }
+    
+    const newPatientCount = (deptData.patient_count || 0) + 1;
+    const { error: updateError } = await supabase
+      .from('departments')
+      .update({ patient_count: newPatientCount })
+      .eq('name', doctorDepartment);
+    if (updateError) {
+      console.error("Error updating department patient count:", updateError);
+      throw updateError;
+    }
+    
+    res.status(200).json({
+      message: 'Appointment scheduled successfully and department patient count updated.',
+      appointment: appointmentData[0],
+      scheduledTime: newAppointmentDateTime
+    });
+  } catch (err) {
+    console.error("Error in scheduleAppointment_modified:", err);
+    next(err);
+  }
+}
+
+
+export async function scheduleAppointment_modifiejhjhd(req, res, next) {
+  console.log(req.body);
+  const { patientId, doctorId, appointmentDate, appointmentTime, condition, slot } = req.body;
+
+  if (!patientId || !doctorId || !appointmentDate || !appointmentTime || !condition || !slot) {
+    return res.status(400).json({ error: 'All appointment fields are required.' });
+  }
+
+  try {
+    // STEP 1: Count the number of appointments already scheduled in the given slot on the appointment date.
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact', head: true })
+      .eq('doctor_id', doctorId)
+      .eq('slot', slot)
+      .eq('status', 'scheduled')
+      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
+      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
+      console.log(count);
+
+    if (countError) throw countError;
+
+    // Maximum allowed appointments per slot is 10.
+    if (count >= 10) {
+      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
+    }
+
+    // STEP 2: Determine the base time for the requested slot.
+    let baseHour;
+    if (slot === 1) {
+      baseHour = 9;
+    } else if (slot === 2) {
+      baseHour = 14;
+    } else if (slot === 3) {
+      baseHour = 18;
+    } else {
+      return res.status(400).json({ error: 'Invalid slot provided.' });
+    }
+
+    // Calculate new appointment time: new time = base time + (count * 15 minutes)
+    // If no appointments yet (count = 0), new appointment time equals base time.
+    let baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
+    let newAppointmentDateTime = new Date(baseTime.getTime() + (count * 15 * 60 * 1000)).toISOString();
+
+    // STEP 3: Insert the new appointment into the appointments table.
+    const { data: appointmentData, error: insertError } = await supabase
+      .from('appointments')
+      .insert([{
+        patient_id: patientId,
+        doctor_id: doctorId,
+        appointment_date: newAppointmentDateTime,
+        reason: condition,
+        slot,
+        status: 'scheduled'
+      }])
+      .select();
+
+    if (insertError) throw insertError;
+
+    // STEP 4: Retrieve the doctor's department.
+    const { data: doctorData, error: doctorError } = await supabase
+      .from('users')
+      .select('department, name')
       .eq('id', doctorId)
       .single();
     if (doctorError) throw doctorError;
     const doctorDepartment = doctorData.department;
-    
-    // Fetch current patient_count for this department from the departments table.
+
+    // STEP 5: Update the department's patient count.
     const { data: deptData, error: deptError } = await supabase
       .from('departments')
       .select('patient_count')
       .eq('name', doctorDepartment)
       .single();
     if (deptError) throw deptError;
-    
-    const newPatientCount = deptData.patient_count + 1;
-    
-    // Update the department's patient_count.
+
+    const newPatientCount = (deptData.patient_count || 0) + 1;
     const { error: updateError } = await supabase
       .from('departments')
       .update({ patient_count: newPatientCount })
       .eq('name', doctorDepartment);
     if (updateError) throw updateError;
-    
 
-    createActivity(fdo,`Appointment scheduled successfully  ${name} registered successfully. `);
+    // Optional: Create an activity log (if you have a createActivity function defined)
+    createActivity('fdo', `Appointment scheduled successfully for ${doctorData.name}.`);
 
+    // Return the scheduled appointment details along with the calculated appointment time.
     res.status(200).json({
       message: 'Appointment scheduled successfully and department patient count updated.',
       appointment: appointmentData[0],
+      scheduledTime: newAppointmentDateTime
     });
   } catch (err) {
     next(err);
@@ -155,13 +365,9 @@ export async function scheduleAppointment(req, res, next) {
  */
 ////part of room updation and type of rooms needed///////
 export async function admitPatient(req, res, next) {
-  console.log("Admitting");
-  const { fdo,patientId, roomId, admissionDate, notes } = req.body;
-  console.log(req.body);
-  console.log(typeof(patientId)); // "string"
-  console.log(typeof(roomId));    // "number"
+  const { patientId, roomId, admissionDate, notes } = req.body;
   
-  if (!fdo||!patientId || !roomId || !admissionDate) {
+  if (!patientId || !roomId || !admissionDate) {
     return res.status(400).json({ error: 'patientId, roomId, and admissionDate are required.' });
   }
   
@@ -199,8 +405,7 @@ export async function admitPatient(req, res, next) {
       .update({ occupied_count: newOccupiedCount })
       .eq('id', roomId);
     if (roomUpdateError) throw roomUpdateError;
-    await createActivity(fdo, `Patient ID: ${patientId} admitted in Room ID: ${roomId}`);
-       
+    
     res.status(200).json({ message: 'Patient admitted successfully.', admission: admissionData[0] });
   } catch (err) {
     next(err);
@@ -216,11 +421,9 @@ export async function admitPatient(req, res, next) {
  */
 //done////////////////
 export async function dischargePatient(req, res, next) {
-  console.log("Discharging")
-  console.log(req.body);
-  const { fdo,patientId, dischargeDate, remarks } = req.body;
+  const { patientId, dischargeDate, remarks } = req.body;
   
-  if (!fdo||!patientId || !dischargeDate) {
+  if (!patientId || !dischargeDate) {
     return res.status(400).json({ error: 'patientId and dischargeDate are required.' });
   }
   
@@ -261,8 +464,7 @@ export async function dischargePatient(req, res, next) {
       .update({ occupied_count: newOccupiedCount })
       .eq('id', roomId);
     if (roomUpdateError) throw roomUpdateError;
-    await createActivity(fdo, `Patient ID: ${patientId} discharged on ${dischargeDate}`);
-    console.log("Activity done")
+    
     res.status(200).json({ message: 'Patient discharged successfully.', admission: admissionRecord });
   } catch (err) {
     next(err);
@@ -717,3 +919,55 @@ export async function getAllRegisteredPatients(req, res, next) {
 
 
 
+export async function getSlotDistributionByDate(req, res, next) {
+  const { doctorId, date } = req.body;
+  console.log(req.body);
+  if (!doctorId || !date) {
+    return res.status(400).json({ error: 'doctorId and date are required in request body (format: YYYY-MM-DD)' });
+  }
+
+  const totalPerSlot = 10;
+
+  try {
+    const slots = [1, 2, 3];
+    const distribution = {};
+
+    for (const slot of slots) {
+      // Count accepted appointments for this slot
+      const { count: acceptedCount, error: acceptedError } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .eq('status', 'accepted');
+
+      if (acceptedError) throw acceptedError;
+
+      // Count pending appointments for this slot
+      const { count: pendingCount, error: pendingError } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .eq('status', 'pending');
+
+      if (pendingError) throw pendingError;
+
+      const accepted = acceptedCount || 0;
+      const pending = pendingCount || 0;
+      const available = Math.max(0, totalPerSlot - accepted - pending);
+
+      distribution[`slot${slot}`] = {
+        total: totalPerSlot,
+        accepted,
+        pending,
+        available,
+      };
+    }
+
+    res.status(200).json(distribution);
+  } catch (err) {
+    console.error('Error in getSlotDistributionByDate:', err);
+    next(err);
+  }
+}
