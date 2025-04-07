@@ -131,7 +131,6 @@ function generateRandomPassword(length) {
  * Controller to register a new user
  */
 export async function registerUser(req, res, next) {
-  // Destructure all required fields from the request body including role.
   const {
     name,
     username,
@@ -149,21 +148,36 @@ export async function registerUser(req, res, next) {
     department,
     experience
   } = req.body;
-  
+
   console.log("Received:");
   console.log(req.body);
-  // return;
+
   try {
     console.log("Processing registration...");
+
+    // Set salary based on role
+    let salary;
+    switch (role) {
+      case 'Doctor':
+        salary = 100000;
+        break;
+      case 'Front Desk Operator':
+        salary = 50000;
+        break;
+      case 'Data Entry Operator':
+        salary = 30000;
+        break;
+      default:
+        salary = 20000;
+        break;
+    }
 
     const newUser = {
       name,
       username,
       email,
-      // Standardize gender to lowercase
       gender: gender.toLowerCase(),
       mobile,
-      // Convert to ISO format
       dob: new Date(dob).toISOString(),
       pin_code,
       street,
@@ -171,30 +185,30 @@ export async function registerUser(req, res, next) {
       state,
       country,
       role,
-      // Rename 'specialization' to 'specialisation' per your schema
       specialisation: specialization,
-      // Convert experience to number for yoe (years of experience)
       yoe: Number(experience),
       department,
-      password: generateRandomPassword(6), // generate a random 6-character password
-      profile_picture: "https://example.com/profile.png", // default profile picture
+      salary,
+      password: generateRandomPassword(6),
+      profile_picture: "https://example.com/profile.png",
       is_admin: false
     };
-    
+
     console.log("Registering user with transformed data:", newUser);
-    sendWelcomeEmail(newUser,"Secret123");
-    // Insert new user data into the 'users' table and select all fields to be returned
+    sendWelcomeEmail(newUser, "Secret123");
+
     const { data, error } = await supabase
       .from('users')
       .insert(newUser)
-      .select('*'); // This returns the inserted row
+      .select('*');
 
     if (error) {
       throw error;
     }
-    sendWelcomeEmail(data,"Secret123");
+
+    sendWelcomeEmail(data, "Secret123");
     console.log("Insertion result:", data);
-    res.status(201).json({ user: new_data });
+    res.status(201).json({ user: data });
   } catch (err) {
     next(err);
   }

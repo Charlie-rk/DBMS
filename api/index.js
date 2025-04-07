@@ -115,6 +115,7 @@ import fdoRoute from './routes/fdoRoute.js';
 import authRoute from './routes/authRoute.js';
 import userRoute from './routes/userRoute.js';
 import deoRoute from './routes/deoRoute.js';
+import { createNotificationTable } from './models/notificationModel.js';
 // import { verifyToken } from './utilis/verifyUser';
 
 
@@ -141,6 +142,7 @@ Promise.all([
   createRoomTable(),
   createDepartmentTable(),
   createActivityTable(),
+  createNotificationTable(),
 ])
   .then(() => console.log('🚀 User, Patient & Appointment tables ready.'))
   .catch((err) => console.error('🔥 Table creation failed:', err));

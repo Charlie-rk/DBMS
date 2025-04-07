@@ -219,4 +219,77 @@ export async function getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor(req,
       next(err);
     }
   }
+
+  export async function getSlotDistributionByDate(req, res, next) {
+    const { date } = req.body;
+    if (!date) {
+      return res.status(400).json({ error: 'Date is required in request body (format: YYYY-MM-DD)' });
+    }
+  
+    // Define the total allowed appointments per slot.
+    const totalPerSlot = 10;
+  
+    // Define time ranges for each slot (using UTC time)
+    const slot1Start = new Date(`${date}T09:00:00Z`).toISOString();
+    const slot1End = new Date(`${date}T12:00:00Z`).toISOString();
+  
+    const slot2Start = new Date(`${date}T14:00:00Z`).toISOString();
+    const slot2End = new Date(`${date}T17:00:00Z`).toISOString();
+  
+    const slot3Start = new Date(`${date}T18:00:00Z`).toISOString();
+    const slot3End = new Date(`${date}T21:00:00Z`).toISOString();
+  
+    try {
+      // Fetch count of accepted appointments for slot 1.
+      const { count: count1, error: error1 } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'accepted')
+        .gte('appointment_date', slot1Start)
+        .lt('appointment_date', slot1End);
+  
+      if (error1) throw error1;
+  
+      // Fetch count for slot 2.
+      const { count: count2, error: error2 } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'accepted')
+        .gte('appointment_date', slot2Start)
+        .lt('appointment_date', slot2End);
+      if (error2) throw error2;
+  
+      // Fetch count for slot 3.
+      const { count: count3, error: error3 } = await supabase
+        .from('appointments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'accepted')
+        .gte('appointment_date', slot3Start)
+        .lt('appointment_date', slot3End);
+      if (error3) throw error3;
+  
+      // Calculate accepted, available and total for each slot.
+      const distribution = {
+        slot1: {
+          total: totalPerSlot,
+          accepted: count1 || 0,
+          available: Math.max(0, totalPerSlot - (count1 || 0))
+        },
+        slot2: {
+          total: totalPerSlot,
+          accepted: count2 || 0,
+          available: Math.max(0, totalPerSlot - (count2 || 0))
+        },
+        slot3: {
+          total: totalPerSlot,
+          accepted: count3 || 0,
+          available: Math.max(0, totalPerSlot - (count3 || 0))
+        }
+      };
+  
+      res.status(200).json(distribution);
+    } catch (err) {
+      next(err);
+    }
+  }
   
