@@ -5,12 +5,15 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage1 } from "../firebase"; // adjust the import path to your firebase config
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { useSelector } from 'react-redux';
 
 export default function UploadReportsPage() {
   const [patientId, setPatientId] = useState('');
+  const [title, setTitle] = useState('');
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const MySwal = withReactContent(Swal);
+  const { currentUser } = useSelector((state) => state.user);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,14 +39,19 @@ export default function UploadReportsPage() {
 
       // Retrieve the download URL of the uploaded file
       const downloadUrl = await getDownloadURL(snapshot.ref);
-
-      console.log(downloadUrl);
+      console.log("Download URL:", downloadUrl);
 
       // Prepare the payload for the backend API
-      const payload = { patientId, reportUrl: downloadUrl };
+      const numericPatientId = Number(patientId);
+      const payload = {
+        deo: currentUser.username,
+        patientId: numericPatientId,
+        title,
+        reportLink: downloadUrl,
+      };
 
       // Send the download URL along with the patient ID to your backend
-      const response = await fetch("/api/reports/upload", {
+      const response = await fetch("/api/deo/upload-report", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,19 +100,18 @@ export default function UploadReportsPage() {
             required
           />
         </div>
+       
         <div>
           <label className="block text-gray-700 dark:text-gray-300">
-            Doctor (username):
+            Title (X-rays,MRI):
           </label>
           <input
             type="text"
-            value={patientId}
-            onChange={(e) => setPatientId(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 p-2 rounded text-gray-900 dark:text-gray-100"
-            required
           />
         </div>
-        
         <div>
           <label className="block text-gray-700 dark:text-gray-300">
             Select Report (PDF):
