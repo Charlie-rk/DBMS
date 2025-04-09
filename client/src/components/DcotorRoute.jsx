@@ -3,7 +3,8 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import DoctorAppDashboard from '../pages/DoctorAppDashboard';
+// import DoctorAppDashboard from '../pages/DoctorAppDashboard';
+import DoctorDashboard from '../pages/DoctorDashboard';
 
 export default function DoctorRoute() {
   const { currentUser } = useSelector((state) => state.user);
@@ -13,5 +14,5 @@ export default function DoctorRoute() {
     return <Navigate to="/sign-in" />;
   }
   
-  return <DoctorAppDashboard />;
+  return <DoctorDashboard />;
 }

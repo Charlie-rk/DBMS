@@ -1205,7 +1205,8 @@ export async function markNotificationAsUnseen(req, res, next) {
  * Send a new notification
  */
 export async function sendNotification(req, res, next) {
-  const { username, subject, message } = req.body;
+  console.log(req.body);
+  const { username,sender, subject, message } = req.body;
 
   if (!username || !subject || !message) {
     return next(errorHandler(400, 'Username, subject, and message are required'));
@@ -1214,7 +1215,7 @@ export async function sendNotification(req, res, next) {
   try {
     const { data, error } = await supabase
       .from('notification')
-      .insert([{ username, subject, message, status: 'unread' }])
+      .insert([{ username,sender,subject, message, status: 'unread' }])
       .select();
 
     if (error) return next(errorHandler(500, error.message));

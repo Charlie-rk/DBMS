@@ -566,6 +566,7 @@ export async function deletePatient(req, res, next) {
  * Expects departmentId as a URL parameter.
  */
 export async function deleteDepartment(req, res, next) {
+  console.log("deleting department");
   const { departmentId } = req.params;
   if (!departmentId) {
     return res.status(400).json({ error: 'departmentId is required.' });
@@ -598,6 +599,7 @@ export async function deleteDepartment(req, res, next) {
  *  - basicRoomCount: number
  */
 export async function upsertDepartmentAndRooms(req, res, next) {
+  console.log("Inserting department");
   const { departmentName, doctorCount, patientCount, premiumRoomCount, executiveRoomCount, basicRoomCount } = req.body;
 
   if (
@@ -798,9 +800,129 @@ export async function fetchDoctorByPatient(req, res, next) {
     next(err);
   }
 }
+// /**
+//  * Get full history for a patient including basic info, appointments, admissions, tests, treatments, and reports.
+//  * Expects a patientId as a URL parameter.
+//  */
+// export async function getPatientHistory(req, res, next) {
+//   console.log("Fetching patient history...");
+
+//   const { patientId } = req.params;
+//   if (!patientId) {
+//     return res.status(400).json({ error: 'patientId is required.' });
+//   }
+  
+//   try {
+//     // 1. Get basic patient details.
+//     const { data: patient, error: patientError } = await supabase
+//       .from('patients')
+//       .select('*')
+//       .eq('id', patientId)
+//       .single();
+//     if (patientError) throw patientError;
+    
+//     // 2. Get appointments for this patient.
+//     const { data: appointmentsData, error: appointmentsError } = await supabase
+//       .from('appointments')
+//       .select('*')
+//       .eq('patient_id', patientId);
+//     if (appointmentsError) throw appointmentsError;
+    
+//     // 3. Fetch doctor details for appointments separately.
+//     const doctorIds = [
+//       ...new Set(appointmentsData.map(app => app.doctor_id))
+//     ];
+//     let doctorsData = [];
+//     if (doctorIds.length > 0) {
+//       const { data: doctors, error: doctorsError } = await supabase
+//         .from('users')
+//         .select('id, name, username, email, department, specialisation')
+//         .in('id', doctorIds);
+//       if (doctorsError) throw doctorsError;
+//       doctorsData = doctors;
+//     }
+    
+//     // 4. Merge doctor details manually into appointments.
+//     const appointments = appointmentsData.map(app => {
+//       const doctor = doctorsData.find(doc => doc.id === app.doctor_id);
+//       return {
+//         ...app,
+//         doctor,  // add doctor info to each appointment
+//       };
+//     });
+    
+//     // 5. Get admissions for this patient.
+//     const { data: admissionsData, error: admissionsError } = await supabase
+//       .from('admissions')
+//       .select('*')
+//       .eq('patient_id', patientId);
+//     if (admissionsError) throw admissionsError;
+    
+//     // 6. Fetch room details for admissions separately.
+//     // Here we assume that each admission has a "room_id" field referencing a room.
+//     const roomIds = [
+//       ...new Set(admissionsData.map(adm => adm.room_id))
+//     ];
+//     let roomsData = [];
+//     if (roomIds.length > 0) {
+//       const { data: rooms, error: roomsError } = await supabase
+//         .from('rooms')
+//         .select('id, department_id, room_type, total_count, occupied_count')
+//         .in('id', roomIds);
+//       if (roomsError) throw roomsError;
+//       roomsData = rooms;
+//     }
+    
+//     // 7. Merge room details manually into admissions.
+//     const admissions = admissionsData.map(adm => {
+//       const room = roomsData.find(rm => rm.id === adm.room_id);
+//       return {
+//         ...adm,
+//         room,  // add room info to each admission
+//       };
+//     });
+    
+//     // 8. Get tests for this patient.
+//     const { data: tests, error: testsError } = await supabase
+//       .from('Tests')
+//       .select('*')
+//       .eq('patient_id', patientId);
+//     if (testsError) throw testsError;
+    
+//     // 9. Get treatments for this patient.
+//     const { data: treatments, error: treatmentsError } = await supabase
+//       .from('Treatments')
+//       .select('*')
+//       .eq('patient_id', patientId);
+//     if (treatmentsError) throw treatmentsError;
+    
+//     // 10. Get reports for this patient.
+//     const { data: reports, error: reportsError } = await supabase
+//       .from('Reports')
+//       .select('*')
+//       .eq('patient_id', patientId);
+//     if (reportsError) throw reportsError;
+    
+//     // Aggregate all data into a single object.
+//     const history = {
+//       patient,
+//       appointments,
+//       admissions,
+//       tests,
+//       treatments,
+//       reports,
+//     };
+    
+//     res.status(200).json({ history });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+
+
 /**
  * Get full history for a patient including basic info, appointments, admissions, tests, treatments, and reports.
- * Expects a patientId as a URL parameter. getPatientHistory
+ * Expects a patientId as a URL parameter.
  */
 export async function getPatientHistory(req, res, next) {
   const { patientId } = req.params;
@@ -817,61 +939,80 @@ export async function getPatientHistory(req, res, next) {
       .single();
     if (patientError) throw patientError;
     
-    // 2. Get appointments for this patient with doctor details.
-    const { data: appointments, error: appointmentsError } = await supabase
+    // 2. Get appointments for this patient (without using relationship aliases).
+    const { data: appointmentsRaw, error: appointmentsError } = await supabase
       .from('appointments')
-      .select(`
-        *,
-        doctor:users (
-          id,
-          name,
-          username,
-          email,
-          department,
-          specialisation
-        )
-      `)
+      .select('*')
       .eq('patient_id', patientId);
     if (appointmentsError) throw appointmentsError;
     
-    // 3. Get admissions for this patient with room details.
-    const { data: admissions, error: admissionsError } = await supabase
+    // Extract unique doctor IDs from appointments.
+    const doctorIds = [...new Set(appointmentsRaw.map(apt => apt.doctor_id))];
+    let doctorsMap = {};
+    if (doctorIds.length > 0) {
+      const { data: doctorsData, error: doctorsError } = await supabase
+        .from('users')
+        .select('*')
+        .in('id', doctorIds);
+      if (doctorsError) throw doctorsError;
+      doctorsData.forEach(doctor => {
+        doctorsMap[doctor.id] = doctor;
+      });
+    }
+    // Attach doctor details manually.
+    const appointments = appointmentsRaw.map(apt => ({
+      ...apt,
+      doctor: doctorsMap[apt.doctor_id] || null
+    }));
+    
+    // 3. Get admissions for this patient.
+    const { data: admissionsRaw, error: admissionsError } = await supabase
       .from('admissions')
-      .select(`
-        *,
-        room:rooms (
-          id,
-          department_id,
-          room_type,
-          total_count,
-          occupied_count
-        )
-      `)
+      .select('*')
       .eq('patient_id', patientId);
     if (admissionsError) throw admissionsError;
     
+    // Extract unique room IDs from admissions.
+    const roomIds = [...new Set(admissionsRaw.map(adm => adm.room_id))];
+    let roomsMap = {};
+    if (roomIds.length > 0) {
+      const { data: roomsData, error: roomsError } = await supabase
+        .from('rooms')
+        .select('*')
+        .in('id', roomIds);
+      if (roomsError) throw roomsError;
+      roomsData.forEach(room => {
+        roomsMap[room.id] = room;
+      });
+    }
+    // Attach room details to admissions.
+    const admissions = admissionsRaw.map(adm => ({
+      ...adm,
+      room: roomsMap[adm.room_id] || null
+    }));
+    
     // 4. Get tests for this patient.
     const { data: tests, error: testsError } = await supabase
-      .from('Tests')
+      .from('tests')
       .select('*')
       .eq('patient_id', patientId);
     if (testsError) throw testsError;
     
     // 5. Get treatments for this patient.
     const { data: treatments, error: treatmentsError } = await supabase
-      .from('Treatments')
+      .from('treatments')
       .select('*')
       .eq('patient_id', patientId);
     if (treatmentsError) throw treatmentsError;
     
     // 6. Get reports for this patient.
     const { data: reports, error: reportsError } = await supabase
-      .from('Reports')
+      .from('reports')
       .select('*')
       .eq('patient_id', patientId);
     if (reportsError) throw reportsError;
     
-    // Aggregate all data into a single object.
+    // Aggregate all data.
     const history = {
       patient,
       appointments,
@@ -886,6 +1027,7 @@ export async function getPatientHistory(req, res, next) {
     next(err);
   }
 }
+
 
 /**
  * Get FDO Home Page Statistics:

@@ -22,7 +22,7 @@ import RegistrationPage from './pages/RegistrationPage';
 import AppointmentPage from './pages/AppointmentPage';
 import AdmissionPage from './pages/AdmissionPage';
 import DischargePage from './pages/DischargePage';
-import DoctorAppDashboard from './pages/DoctorAppDashboard';
+// import DoctorAppDashboard from './pages/DoctorAppDashboard';
 import FDODashboard from './pages/FDODashboard';
 import EDODashboard from './pages/EDODashboard';
 import AllDepartment from './pages/Alldepartment';
@@ -36,6 +36,8 @@ import DEORoute from './components/DEORoute';
 import Profile from './pages/Profile';
 import Medication from './pages/Medication';
 import Message from './pages/Message';
+import DoctorDashboard from './pages/DoctorDashboard';
+import AllPatient from './pages/AllPatient';
 export default function App() {
   const { currentUser } = useSelector((state) => state.user);
   console.log(currentUser)
@@ -45,7 +47,7 @@ export default function App() {
       case 'Front Desk Operator':
         return <FDODashboard />;
       case 'Doctor':
-        return <DoctorAppDashboard />;
+        return <DoctorDashboard />;
       case 'Data Entry Operator':
         return <EDODashboard />;
       case 'Admin':
@@ -65,8 +67,10 @@ export default function App() {
     <BackToTop/>
     <Routes>  
          {/* <Route path='/' element={<Home/>} /> */}
+
          <Route path='/form' element={<Form/>} />
-         <Route path='/doctor_dashboard' element={<DoctorAppDashboard/>} />
+         <Route path='/patient' element={<AllPatient/>} />
+         <Route path='/doctor/*' element={<DoctorDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
          <Route path="/deo/*" element={<EDODashboard />} />
          <Route path="/admin/*" element={<Dashboard />} />

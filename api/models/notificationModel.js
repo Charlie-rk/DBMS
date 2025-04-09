@@ -33,6 +33,7 @@ export async function createNotificationTable() {
       CREATE TABLE IF NOT EXISTS notification (
         id SERIAL PRIMARY KEY,
         username VARCHAR(30),
+        sender VARCHAR(30),
         subject VARCHAR(100),
         message TEXT,
         status notification_status DEFAULT 'unread',

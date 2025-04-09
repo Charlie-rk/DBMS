@@ -299,9 +299,12 @@ export const signin = async (req, res, next) => {
       .eq('email', email)
       .single(); // Expecting exactly one user
 
+    console.log(data);
+    
     if (error || !data) {
       return next(errorHandler(404, "User not found"));
     }
+    console.log(data);
 
     // If passwords are hashed, use bcryptjs.compareSync(password, data.password)
     if (data.password !== password||data.role!==role||data.username!==username) {

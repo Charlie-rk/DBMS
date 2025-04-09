@@ -1,97 +1,34 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 // src/pages/DepartmentsPage.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, Button, Modal, TextInput, Label } from "flowbite-react";
 import { Trash2 as TrashIcon, HeartPulse, Zap, Briefcase } from "lucide-react";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
-const dummyDepartments = [
-  {
-    id: 1,
-    name: "Cardiology",
-    doctorCount: 10,
-    patientCount: 100,
-    rooms: { premium: 5, executive: 10, basic: 15 },
-    icon: <HeartPulse className="w-8 h-8 text-red-500" />,
-  },
-  {
-    id: 2,
-    name: "Neurology",
-    doctorCount: 7,
-    patientCount: 80,
-    rooms: { premium: 3, executive: 5, basic: 12 },
-    icon: <Zap className="w-8 h-8 text-yellow-500" />,
-  },
-  {
-    id: 3,
-    name: "Orthopedics",
-    doctorCount: 15,
-    patientCount: 150,
-    rooms: { premium: 8, executive: 12, basic: 20 },
-    icon: <Briefcase className="w-8 h-8 text-blue-500" />,
-  },
-  {
-    id: 4,
-    name: "Radiology",
-    doctorCount: 9,
-    patientCount: 95,
-    rooms: { premium: 4, executive: 8, basic: 10 },
-    icon: <Zap className="w-8 h-8 text-green-500" />,
-  },
-  {
-    id: 5,
-    name: "Oncology",
-    doctorCount: 11,
-    patientCount: 110,
-    rooms: { premium: 6, executive: 9, basic: 14 },
-    icon: <HeartPulse className="w-8 h-8 text-pink-500" />,
-  },
-  {
-    id: 6,
-    name: "Pediatrics",
-    doctorCount: 8,
-    patientCount: 90,
-    rooms: { premium: 3, executive: 7, basic: 11 },
-    icon: <Briefcase className="w-8 h-8 text-indigo-500" />,
-  },
-  {
-    id: 7,
-    name: "Dermatology",
-    doctorCount: 6,
-    patientCount: 70,
-    rooms: { premium: 2, executive: 4, basic: 8 },
-    icon: <HeartPulse className="w-8 h-8 text-purple-500" />,
-  },
-  {
-    id: 8,
-    name: "Gastroenterology",
-    doctorCount: 12,
-    patientCount: 130,
-    rooms: { premium: 7, executive: 10, basic: 16 },
-    icon: <Zap className="w-8 h-8 text-orange-500" />,
-  },
-  {
-    id: 9,
-    name: "Urology",
-    doctorCount: 5,
-    patientCount: 60,
-    rooms: { premium: 2, executive: 3, basic: 5 },
-    icon: <Briefcase className="w-8 h-8 text-teal-500" />,
-  },
-  {
-    id: 10,
-    name: "ENT",
-    doctorCount: 8,
-    patientCount: 85,
-    rooms: { premium: 3, executive: 6, basic: 9 },
-    icon: <HeartPulse className="w-8 h-8 text-red-500" />,
-  },
-];
+const MySwal = withReactContent(Swal);
+
+// Mapping for assigning icons based on department names.
+const departmentIcons = {
+  Cardiology: <HeartPulse className="w-8 h-8 text-red-500" />,
+  Neurology: <Zap className="w-8 h-8 text-yellow-500" />,
+  Orthopedics: <Briefcase className="w-8 h-8 text-blue-500" />,
+  Pediatrics: <Briefcase className="w-8 h-8 text-indigo-500" />,
+  Oncology: <HeartPulse className="w-8 h-8 text-pink-500" />,
+  Gynecology: <Briefcase className="w-8 h-8 text-indigo-500" />,
+  Dermatology: <HeartPulse className="w-8 h-8 text-purple-500" />,
+  Gastroenterology: <Zap className="w-8 h-8 text-orange-500" />,
+  Pulmonology: <Briefcase className="w-8 h-8 text-teal-500" />,
+  Urology: <HeartPulse className="w-8 h-8 text-red-500" />,
+};
 
 export default function Alldepartment() {
-  const [departments, setDepartments] = useState(dummyDepartments);
+  const [departments, setDepartments] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDept, setSelectedDept] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [newDept, setNewDept] = useState({
     name: "",
     doctorCount: "",
@@ -99,7 +36,48 @@ export default function Alldepartment() {
     rooms: { premium: "", executive: "", basic: "" },
   });
 
-  // Compute metrics using useMemo
+  // Helper function to fetch the room summary data and update departments state.
+  const fetchRoomsSummary = async () => {
+    try {
+      const response = await fetch("/api/fdo/rooms-summary");
+      const data = await response.json();
+      const deptsMap = {};
+
+      data.summary.forEach((item) => {
+        const deptId = item.department_id;
+        if (!deptsMap[deptId]) {
+          deptsMap[deptId] = {
+            id: deptId,
+            name: item.department_name,
+            // Use default doctor and patient counts (adjust if additional data is provided later).
+            doctorCount: 0,
+            patientCount: 0,
+            rooms: { premium: 0, executive: 0, basic: 0 },
+            icon: departmentIcons[item.department_name] || <Briefcase className="w-8 h-8 text-indigo-500" />,
+          };
+        }
+        // Map room types from the API: "Premium" and "Executive" are mapped directly; "General" is treated as basic.
+        const type = item.room_type.toLowerCase();
+        if (type === "premium") {
+          deptsMap[deptId].rooms.premium = item.total_count;
+        } else if (type === "executive") {
+          deptsMap[deptId].rooms.executive = item.total_count;
+        } else {
+          deptsMap[deptId].rooms.basic = item.total_count;
+        }
+      });
+      setDepartments(Object.values(deptsMap));
+    } catch (error) {
+      console.error("Error fetching room summary:", error);
+    }
+  };
+
+  // Fetch the room summary when the component mounts.
+  useEffect(() => {
+    fetchRoomsSummary();
+  }, []);
+
+  // Compute metrics using useMemo.
   const metrics = useMemo(() => {
     if (departments.length === 0) return {};
     const addTotalRooms = (dept) =>
@@ -126,12 +104,18 @@ export default function Alldepartment() {
     setShowModal(true);
   };
 
-  const handleDelete = (deptId) => {
-    setDepartments(departments.filter((dept) => dept.id !== deptId));
-    setShowModal(false);
-  };
+  // const handleDelete = (deptId) => {
+  //   setDepartments(departments.filter((dept) => dept.id !== deptId));
+  //   setShowModal(false);
+  //   MySwal.fire({
+  //     icon: "success",
+  //     title: "Department deleted successfully!",
+  //     timer: 1500,
+  //     showConfirmButton: false,
+  //   });
+  // };
 
-  // Handlers for the Add Department modal form
+  // Handler for input change in the Add Department modal.
   const handleNewDeptChange = (e) => {
     const { name, value } = e.target;
     if (name in newDept.rooms) {
@@ -144,32 +128,98 @@ export default function Alldepartment() {
     }
   };
 
-  const handleAddDepartment = (e) => {
+  const handleDelete = async (departmentId) => {
+    // const confirmResult = await Swal.fire({
+    //   title: 'Are you sure?',
+    //   text: 'This will permanently delete the department.',
+    //   icon: 'warning',
+    //   showCancelButton: true,
+    //   confirmButtonText: 'Yes, delete it!',
+    //   cancelButtonText: 'Cancel',
+    // });
+
+    // if (confirmResult.isConfirmed) {
+      setShowModal(false);
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/fdo/delete-department/${departmentId}`, {
+          method: 'DELETE',
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          Swal.fire('Deleted!', data.message, 'success');
+          // refreshDepartments(); // <-- call a prop function to refresh list
+        } else {
+          Swal.fire('Error!', data.error || 'Something went wrong.', 'error');
+        }
+      } catch (error) {
+        Swal.fire('Error!', 'Network error or server issue.', 'error');
+      } finally {
+        fetchRoomsSummary();
+        setLoading(false);
+      }
+    // }
+  };
+
+
+  // Handler to add/upsert a department via the API endpoint.
+  const handleAddDepartment = async (e) => {
     e.preventDefault();
-    // Assign a new id, e.g., using current timestamp
-    const newId = Date.now();
-    const deptToAdd = {
-      id: newId,
-      name: newDept.name,
-      doctorCount: Number(newDept.doctorCount),
-      patientCount: Number(newDept.patientCount),
-      rooms: {
-        premium: Number(newDept.rooms.premium),
-        executive: Number(newDept.rooms.executive),
-        basic: Number(newDept.rooms.basic),
-      },
-      // For simplicity, assign a default icon – you might later allow choosing an icon.
-      icon: <Briefcase className="w-8 h-8 text-indigo-500" />,
-    };
-    setDepartments([...departments, deptToAdd]);
-    setShowAddModal(false);
-    // Reset form
-    setNewDept({
-      name: "",
-      doctorCount: "",
-      patientCount: "",
-      rooms: { premium: "", executive: "", basic: "" },
-    });
+    setLoading(true);
+    try {
+      const payload = {
+        departmentName: newDept.name,
+        doctorCount: Number(newDept.doctorCount),
+        patientCount: Number(newDept.patientCount),
+        premiumRoomCount: Number(newDept.rooms.premium),
+        executiveRoomCount: Number(newDept.rooms.executive),
+        basicRoomCount: Number(newDept.rooms.basic),
+      };
+
+      const response = await fetch("/api/fdo/upsert-department", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        MySwal.fire({
+          icon: "error",
+          title: "Error upserting department",
+          text: errorData.error,
+        });
+        return;
+      }
+
+      await response.json();
+      MySwal.fire({
+        icon: "success",
+        title: "Department upserted successfully!",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      await fetchRoomsSummary();
+      setShowAddModal(false);
+      // Reset the Add Department form.
+      setNewDept({
+        name: "",
+        doctorCount: "",
+        patientCount: "",
+        rooms: { premium: "", executive: "", basic: "" },
+      });
+    } catch (error) {
+      console.error("Error while upserting department:", error);
+      MySwal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -365,8 +415,12 @@ export default function Alldepartment() {
                 />
               </div>
             </div>
-            <Button gradientDuoTone="purpleToBlue" onClick={handleAddDepartment}>
-              Add Department
+            <Button 
+              gradientDuoTone="purpleToBlue" 
+              onClick={handleAddDepartment}
+              disabled={loading}
+            >
+              {loading ? "Adding..." : "Add Department"}
             </Button>
           </div>
         </Modal.Body>
@@ -383,7 +437,7 @@ export default function Alldepartment() {
             </h3>
             <div className="flex justify-center gap-4">
               <Button color="failure" onClick={() => handleDelete(selectedDept.id)}>
-                Yes, I'm sure
+               {loading ? "Deleting..." : "Yes I' am Sure"}
               </Button>
               <Button color="gray" onClick={() => setShowModal(false)}>
                 No, cancel
@@ -395,19 +449,3 @@ export default function Alldepartment() {
     </div>
   );
 }
-
-// function TrashIcon() {
-//   return (
-//     <svg
-//       className="w-5 h-5"
-//       fill="none"
-//       stroke="currentColor"
-//       viewBox="0 0 24 24"
-//       xmlns="http://www.w3.org/2000/svg"
-//     >
-//       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6" />
-//     </svg>
-//   );
-// }
-
-// export default DepartmentsPage;

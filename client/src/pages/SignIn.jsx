@@ -34,7 +34,6 @@ export default function SignIn() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-
   // OTP related states
   const [generatedOtp, setGeneratedOtp] = useState(null);
   const [otpSent, setOtpSent] = useState(false);
@@ -65,7 +64,7 @@ export default function SignIn() {
   };
   
   useEffect(()=>{
-    const notify = () => toast.success("🤗🤗 Welcome to SigIn Page 🤗🤗");
+    const notify = () => toast.success("🤗🤗 Welcome to SignIn Page 🤗🤗");
     notify();
   },[])
 
@@ -157,6 +156,7 @@ export default function SignIn() {
       Admin: "admin123",
       "Front Desk Operator": "fdo123",
       "Entry Data Operator": "edo123",
+      Doctor: "doc123",  // New role added for Doctor
     };
     if (secretKey !== secretMap[role]) {
       MySwal.fire({
@@ -214,7 +214,7 @@ export default function SignIn() {
         if (data.role === "Front Desk Operator") {
           navigate("/fdo");
         }
-        if (data.role === "doctor") {
+        if (data.role === "doctor") {  // Updated condition for Doctor role
           navigate("/doctor_dashboard");
         }
         if (data.role === "Data Entry Operator") {
@@ -360,6 +360,18 @@ export default function SignIn() {
                 />
                 <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
                   Admin
+                </label>
+                {/* New radio button for Doctor */}
+                <input
+                  type="radio"
+                  name="role"
+                  value="doctor"
+                  onChange={handleChange}
+                  className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
+                  required
+                />
+                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                  Doctor
                 </label>
               </div>
             </div>

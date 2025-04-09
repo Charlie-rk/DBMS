@@ -1,8 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
-// src/pages/HospitalDashboard.jsx
+// src/pages/FrontDeskOperators.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, Button, Modal, TextInput, Textarea } from "flowbite-react";
-import { Trash2 as TrashIcon, MessageCircle as MessageIcon } from "lucide-react";
+import { Trash2 as TrashIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
@@ -11,10 +11,10 @@ import { RiMessage2Fill } from "react-icons/ri";
 
 const MySwal = withReactContent(Swal);
 
-export default function Alldoctor() {
-  const [doctors, setDoctors] = useState([]);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [showDoctorModal, setShowDoctorModal] = useState(false);
+export default function AllFDO() {
+  const [operators, setOperators] = useState([]);
+  const [selectedOperator, setSelectedOperator] = useState(null);
+  const [showOperatorModal, setShowOperatorModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // States for Message Modal
@@ -22,88 +22,80 @@ export default function Alldoctor() {
   const [messageSubject, setMessageSubject] = useState("");
   const [messageContent, setMessageContent] = useState("");
 
-  const [filterDept, setFilterDept] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   
   // Get current user from Redux store
   const { currentUser } = useSelector((state) => state.user);
 
-  // Fetch doctor data from actual API on component mount
+  // Fetch front desk operator data on component mount
   useEffect(() => {
-    const fetchDoctors = async () => {
+    const fetchOperators = async () => {
       try {
-        const response = await fetch("/api/admin/get-all-users?role=doctor", {
+        const response = await fetch("/api/admin/get-all-users?role=Front Desk Operator", {
           method: "GET",
         });
         const data = await response.json();
-        // Map API response data to expected doctor object structure
-        const mappedDoctors = data.users.map((doc) => ({
-          id: doc.id,
-          username: doc.username, // include username for deletion and messaging
-          name: doc.name,
-          department: doc.department,
-          specialization: doc.specialisation, // convert spelling from the API to our expected key
-          experience: doc.yoe,
-          status: "online", // default status, update if API provides real-time info
-          image: doc.profile_picture,
-          contact: {
-            mobile: doc.mobile,
-            email: doc.email,
-          },
+        // Map API response data to expected operator object structure
+        const mappedOperators = data.users.map((op) => ({
+          id: op.id,
+          username: op.username,
+          name: op.name,
+          email: op.email,
+          gender: op.gender,
+          dob: op.dob,
+          mobile: op.mobile,
+          profile_picture: op.profile_picture,
           address: {
-            pincode: doc.pin_code,
-            street: doc.street,
-            city: doc.city,
+            street: op.street,
+            city: op.city,
+            pincode: op.pin_code,
           },
-          salary: `$${parseInt(doc.salary).toLocaleString()}`,
+          salary: `$${parseInt(op.salary).toLocaleString()}`,
         }));
-        setDoctors(mappedDoctors);
+        setOperators(mappedOperators);
       } catch (error) {
-        console.error("Error fetching doctors:", error);
+        console.error("Error fetching front desk operators:", error);
       }
     };
 
-    fetchDoctors();
+    fetchOperators();
   }, []);
 
-  // Filter doctors based on department and search query
-  const filteredDoctors = useMemo(() => {
-    return doctors.filter((doc) => {
-      const matchesDept = filterDept === "All" || doc.department === filterDept;
-      const matchesSearch =
-        doc.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesDept && matchesSearch;
-    });
-  }, [doctors, filterDept, searchQuery]);
+  // Filter operators based only on the search query (name filtering)
+  const filteredOperators = useMemo(() => {
+    return operators.filter((op) =>
+      op.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [operators, searchQuery]);
 
-  // Open doctor details modal
-  const openDoctorModal = (doc) => {
-    setSelectedDoctor(doc);
-    setShowDoctorModal(true);
+  // Open operator details modal
+  const openOperatorModal = (op) => {
+    setSelectedOperator(op);
+    setShowOperatorModal(true);
   };
 
   // Open delete confirmation modal
-  const openDeleteModal = (doc) => {
-    setSelectedDoctor(doc);
+  const openDeleteModal = (op) => {
+    setSelectedOperator(op);
     setShowDeleteModal(true);
   };
 
   // Open message modal and reset fields
-  const openMessageModal = (doc) => {
-    setSelectedDoctor(doc);
+  const openMessageModal = (op) => {
+    setSelectedOperator(op);
     setMessageSubject("");
     setMessageContent("");
     setShowMessageModal(true);
   };
 
-  // Delete doctor handler using the API endpoint
-  const handleDelete = async (docUsername) => {
+  // Delete operator handler using the API endpoint
+  const handleDelete = async (opUsername) => {
     try {
       const response = await fetch("/api/deo/delete-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: docUsername }),
+        body: JSON.stringify({ username: opUsername }),
       });
       if (!response.ok) {
         const errData = await response.json();
@@ -111,18 +103,18 @@ export default function Alldoctor() {
       }
       MySwal.fire({
         icon: "success",
-        title: "Doctor deleted successfully!",
+        title: "Operator deleted successfully!",
         timer: 1500,
         showConfirmButton: false,
       });
-      // Remove the doctor from the state upon success
-      setDoctors(doctors.filter((doc) => doc.username !== docUsername));
+      // Remove the operator from state
+      setOperators(operators.filter((op) => op.username !== opUsername));
       setShowDeleteModal(false);
     } catch (error) {
-      console.error("Error deleting doctor:", error);
+      console.error("Error deleting operator:", error);
       MySwal.fire({
         icon: "error",
-        title: "Error deleting doctor!",
+        title: "Error deleting operator!",
         timer: 1500,
         showConfirmButton: false,
       });
@@ -142,12 +134,11 @@ export default function Alldoctor() {
     }
     try {
       const payload = {
-        username: selectedDoctor.username, // doctor receiving the message
+        username: selectedOperator.username, // recipient operator username
         sender: currentUser.username, // current logged in user's username
         subject: messageSubject,
         message: messageContent,
       };
-       console.log(payload);
 
       const response = await fetch("/api/user/send-notification", {
         method: "POST",
@@ -184,58 +175,44 @@ export default function Alldoctor() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
-            Department &gt; Doctor List
+            Front Desk Operators List
           </h1>
           <p className="text-gray-500 dark:text-gray-300">
-            Browse through all doctors or filter by department.
+            Browse through all front desk operators.
           </p>
         </div>
         <Button
           gradientDuoTone="purpleToBlue"
           onClick={() => navigate("/admin/add-user")}
         >
-          Add New Doctor
+          Add New Operator
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Filter - Only by Name */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <div className="flex items-center gap-4">
-          <select
-            className="px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-100"
-            value={filterDept}
-            onChange={(e) => setFilterDept(e.target.value)}
-          >
-            <option value="All">All Departments</option>
-            {[...new Set(doctors.map((doc) => doc.department))].map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
-          <TextInput
-            type="text"
-            placeholder="Search doctor name"
-            className="w-64 dark:bg-gray-700 dark:text-gray-100"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <TextInput
+          type="text"
+          placeholder="Search operator name"
+          className="w-64 dark:bg-gray-700 dark:text-gray-100"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
 
-      {/* Doctor Cards Grid */}
+      {/* Operator Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDoctors.map((doc) => (
+        {filteredOperators.map((op) => (
           <Card
-            key={doc.id}
+            key={op.id}
             className="relative bg-sky-50 dark:bg-gray-800 shadow-lg overflow-hidden transition-colors duration-700 ease-in-out group cursor-pointer hover:bg-gradient-to-r hover:from-blue-400 p-2 hover:to-sky-300 h-full shadow-slate-500 dark:shadow-slate-700"
-            onClick={() => openDoctorModal(doc)}
+            onClick={() => openOperatorModal(op)}
           >
             {/* Delete Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                openDeleteModal(doc);
+                openDeleteModal(op);
               }}
               className="absolute top-2 right-2 z-10 bg-slate-500 text-white p-[2px] rounded-lg"
             >
@@ -245,7 +222,7 @@ export default function Alldoctor() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                openMessageModal(doc);
+                openMessageModal(op);
               }}
               className="absolute top-2 left-2 z-10 text-white p-[2px] rounded-lg"
             >
@@ -253,58 +230,54 @@ export default function Alldoctor() {
             </button>
             {/* Card Content */}
             <div className="relative flex flex-col items-center z-10">
-              {/* Doctor Image */}
+              {/* Operator Image */}
               <img
-                src={doc.image}
-                alt={doc.name}
+                src={op.profile_picture}
+                alt={op.name}
                 className="w-52 h-60 rounded-lg object-cover mb-2"
               />
-              {/* Status Dot and Experience */}
+              {/* Contact and Salary */}
               <div className="flex items-center space-x-2 mb-1">
-                <span
-                  className={`w-3 h-3 rounded-full ${
-                    doc.status === "online" ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                ></span>
                 <span className="text-xs text-gray-600 dark:text-gray-300">
-                  {doc.experience} yrs exp
+                  {op.mobile}
                 </span>
               </div>
-              {/* Name with Department */}
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 group-hover:text-white transition-colors">
-                {doc.name} <span className="text-sm">({doc.department})</span>
+                {op.name}
               </h3>
-              {/* Specialization */}
               <p className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors">
-                {doc.specialization}
+                {op.email}
+              </p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors">
+                {op.salary}
               </p>
             </div>
           </Card>
         ))}
       </div>
 
-      {/* Doctor Details Modal */}
+      {/* Operator Details Modal */}
       <Modal
-        show={showDoctorModal}
-        onClose={() => setShowDoctorModal(false)}
+        show={showOperatorModal}
+        onClose={() => setShowOperatorModal(false)}
         popup
         size="lg"
       >
         <Modal.Header />
         <Modal.Body>
-          {selectedDoctor && (
+          {selectedOperator && (
             <div className="space-y-4">
               <div className="flex flex-col items-center">
                 <img
-                  src={selectedDoctor.image}
-                  alt={selectedDoctor.name}
+                  src={selectedOperator.profile_picture}
+                  alt={selectedOperator.name}
                   className="w-24 h-24 rounded-full object-cover"
                 />
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mt-2">
-                  {selectedDoctor.name}
+                  {selectedOperator.name}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300">
-                  {selectedDoctor.specialization} - {selectedDoctor.department}
+                  {selectedOperator.email}
                 </p>
               </div>
               <div>
@@ -312,10 +285,7 @@ export default function Alldoctor() {
                   Contact Information
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
-                  Mobile: {selectedDoctor.contact.mobile}
-                </p>
-                <p className="text-gray-700 dark:text-gray-300">
-                  Email: {selectedDoctor.contact.email}
+                  Mobile: {selectedOperator.mobile}
                 </p>
               </div>
               <div>
@@ -323,9 +293,8 @@ export default function Alldoctor() {
                   Address
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
-                  {selectedDoctor.address.street},{" "}
-                  {selectedDoctor.address.city},{" "}
-                  {selectedDoctor.address.pincode}
+                  {selectedOperator.address.street}, {selectedOperator.address.city},{" "}
+                  {selectedOperator.address.pincode}
                 </p>
               </div>
               <div>
@@ -333,7 +302,7 @@ export default function Alldoctor() {
                   Salary
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
-                  {selectedDoctor.salary}
+                  {selectedOperator.salary}
                 </p>
               </div>
             </div>
@@ -353,12 +322,12 @@ export default function Alldoctor() {
           <div className="text-center">
             <TrashIcon className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
             <h3 className="mb-5 text-lg text-gray-500 dark:text-gray-400">
-              Are you sure you want to delete the {selectedDoctor?.name} doctor?
+              Are you sure you want to delete {selectedOperator?.name}?
             </h3>
             <div className="flex justify-center gap-4">
               <Button
                 color="failure"
-                onClick={() => handleDelete(selectedDoctor.username)}
+                onClick={() => handleDelete(selectedOperator.username)}
               >
                 Yes, I'm sure
               </Button>
@@ -379,10 +348,10 @@ export default function Alldoctor() {
       >
         <Modal.Header />
         <Modal.Body>
-          {selectedDoctor && (
+          {selectedOperator && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                Send Message to {selectedDoctor.name}
+                Send Message to {selectedOperator.name}
               </h2>
               <div>
                 <TextInput

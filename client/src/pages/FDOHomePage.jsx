@@ -7,7 +7,12 @@ import { FaUsers, FaProcedures, FaCalendarAlt } from 'react-icons/fa';
 
 export default function FDOHomePage() {
   const [recentActivities, setRecentActivities] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    activeAdmissions: 0,
+    totalAppointments: 0
+  });
   const [error, setError] = useState(null);
 
   const { currentUser } = useSelector((state) => state.user);
@@ -15,7 +20,7 @@ export default function FDOHomePage() {
 
   useEffect(() => {
     async function fetchRecentActivities() {
-      setLoading(true);
+      setLoadingActivities(true);
       try {
         const response = await fetch('/api/user/recent-activities', {
           method: 'POST',
@@ -37,11 +42,33 @@ export default function FDOHomePage() {
       } catch (err) {
         setError("Network error while fetching recent activities.");
       } finally {
-        setLoading(false);
+        setLoadingActivities(false);
       }
     }
     fetchRecentActivities();
   }, [username]);
+
+  // Fetch home stats data
+  useEffect(() => {
+    async function fetchHomeStats() {
+      try {
+        const response = await fetch('/api/fdo/home-stats');
+        const data = await response.json();
+        if (response.ok) {
+          setStats({
+            totalPatients: data.totalPatients,
+            activeAdmissions: data.activeAdmissions,
+            totalAppointments: data.totalAppointments
+          });
+        } else {
+          console.error(data.error || "Failed to fetch home stats.");
+        }
+      } catch (err) {
+        console.error("Network error while fetching home stats.");
+      }
+    }
+    fetchHomeStats();
+  }, []);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md shadow-slate-500">
@@ -60,7 +87,7 @@ export default function FDOHomePage() {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             Total Patients
           </h3>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">120</p>
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">{stats.totalPatients}</p>
         </div>
         {/* Active Admissions */}
         <div className="shadow-xl dark:shadow-slate-700 shadow-slate-600 bg-green-100 dark:bg-green-900 p-4 rounded text-center transform transition duration-300 hover:scale-105">
@@ -68,7 +95,7 @@ export default function FDOHomePage() {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             Active Admissions
           </h3>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-300">18</p>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-300">{stats.activeAdmissions}</p>
         </div>
         {/* Today's Appointments */}
         <div className="shadow-xl dark:shadow-slate-700 shadow-slate-600 bg-yellow-100 dark:bg-yellow-900 p-4 rounded text-center transform transition duration-300 hover:scale-105">
@@ -76,7 +103,7 @@ export default function FDOHomePage() {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             Today's Appointments
           </h3>
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-300">35</p>
+          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-300">{stats.totalAppointments}</p>
         </div>
       </div>
 
@@ -85,7 +112,7 @@ export default function FDOHomePage() {
         <h3 className="text-xl w-fit border-b-2 border-sky-900 font-semibold text-white dark:bg-sky-700 dark:text-gray-200 mb-3 bg-sky-500 rounded-md px-1">
           Recent Activities
         </h3>
-        {loading ? (
+        {loadingActivities ? (
           <p className="text-gray-700 dark:text-gray-300">Loading activities...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>

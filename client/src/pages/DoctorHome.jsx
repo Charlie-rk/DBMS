@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { TrendingUp } from "lucide-react";
-import SideBar_Doctor from "./../components/SideBar_Doctor";
-import Profile_Doctor from "./../components/Profile_Doctor";
+import SideBar_Doctor from "../components/SideBar_Doctor";
+import Profile_Doctor from "../components/Profile_Doctor";
 // Recharts imports for area chart
 import {
   ResponsiveContainer,
@@ -106,7 +106,7 @@ const percentIncrease = Math.round(
   ((totalPresentYear - totalLastYear) / totalLastYear) * 100
 );
 
-const DoctorAppDashboard = () => {
+const DoctorHome= () => {
   // State management
   const [currentTab, setCurrentTab] = useState("Dashboard");
   // ... inside your DoctorAppDashboard component
@@ -161,7 +161,7 @@ const DoctorAppDashboard = () => {
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar */}
-      <SideBar_Doctor currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      {/* <SideBar_Doctor currentTab={currentTab} setCurrentTab={setCurrentTab} /> */}
 
       {/* Main Content */}
       <div className="flex-1 p-6 overflow-y-auto">
@@ -474,4 +474,4 @@ const DoctorAppDashboard = () => {
   );
 };
 
-export default DoctorAppDashboard;
+export default DoctorHome;
