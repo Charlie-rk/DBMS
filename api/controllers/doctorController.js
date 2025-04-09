@@ -294,3 +294,59 @@ export async function getAllAppointmentsByDoctor(req, res, next) {
     next(err);
   }
 }
+
+export async function getMyLiveStatus(req, res, next) {
+  try {
+    const { doctorId } = req.body;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('live_status')
+      .eq('id', doctorId)
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ live_status: data.live_status });
+  } catch (err) {
+    console.error('❌ Error fetching live status:', err);
+    next(err);
+  }
+}
+
+export async function changeMyLiveStatus(req, res, next) {
+  try {
+    const { doctorId } = req.body;
+
+    // Fetch current live_status
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('live_status')
+      .eq('id', doctorId)
+      .single();
+
+    if (fetchError) {
+      return res.status(500).json({ error: fetchError.message });
+    }
+
+    // Toggle live_status
+    const newStatus = !user.live_status;
+
+    // Update live_status
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ live_status: newStatus })
+      .eq('id', doctorId);
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    return res.json({ message: 'Live status updated successfully', live_status: newStatus });
+  } catch (err) {
+    console.error('❌ Error updating live status:', err);
+    next(err);
+  }
+}
