@@ -35,6 +35,7 @@ export async function createUserTable() {
         country VARCHAR(50),
         role VARCHAR(50),
         specialisation VARCHAR(50),
+        live_status BOOLEAN DEFAULT TRUE,
         yoe INT,
         department VARCHAR(50),
         salary INT DEFAULT 100000,
