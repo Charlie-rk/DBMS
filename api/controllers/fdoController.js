@@ -932,3 +932,60 @@ export async function getFdoHomeStats(req, res, next) {
   }
 }
 
+/**
+ * Get department extremes:
+ * - Department with maximum patients,
+ * - Department with minimum patients,
+ * - Department with maximum doctors,
+ * - Department with minimum doctors.
+ */
+export async function getDepartmentExtremes(req, res, next) {
+  try {
+    // Department with the maximum patient count.
+    const { data: maxPatientData, error: maxPatientError } = await supabase
+      .from('departments')
+      .select('*')
+      .order('patient_count', { ascending: false })
+      .limit(1)
+      .single();
+    if (maxPatientError) throw maxPatientError;
+
+    // Department with the minimum patient count.
+    const { data: minPatientData, error: minPatientError } = await supabase
+      .from('departments')
+      .select('*')
+      .order('patient_count', { ascending: true })
+      .limit(1)
+      .single();
+    if (minPatientError) throw minPatientError;
+
+    // Department with the maximum doctor count.
+    const { data: maxDoctorData, error: maxDoctorError } = await supabase
+      .from('departments')
+      .select('*')
+      .order('doctor_count', { ascending: false })
+      .limit(1)
+      .single();
+    if (maxDoctorError) throw maxDoctorError;
+
+    // Department with the minimum doctor count.
+    const { data: minDoctorData, error: minDoctorError } = await supabase
+      .from('departments')
+      .select('*')
+      .order('doctor_count', { ascending: true })
+      .limit(1)
+      .single();
+    if (minDoctorError) throw minDoctorError;
+
+    res.status(200).json({
+      maxPatientDepartment: maxPatientData,
+      minPatientDepartment: minPatientData,
+      maxDoctorDepartment: maxDoctorData,
+      minDoctorDepartment: minDoctorData
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
