@@ -409,3 +409,285 @@ export async function deleteAllUser(req,res,next){
     next(err);
   }
 }
+
+export async function getDashboardCardsSummary(req, res, next) {
+  try {
+    // ----- BEDS SUMMARY -----
+    // Query the rooms table and calculate totals and breakdown by room_type.
+    const { data: rooms, error: roomsError } = await supabase
+      .from('rooms')
+      .select('id, room_type, total_count, occupied_count');
+    if (roomsError) throw roomsError;
+
+    const totalBeds = rooms.reduce((acc, room) => acc + room.total_count, 0);
+    const occupiedBeds = rooms.reduce((acc, room) => acc + room.occupied_count, 0);
+    const availableBeds = totalBeds - occupiedBeds;
+
+    // Breakdown by room type (e.g., Executive, Premium, Basic)
+    const roomBreakdown = {};
+    rooms.forEach(room => {
+      if (!roomBreakdown[room.room_type]) {
+        roomBreakdown[room.room_type] = { total: 0, occupied: 0, available: 0 };
+      }
+      roomBreakdown[room.room_type].total += room.total_count;
+      roomBreakdown[room.room_type].occupied += room.occupied_count;
+      roomBreakdown[room.room_type].available += room.total_count - room.occupied_count;
+    });
+
+    // ----- DOCTORS SUMMARY -----
+    // Query the users table filtering by role "doctor"
+    const { data: doctors, error: doctorsError } = await supabase
+      .from('users')
+      .select('id, name, role, live_status')
+      .eq('role', 'doctor');
+    if (doctorsError) throw doctorsError;
+
+    let availableDoctors = 0;
+    let onLeaveDoctors = 0;
+    doctors.forEach(doc => {
+      // Assume doctor is available if 'live_status' is true.
+      if (doc.live_status === true) {
+        availableDoctors++;
+      } else {
+        onLeaveDoctors++;
+      }
+    });
+
+    // ----- PATIENTS SUMMARY -----
+    // Define time period: From one year ago until today.
+    const endDate = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    
+    // Query the patients table filtering by the one-year period.
+    const { data: patients, error: patientsError } = await supabase
+      .from('patients')
+      .select('id, created_at, gender')
+      .gte('created_at', oneYearAgo.toISOString());
+    if (patientsError) throw patientsError;
+
+    // Define "new" patients as those registered within the last 30 days.
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    let newPatients = 0;
+    let oldPatients = 0;
+    patients.forEach(patient => {
+      const createdAt = new Date(patient.created_at);
+      if (createdAt >= thirtyDaysAgo) {
+        newPatients++;
+      } else {
+        oldPatients++;
+      }
+    });
+
+    // ----- PATIENT GENDER SUMMARY -----
+    let maleCount = 0;
+    let femaleCount = 0;
+    patients.forEach(patient => {
+      if (patient.gender) {
+        const genderVal = patient.gender.toLowerCase().trim();
+        if (genderVal === 'male') {
+          maleCount++;
+        } else if (genderVal === 'female') {
+          femaleCount++;
+        }
+      }
+    });
+    const totalGenderCount = maleCount + femaleCount;
+    const malePercentage =
+      totalGenderCount > 0 ? ((maleCount / totalGenderCount) * 100).toFixed(0) : "0";
+    const femalePercentage =
+      totalGenderCount > 0 ? ((femaleCount / totalGenderCount) * 100).toFixed(0) : "0";
+
+    // ----- DAILY PATIENT FLOW -----
+    // Query the admissions table to count today's admissions and discharges.
+    const { data: admissions, error: admissionsError } = await supabase
+      .from('admissions')
+      .select('admission_date, discharge_date');
+    if (admissionsError) throw admissionsError;
+
+    const todayStr = new Date().toISOString().slice(0, 10); // format: YYYY-MM-DD
+    let dailyAdmissions = 0;
+    let dailyDischarges = 0;
+
+    admissions.forEach(record => {
+      if (record.admission_date) {
+        const admissionDate = new Date(record.admission_date)
+          .toISOString()
+          .slice(0, 10);
+        if (admissionDate === todayStr) {
+          dailyAdmissions++;
+        }
+      }
+      if (record.discharge_date) {
+        const dischargeDate = new Date(record.discharge_date)
+          .toISOString()
+          .slice(0, 10);
+        if (dischargeDate === todayStr) {
+          dailyDischarges++;
+        }
+      }
+    });
+
+    // ----- COMPOSE THE FINAL RESPONSE -----
+    // Include a dateRange object to return the one-year span.
+    const dashboardSummary = {
+      dateRange: {
+        startDate: oneYearAgo.toISOString(),
+        endDate: endDate.toISOString()
+      },
+      beds: {
+        totalBeds,
+        occupiedBeds,
+        availableBeds,
+        breakdown: roomBreakdown,
+      },
+      doctors: {
+        available: availableDoctors,
+        onLeave: onLeaveDoctors,
+      },
+      patients: {
+        newPatients,
+        oldPatients,
+        gender: {
+          maleCount,
+          femaleCount,
+          malePercentage,
+          femalePercentage,
+        },
+      },
+      dailyFlow: {
+        admissions: dailyAdmissions,
+        discharges: dailyDischarges,
+      },
+    };
+
+    res.status(200).json(dashboardSummary);
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+export async function getPatientsOverviewData(req, res, next) {
+  try {
+    // Calculate the current month's boundaries
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+
+    // --- 1. Fetch Admissions in current month ---
+    const { data: admissions, error: admError } = await supabase
+      .from("admissions")
+      .select("id, admission_date, discharge_date")
+      .gte("admission_date", startOfMonth)
+      .lte("admission_date", endOfMonth);
+    if (admError) throw admError;
+
+    // --- 2. Fetch Appointments in current month ---
+    const { data: appointments, error: appError } = await supabase
+      .from("appointments")
+      .select("id, appointment_date")
+      .gte("appointment_date", startOfMonth)
+      .lte("appointment_date", endOfMonth);
+    if (appError) throw appError;
+
+    // --- 3. Fetch Rooms ---
+    const { data: rooms, error: roomsError } = await supabase
+      .from("rooms")
+      .select("room_type, total_count");
+    if (roomsError) throw roomsError;
+
+    // --- A. Aggregate Room Stats ---
+    // Map room types to the UI labels: Executive, Premium, Emergency (from "General")
+    const roomStats = { Executive: 0, Premium: 0, Emergency: 0 };
+    rooms.forEach((room) => {
+      const type = room.room_type.toLowerCase();
+      if (type === "executive") {
+        roomStats.Executive += room.total_count;
+      } else if (type === "premium") {
+        roomStats.Premium += room.total_count;
+      } else if (type === "general") {
+        roomStats.Emergency += room.total_count;
+      }
+    });
+
+    // --- B. Get Total Appointments Count ---
+    const appointmentsTotal = appointments.length;
+
+    // --- C. Prepare Chart Data ---
+    // Define date intervals (here: 01-07, 08-12, 13-17, 18-21)
+    const intervals = [
+      { label: "01-07", start: 1, end: 7 },
+      { label: "08-12", start: 8, end: 12 },
+      { label: "13-17", start: 13, end: 17 },
+      { label: "18-21", start: 18, end: 21 },
+      { label: "22-25", start: 18, end: 21 },
+      { label: "26-29", start: 18, end: 21 },
+      { label: "29-30", start: 18, end: 21 }
+      // You can add more intervals if needed.
+    ];
+
+    // Initialize an array for the chart data
+    const chartData = intervals.map((interval) => ({
+      date: interval.label,
+      new: 0,         // count of admissions
+      discharge: 0,   // count of discharges (where discharge_date exists)
+      appointments: 0
+    }));
+
+    // Group Admissions into intervals:
+    admissions.forEach((adm) => {
+      // For new admissions, use the admission_date field:
+      if (adm.admission_date) {
+        const admDate = new Date(adm.admission_date);
+        const day = admDate.getUTCDate();
+        const foundInterval = intervals.find(
+          (i) => day >= i.start && day <= i.end
+        );
+        if (foundInterval) {
+          const idx = intervals.indexOf(foundInterval);
+          chartData[idx].new += 1;
+        }
+      }
+      // For discharges, check if discharge_date exists:
+      if (adm.discharge_date) {
+        const disDate = new Date(adm.discharge_date);
+        const day = disDate.getUTCDate();
+        const foundInterval = intervals.find(
+          (i) => day >= i.start && day <= i.end
+        );
+        if (foundInterval) {
+          const idx = intervals.indexOf(foundInterval);
+          chartData[idx].discharge += 1;
+        }
+      }
+    });
+
+    // Group Appointments into intervals:
+    appointments.forEach((app) => {
+      if (app.appointment_date) {
+        const appDate = new Date(app.appointment_date);
+        const day = appDate.getUTCDate();
+        const foundInterval = intervals.find(
+          (i) => day >= i.start && day <= i.end
+        );
+        if (foundInterval) {
+          const idx = intervals.indexOf(foundInterval);
+          chartData[idx].appointments += 1;
+        }
+      }
+    });
+
+    // --- Compose the Response ---
+    const response = {
+      rooms: roomStats,
+      appointmentsTotal,
+      chartData
+    };
+
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+}

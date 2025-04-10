@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 // src/pages/DepartmentsPage.jsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Button, Modal, TextInput, Label } from "flowbite-react";
 import { Trash2 as TrashIcon, HeartPulse, Zap, Briefcase } from "lucide-react";
 import Swal from "sweetalert2";
@@ -29,6 +29,7 @@ export default function Alldepartment() {
   const [selectedDept, setSelectedDept] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [extremes, setExtremes] = useState(null);
   const [newDept, setNewDept] = useState({
     name: "",
     doctorCount: "",
@@ -53,7 +54,10 @@ export default function Alldepartment() {
             doctorCount: 0,
             patientCount: 0,
             rooms: { premium: 0, executive: 0, basic: 0 },
-            icon: departmentIcons[item.department_name] || <Briefcase className="w-8 h-8 text-indigo-500" />,
+            icon:
+              departmentIcons[item.department_name] || (
+                <Briefcase className="w-8 h-8 text-indigo-500" />
+              ),
           };
         }
         // Map room types from the API: "Premium" and "Executive" are mapped directly; "General" is treated as basic.
@@ -77,43 +81,53 @@ export default function Alldepartment() {
     fetchRoomsSummary();
   }, []);
 
-  // Compute metrics using useMemo.
-  const metrics = useMemo(() => {
-    if (departments.length === 0) return {};
-    const addTotalRooms = (dept) =>
-      Number(dept.rooms.premium) + Number(dept.rooms.executive) + Number(dept.rooms.basic);
-    let maxDoc = departments[0],
-      minDoc = departments[0],
-      maxPat = departments[0],
-      minPat = departments[0],
-      maxRooms = departments[0],
-      minRooms = departments[0];
-    departments.forEach((dept) => {
-      if (dept.doctorCount > maxDoc.doctorCount) maxDoc = dept;
-      if (dept.doctorCount < minDoc.doctorCount) minDoc = dept;
-      if (dept.patientCount > maxPat.patientCount) maxPat = dept;
-      if (dept.patientCount < minPat.patientCount) minPat = dept;
-      if (addTotalRooms(dept) > addTotalRooms(maxRooms)) maxRooms = dept;
-      if (addTotalRooms(dept) < addTotalRooms(minRooms)) minRooms = dept;
-    });
-    return { maxDoc, minDoc, maxPat, minPat, maxRooms, minRooms };
-  }, [departments]);
+  // New helper function to fetch department extremes data.
+  const fetchDepartmentExtremes = async () => {
+    try {
+      const response = await fetch("/api/fdo/department-extremes");
+      const data = await response.json();
+      setExtremes(data);
+    } catch (error) {
+      console.error("Error fetching department extremes:", error);
+    }
+  };
+
+  // Fetch extremes data on component mount.
+  useEffect(() => {
+    fetchDepartmentExtremes();
+  }, []);
 
   const openDeleteModal = (dept) => {
     setSelectedDept(dept);
     setShowModal(true);
   };
 
-  // const handleDelete = (deptId) => {
-  //   setDepartments(departments.filter((dept) => dept.id !== deptId));
-  //   setShowModal(false);
-  //   MySwal.fire({
-  //     icon: "success",
-  //     title: "Department deleted successfully!",
-  //     timer: 1500,
-  //     showConfirmButton: false,
-  //   });
-  // };
+  // Updated delete handler remains the same.
+  const handleDelete = async (departmentId) => {
+    setShowModal(false);
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/fdo/delete-department/${departmentId}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        Swal.fire("Deleted!", data.message, "success");
+        // Optionally refresh the departments list here
+      } else {
+        Swal.fire("Error!", data.error || "Something went wrong.", "error");
+      }
+    } catch (error) {
+      Swal.fire("Error!", "Network error or server issue.", "error");
+    } finally {
+      fetchRoomsSummary();
+      setLoading(false);
+      // Refresh extremes after delete if needed.
+      fetchDepartmentExtremes();
+    }
+  };
 
   // Handler for input change in the Add Department modal.
   const handleNewDeptChange = (e) => {
@@ -127,42 +141,6 @@ export default function Alldepartment() {
       setNewDept({ ...newDept, [name]: value });
     }
   };
-
-  const handleDelete = async (departmentId) => {
-    // const confirmResult = await Swal.fire({
-    //   title: 'Are you sure?',
-    //   text: 'This will permanently delete the department.',
-    //   icon: 'warning',
-    //   showCancelButton: true,
-    //   confirmButtonText: 'Yes, delete it!',
-    //   cancelButtonText: 'Cancel',
-    // });
-
-    // if (confirmResult.isConfirmed) {
-      setShowModal(false);
-      try {
-        setLoading(true);
-        const res = await fetch(`/api/fdo/delete-department/${departmentId}`, {
-          method: 'DELETE',
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          Swal.fire('Deleted!', data.message, 'success');
-          // refreshDepartments(); // <-- call a prop function to refresh list
-        } else {
-          Swal.fire('Error!', data.error || 'Something went wrong.', 'error');
-        }
-      } catch (error) {
-        Swal.fire('Error!', 'Network error or server issue.', 'error');
-      } finally {
-        fetchRoomsSummary();
-        setLoading(false);
-      }
-    // }
-  };
-
 
   // Handler to add/upsert a department via the API endpoint.
   const handleAddDepartment = async (e) => {
@@ -202,6 +180,7 @@ export default function Alldepartment() {
         showConfirmButton: false,
       });
       await fetchRoomsSummary();
+      await fetchDepartmentExtremes();
       setShowAddModal(false);
       // Reset the Add Department form.
       setNewDept({
@@ -229,7 +208,10 @@ export default function Alldepartment() {
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
           Departments
         </h1>
-        <Button gradientDuoTone="purpleToBlue" onClick={() => setShowAddModal(true)}>
+        <Button
+          gradientDuoTone="purpleToBlue"
+          onClick={() => setShowAddModal(true)}
+        >
           Add Department
         </Button>
       </div>
@@ -241,7 +223,9 @@ export default function Alldepartment() {
             Department with Maximum Doctors
           </h2>
           <p className="mt-2 bg-green-300 dark:bg-green-700 rounded-md w-2/3 px-1 text-black dark:text-gray-300">
-            {metrics.maxDoc ? metrics.maxDoc.name : "N/A"} ({metrics.maxDoc?.doctorCount} doctors)
+            {extremes?.maxDoctorDepartment
+              ? `${extremes.maxDoctorDepartment.name} (${extremes.maxDoctorDepartment.doctor_count} doctors)`
+              : "N/A"}
           </p>
         </Card>
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
@@ -249,7 +233,9 @@ export default function Alldepartment() {
             Department with Minimum Doctors
           </h2>
           <p className="mt-2 bg-red-400 dark:bg-red-700 rounded-md w-2/3 px-1 text-black dark:text-gray-300">
-            {metrics.minDoc ? metrics.minDoc.name : "N/A"} ({metrics.minDoc?.doctorCount} doctors)
+            {extremes?.minDoctorDepartment
+              ? `${extremes.minDoctorDepartment.name} (${extremes.minDoctorDepartment.doctor_count} doctors)`
+              : "N/A"}
           </p>
         </Card>
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
@@ -257,9 +243,9 @@ export default function Alldepartment() {
             Department with Maximum Rooms
           </h2>
           <p className="mt-2 bg-yellow-300 dark:bg-yellow-700 rounded-md w-2/3 px-1 text-black dark:text-gray-300">
-            {metrics.maxRooms ? metrics.maxRooms.name : "N/A"} ({metrics.maxRooms ? 
-              metrics.maxRooms.rooms.premium + metrics.maxRooms.rooms.executive + metrics.maxRooms.rooms.basic 
-              : 0} rooms)
+            {extremes?.maxRoomDepartment
+              ? `${extremes.maxRoomDepartment.name} (${extremes.maxRoomDepartment.total_rooms} rooms)`
+              : "N/A"}
           </p>
         </Card>
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
@@ -267,9 +253,9 @@ export default function Alldepartment() {
             Department with Minimum Rooms
           </h2>
           <p className="mt-2 bg-green-300 dark:bg-green-700 rounded-md w-2/3 px-1 text-black dark:text-gray-300">
-            {metrics.minRooms ? metrics.minRooms.name : "N/A"} ({metrics.minRooms ? 
-              metrics.minRooms.rooms.premium + metrics.minRooms.rooms.executive + metrics.minRooms.rooms.basic 
-              : 0} rooms)
+            {extremes?.minRoomDepartment
+              ? `${extremes.minRoomDepartment.name} (${extremes.minRoomDepartment.total_rooms} rooms)`
+              : "N/A"}
           </p>
         </Card>
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
@@ -277,7 +263,9 @@ export default function Alldepartment() {
             Department with Maximum Patients
           </h2>
           <p className="mt-2 bg-red-400 dark:bg-red-700 rounded-md w-2/3 px-1 text-black dark:text-gray-300">
-            {metrics.maxPat ? metrics.maxPat.name : "N/A"} ({metrics.maxPat?.patientCount} patients)
+            {extremes?.maxPatientDepartment
+              ? `${extremes.maxPatientDepartment.name} (${extremes.maxPatientDepartment.patient_count} patients)`
+              : "N/A"}
           </p>
         </Card>
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-500">
@@ -285,7 +273,9 @@ export default function Alldepartment() {
             Department with Minimum Patients
           </h2>
           <p className="mt-2 bg-green-300 dark:bg-green-700 rounded-md w-2/3 px-1 text-black dark:text-gray-300">
-            {metrics.minPat ? metrics.minPat.name : "N/A"} ({metrics.minPat?.patientCount} patients)
+            {extremes?.minPatientDepartment
+              ? `${extremes.minPatientDepartment.name} (${extremes.minPatientDepartment.patient_count} patients)`
+              : "N/A"}
           </p>
         </Card>
       </div>
@@ -294,7 +284,9 @@ export default function Alldepartment() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {departments.map((dept) => {
           const totalRooms =
-            Number(dept.rooms.premium) + Number(dept.rooms.executive) + Number(dept.rooms.basic);
+            Number(dept.rooms.premium) +
+            Number(dept.rooms.executive) +
+            Number(dept.rooms.basic);
           return (
             <Card
               key={dept.id}
@@ -304,7 +296,6 @@ export default function Alldepartment() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-sky-400 transform translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
               {/* Delete Button */}
               <button
-                color="failure"
                 onClick={() => openDeleteModal(dept)}
                 className="absolute top-2 right-2 z-10 bg-slate-500 text-white rounded-md p-[1px]"
               >
@@ -322,7 +313,8 @@ export default function Alldepartment() {
                 </h3>
                 {/* Total Room Count */}
                 <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 group-hover:text-white transition-colors duration-700">
-                  Total Rooms: <span className="font-semibold">{totalRooms}</span>
+                  Total Rooms:{" "}
+                  <span className="font-semibold">{totalRooms}</span>
                 </p>
                 {/* Room Breakdown */}
                 <div className="mt-1 text-center text-xs">
@@ -437,7 +429,7 @@ export default function Alldepartment() {
             </h3>
             <div className="flex justify-center gap-4">
               <Button color="failure" onClick={() => handleDelete(selectedDept.id)}>
-               {loading ? "Deleting..." : "Yes I' am Sure"}
+                {loading ? "Deleting..." : "Yes I' am Sure"}
               </Button>
               <Button color="gray" onClick={() => setShowModal(false)}>
                 No, cancel

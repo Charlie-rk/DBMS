@@ -41,6 +41,7 @@ export async function createUserTable() {
         password VARCHAR(255) NOT NULL,
         profile_picture VARCHAR(255) DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
         is_admin BOOLEAN DEFAULT false,
+        live_status bool DEFAULT true,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );

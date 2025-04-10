@@ -707,6 +707,22 @@ export async function getAllRegisteredPatients(req, res, next) {
   }
 }
 
+export async function getrRecentRegisteredPatients(req, res, next) {
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .limit(4);
+      
+    if (error) throw error;
+    
+    res.status(200).json({ patients: data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 
 export async function getSlotDistributionByDate(req, res, next) {
   const { doctorId, date } = req.body;
@@ -1074,16 +1090,9 @@ export async function getFdoHomeStats(req, res, next) {
   }
 }
 
-/**
- * Get department extremes:
- * - Department with maximum patients,
- * - Department with minimum patients,
- * - Department with maximum doctors,
- * - Department with minimum doctors.
- */
 export async function getDepartmentExtremes(req, res, next) {
   try {
-    // Department with the maximum patient count.
+    // 1. Max Patient Department
     const { data: maxPatientData, error: maxPatientError } = await supabase
       .from('departments')
       .select('*')
@@ -1092,7 +1101,7 @@ export async function getDepartmentExtremes(req, res, next) {
       .single();
     if (maxPatientError) throw maxPatientError;
 
-    // Department with the minimum patient count.
+    // 2. Min Patient Department
     const { data: minPatientData, error: minPatientError } = await supabase
       .from('departments')
       .select('*')
@@ -1101,7 +1110,7 @@ export async function getDepartmentExtremes(req, res, next) {
       .single();
     if (minPatientError) throw minPatientError;
 
-    // Department with the maximum doctor count.
+    // 3. Max Doctor Department
     const { data: maxDoctorData, error: maxDoctorError } = await supabase
       .from('departments')
       .select('*')
@@ -1110,7 +1119,7 @@ export async function getDepartmentExtremes(req, res, next) {
       .single();
     if (maxDoctorError) throw maxDoctorError;
 
-    // Department with the minimum doctor count.
+    // 4. Min Doctor Department
     const { data: minDoctorData, error: minDoctorError } = await supabase
       .from('departments')
       .select('*')
@@ -1119,15 +1128,62 @@ export async function getDepartmentExtremes(req, res, next) {
       .single();
     if (minDoctorError) throw minDoctorError;
 
+    // ---- 5. Max Rooms Department ----
+    const { data: maxRoomAggData, error: maxRoomAggError } = await supabase
+      .from('rooms')
+      .select('department_id, total_count')
+      .order('total_count', { ascending: false })
+      .limit(1)
+      .single();
+    if (maxRoomAggError) throw maxRoomAggError;
+
+    let maxRoomDepartment = null;
+    if (maxRoomAggData) {
+      const { data: deptData, error: deptError } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('id', maxRoomAggData.department_id)
+        .single();
+      if (deptError) throw deptError;
+      maxRoomDepartment = {
+        ...deptData,
+        total_rooms: maxRoomAggData.total_count,
+      };
+    }
+
+    // ---- 6. Min Rooms Department ----
+    const { data: minRoomAggData, error: minRoomAggError } = await supabase
+      .from('rooms')
+      .select('department_id, total_count')
+      .order('total_count', { ascending: true })
+      .limit(1)
+      .single();
+    if (minRoomAggError) throw minRoomAggError;
+
+    let minRoomDepartment = null;
+    if (minRoomAggData) {
+      const { data: deptData, error: deptError } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('id', minRoomAggData.department_id)
+        .single();
+      if (deptError) throw deptError;
+      minRoomDepartment = {
+        ...deptData,
+        total_rooms: minRoomAggData.total_count,
+      };
+    }
+
+    // --- Final Response ---
     res.status(200).json({
       maxPatientDepartment: maxPatientData,
       minPatientDepartment: minPatientData,
       maxDoctorDepartment: maxDoctorData,
-      minDoctorDepartment: minDoctorData
+      minDoctorDepartment: minDoctorData,
+      maxRoomDepartment,
+      minRoomDepartment,
     });
   } catch (err) {
     next(err);
   }
 }
-
-

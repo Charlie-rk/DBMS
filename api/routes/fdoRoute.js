@@ -17,7 +17,8 @@ import {
   fetchDoctorByPatient,
   getPatientHistory,
   getFdoHomeStats,
-  getDepartmentExtremes
+  getDepartmentExtremes,
+  getrRecentRegisteredPatients
 } from '../controllers/fdoController.js';
 
 const router = express.Router();
@@ -36,6 +37,7 @@ router.post('/upsert-department', upsertDepartmentAndRooms);
 router.post('/seed-departments', seedDepartments);
 router.post('/seed-rooms', seedRooms);
 router.get('/all-patients', getAllRegisteredPatients);
+router.get('/recent-patients', getrRecentRegisteredPatients);
 router.post('/get-slot-distribution', getSlotDistributionByDate);
 router.post('/appointment-doctor-patientID',fetchDoctorByPatient);
 router.get('/patient-history/:patientId', getPatientHistory);

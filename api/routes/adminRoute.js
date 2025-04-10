@@ -1,5 +1,5 @@
 import  express from "express";
-import { registerUser, fetchUser, fetchUsers, deleteUser, seedDoctor, deleteAllUser } from "../controllers/adminController.js";
+import { registerUser, fetchUser, fetchUsers, deleteUser, seedDoctor, deleteAllUser, getDashboardCardsSummary, getPatientsOverviewData } from "../controllers/adminController.js";
 const router=express.Router();
 
 router.post('/register',registerUser);
@@ -13,5 +13,7 @@ router.post('/get-user', fetchUser);
 router.delete('/delete-user', deleteUser);
 router.get('/seed-doctor',seedDoctor)
 router.delete('/delete-all-users',deleteAllUser);
+router.get('/dash-summary',getDashboardCardsSummary)
+router.get('/patient-overview',getPatientsOverviewData);
 
 export default router;
