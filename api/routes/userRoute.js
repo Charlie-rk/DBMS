@@ -26,7 +26,7 @@
 
 import express from 'express';
 import { fetchRecentActivitiesOfUser, createActivity, updateUser, signout } from '../controllers/userController.js';
-import { fetchNotifications, sendNotification, markNotificationAsSeen, markNotificationAsUnseen } from '../controllers/notificationController.js';
+import { fetchNotifications, sendNotification, markNotificationAsSeen, markNotificationAsUnseen, fetchNotifications1 } from '../controllers/notificationController.js';
 import { verifyToken } from '../utilis/verifyUser.js';
 
 
@@ -44,7 +44,7 @@ router.post('/get-all-notifications', fetchNotifications);             // Get no
 router.post('/send-notification', sendNotification);                // Send a notification
 router.post('/mark-notification-seen', markNotificationAsSeen);     // Mark a notification as seen
 router.post('/mark-notification-unseen', markNotificationAsUnseen); // Mark a notification as unseen
-
+router.post('/get-all-send-notifications', fetchNotifications1);  
 
 
 //NO USE ONLY FOR TESTING FUNCTION

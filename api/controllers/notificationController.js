@@ -1156,6 +1156,30 @@ export async function fetchNotifications(req, res, next) {
 }
 
 /**
+ * Fetch all notifications for a given username
+ */
+export async function fetchNotifications1(req, res, next) {
+  const { username } = req.body;
+
+  if (!username) return next(errorHandler(400, 'Username is required'));
+
+  try {
+    const { data, error } = await supabase
+      .from('notification')
+      .select('*')
+      .eq('sender', username)
+      .order('created_at', { ascending: false });
+
+    if (error) return next(errorHandler(500, error.message));
+
+    res.status(200).json(data);
+  } catch (err) {
+    next(errorHandler(500, err.message || 'Failed to fetch notifications'));
+  }
+}
+
+
+/**
  * Mark a notification as "read"
  */
 export async function markNotificationAsSeen(req, res, next) {

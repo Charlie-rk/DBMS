@@ -5,6 +5,7 @@ import { Routes, Route } from 'react-router-dom';
 // import DoctorAppDashboard from '../pages/DoctorHome';
 import DoctorHome from '../pages/DoctorHome';
 import Messages from '../pages/Message';
+import AllPatient_Doctor from '../pages/AllPatient_Doctor';
 
 // Import other doctor pages or use placeholders
 // import DoctorAppointmentPage from '../pages/DoctorAppointmentPage';
@@ -23,6 +24,8 @@ const DoctorMainMenu = () => {
         {/* Home route renders the Doctor Desktop Dashboard */}
         <Route path="/" element={<DoctorHome />} />
         <Route path="/messages" element={<Messages/>} />
+        <Route path="/patients" element={<AllPatient_Doctor/>} />
+
         {/* <Route path="/appointment" element={<DoctorAppointmentPage />} />
         <Route path="/patients" element={<DoctorPatientsPage />} />
         <Route path="/messages" element={<DoctorMessagesPage />} />

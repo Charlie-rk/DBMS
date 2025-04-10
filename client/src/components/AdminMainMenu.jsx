@@ -7,6 +7,7 @@ import Alldoctor from '../pages/Alldoctor'
 import AllPatient from '../pages/AllPatient'
 import AllFDO from '../pages/AllFDO'
 import AllEDO from '../pages/AllEDO'
+import Messages from '../pages/Message'
 
 export default function AdminMainMenu() {
   return (
@@ -19,6 +20,7 @@ export default function AdminMainMenu() {
            <Route path="/all-patient" element={<AllPatient />} />
            <Route path="/all-fdo" element={<AllFDO />} />
            <Route path="/all-edo" element={<AllEDO />} />
+           <Route path="/message" element={<Messages />} />
 
            {/* <Route path="/all-doctor" element={<AllDoctor />} />
            <Route path="/all-patient" element={<AllPatient />} />

@@ -1,18 +1,24 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import React from "react";
+import { useSelector } from "react-redux";
 
 const Profile_Doctor = ({ bookedAppointments, maxAppointments }) => {
+  const { currentUser } = useSelector((state) => state.user);
+  console.log(currentUser);
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center h-full">
       <img
-        src="https://www.iitbbs.ac.in/wp-content/uploads/2024/07/Sumana-Maiti.png"
-        alt="Dr. Jackson Santos"
+        src={currentUser?.profile_picture || "https://via.placeholder.com/150"}
+        alt={`Dr. ${currentUser?.name || "Doctor"}`}
         className="rounded-full mx-auto mb-4 h-24 w-24 shadow-2xl shadow-blue-400 dark:shadow-blue-900"
       />
-      <h3 className="font-bold text-gray-800 dark:text-gray-200">Dr. Sumana Maiti</h3>
+      <h3 className="font-bold text-gray-800 dark:text-gray-200">
+        Dr. {currentUser?.name || "Doctor"}
+      </h3>
       <p className="text-gray-600 dark:text-gray-300 p-1 bg-blue-200 dark:bg-blue-900 rounded-lg">
-        Dermatologist - Texas Hospital
+        {currentUser?.specialisation || "Specialisation"} - {currentUser?.department || "Department"}
       </p>
 
       {/* Appointment limit section */}

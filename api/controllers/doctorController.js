@@ -39,6 +39,7 @@ export async function fetchAcceptedAppointmentsByDate(req, res, next) {
  */
 export async function getMonthlyAcceptedAppointmentsByDoctor(req, res, next) {
   const { doctorId, month, year } = req.body;
+  console.log(req.body)
 
   if (!doctorId || !month || !year) {
     return res.status(400).json({ error: 'doctorId, month, and year are required in request body.' });
@@ -217,83 +218,118 @@ export async function changeAppointmentStatus(req, res, next) {
 //Post: get recent patients within 24hrs
 
 export async function fetchRecentPatientsByDoctor(req, res, next) {
-  const { username } = req.body;
-  console.log(username);
+  const { doctorId } = req.body;
+  console.log(doctorId);
 
-  if (!username) {
-    return res.status(400).json({ error: 'Username is required' });
+  if (!doctorId) {
+    return res.status(400).json({ error: 'doctorId is required' });
   }
 
   try {
-    // Get current and previous day's timestamp (24 hours ago)
+    // Get current time and timestamp for one week ago
     const currTime = new Date();
-    const prevDayTime = new Date(currTime.getTime() - 24 * 60 * 60 * 1000);
+    const prevWeekTime = new Date(currTime.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // Get doctorId using username
-    console.log(currTime);
-    const { data: doctorData, error: doctorError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('username', username)
-      .single();
-
-    if (doctorError || !doctorData) {
-      return res.status(404).json({ error: 'Doctor not found' });
-    }
-
-    const doctorId = doctorData.id;
     console.log(`Doctor ID: ${doctorId}`);
 
-    // Fetch accepted appointments in last 24 hours for this doctor
+    // Fetch accepted appointments in the last week for this doctor
+    // Fetch all appointment fields (including patient_id)
     const { data: appointments, error: appointmentError } = await supabase
       .from('appointments')
-      .select('patient_id')
+      .select('*')
       .eq('doctor_id', doctorId)
       .eq('status', 'accepted')
-      .gte('appointment_date', prevDayTime.toISOString())
+      .gte('appointment_date', prevWeekTime.toISOString())
       .lte('appointment_date', currTime.toISOString());
 
     if (appointmentError) throw appointmentError;
     console.log(appointments);
 
-    const patientIds = appointments.map(app => app.patient_id);
-
-    if (patientIds.length === 0) {
-      return res.status(200).json({ patients: [] });
+    if (!appointments || appointments.length === 0) {
+      return res.status(200).json({ appointments: [] });
     }
 
-    // Fetch patient details using the list of patientIds
+    // Extract unique patient IDs from the appointments
+    const patientIds = appointments.map(app => app.patient_id);
+    const uniquePatientIds = [...new Set(patientIds)];
+
+    // Fetch patient details using the list of unique patientIds
     const { data: patients, error: patientError } = await supabase
       .from('patients')
       .select('*')
-      .in('id', patientIds);
+      .in('id', uniquePatientIds);
 
     if (patientError) throw patientError;
 
-    res.status(200).json({ patients });
+    // Create a lookup map from patient ID to patient details
+    const patientMap = {};
+    patients.forEach(patient => {
+      patientMap[patient.id] = patient;
+    });
+
+    // Combine appointment details with corresponding patient info
+    const appointmentsWithPatientInfo = appointments.map(app => ({
+      ...app,
+      patientInfo: patientMap[app.patient_id] || null
+    }));
+
+    res.status(200).json({ appointments: appointmentsWithPatientInfo });
   } catch (err) {
-    console.error('Error fetching recent patients:', err);
+    console.error('Error fetching recent appointments:', err);
     next(err);
   }
 }
+
 export async function getAllAppointmentsByDoctor(req, res, next) {
   const { doctorId } = req.body;
   console.log(doctorId);
   try {
-    const { data, error, count } = await supabase
+    // Fetch appointments for the doctor
+    const { data: appointments, error: appointmentError, count } = await supabase
       .from('appointments')
       .select('*', { count: 'exact' })
       .eq('doctor_id', doctorId);
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    if (appointmentError) {
+      return res.status(500).json({ error: appointmentError.message });
     }
 
-    return res.status(200).json({ appointments: data, count });
+    if (!appointments || appointments.length === 0) {
+      return res.status(200).json({ appointments: [], count: 0 });
+    }
+
+    // Extract unique patient IDs from the appointments
+    const patientIds = [...new Set(appointments.map(app => app.patient_id))];
+
+    // Fetch patient details (id and name) from the patients table
+    const { data: patients, error: patientError } = await supabase
+      .from('patients')
+      .select('id, name')
+      .in('id', patientIds);
+
+    if (patientError) {
+      return res.status(500).json({ error: patientError.message });
+    }
+
+    // Create a lookup map for patient ID -> patient name
+    const patientMap = {};
+    patients.forEach(patient => {
+      patientMap[patient.id] = patient.name;
+    });
+
+    // Merge the patient's name into each appointment object
+    const appointmentsWithPatientNames = appointments.map(app => ({
+      ...app,
+      patient_name: patientMap[app.patient_id] || null
+    }));
+
+    return res.status(200).json({ appointments: appointmentsWithPatientNames, count });
   } catch (err) {
+    console.error("Error in getAllAppointmentsByDoctor:", err);
     next(err);
   }
 }
+
 
 export async function getMyLiveStatus(req, res, next) {
   try {
@@ -347,6 +383,63 @@ export async function changeMyLiveStatus(req, res, next) {
     return res.json({ message: 'Live status updated successfully', live_status: newStatus });
   } catch (err) {
     console.error('❌ Error updating live status:', err);
+    next(err);
+  }
+}
+
+
+export async function fetchPatientsByDoctor(req, res, next) {
+  const { doctorId } = req.body;
+  console.log(doctorId);
+
+  if (!doctorId) {
+    return res.status(400).json({ error: 'doctorId is required' });
+  }
+
+  try {
+    console.log(`Doctor ID: ${doctorId}`);
+
+    // Fetch all accepted appointments for this doctor without any time filtering
+    const { data: appointments, error: appointmentError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .eq('status', 'accepted');
+
+    if (appointmentError) throw appointmentError;
+    console.log(appointments);
+
+    if (!appointments || appointments.length === 0) {
+      return res.status(200).json({ appointments: [] });
+    }
+
+    // Extract unique patient IDs from the appointments
+    const patientIds = appointments.map(app => app.patient_id);
+    const uniquePatientIds = [...new Set(patientIds)];
+
+    // Fetch all patient details for these patient IDs from the patients table
+    const { data: patients, error: patientError } = await supabase
+      .from('patients')
+      .select('*')
+      .in('id', uniquePatientIds);
+
+    if (patientError) throw patientError;
+
+    // Create a lookup map from patient ID to full patient details
+    const patientMap = {};
+    patients.forEach(patient => {
+      patientMap[patient.id] = patient;
+    });
+
+    // Merge patient details into each appointment object
+    const appointmentsWithPatientInfo = appointments.map(app => ({
+      ...app,
+      patientInfo: patientMap[app.patient_id] || null
+    }));
+
+    res.status(200).json({ appointments: appointmentsWithPatientInfo });
+  } catch (err) {
+    console.error('Error fetching appointments with patient info:', err);
     next(err);
   }
 }

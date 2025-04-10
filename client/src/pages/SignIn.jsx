@@ -215,7 +215,7 @@ export default function SignIn() {
           navigate("/fdo");
         }
         if (data.role === "doctor") {  // Updated condition for Doctor role
-          navigate("/doctor_dashboard");
+          navigate("/doctor");
         }
         if (data.role === "Data Entry Operator") {
           navigate("/deo");

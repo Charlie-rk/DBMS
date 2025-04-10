@@ -1,5 +1,5 @@
 import express from 'express';
-import { changeAppointmentStatus, fetchAcceptedAppointmentsByDate, getMonthlyAcceptedAppointmentsByDoctor, getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor, fetchRecentPatientsByDoctor, getAllAppointmentsByDoctor, getMyLiveStatus, changeMyLiveStatus } from '../controllers/doctorController.js';
+import { fetchPatientsByDoctor,changeAppointmentStatus, fetchAcceptedAppointmentsByDate, getMonthlyAcceptedAppointmentsByDoctor, getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor, fetchRecentPatientsByDoctor, getAllAppointmentsByDoctor, getMyLiveStatus, changeMyLiveStatus } from '../controllers/doctorController.js';
 
 const router = express.Router();
 
@@ -20,4 +20,5 @@ router.post('/change-appointment-status', changeAppointmentStatus);
 router.post('/recent-patients', fetchRecentPatientsByDoctor);
 router.post('/get-live-status', getMyLiveStatus);
 router.post('/change-live-status', changeMyLiveStatus);
+router.post('/doctor-patient',fetchPatientsByDoctor);
 export default router;

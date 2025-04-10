@@ -45,7 +45,7 @@ export default function Alldoctor() {
           department: doc.department,
           specialization: doc.specialisation, // convert spelling from the API to our expected key
           experience: doc.yoe,
-          status: "online", // default status, update if API provides real-time info
+          status: doc.live_status, // default status, update if API provides real-time info
           image: doc.profile_picture,
           contact: {
             mobile: doc.mobile,
@@ -263,7 +263,7 @@ export default function Alldoctor() {
               <div className="flex items-center space-x-2 mb-1">
                 <span
                   className={`w-3 h-3 rounded-full ${
-                    doc.status === "online" ? "bg-green-500" : "bg-gray-400"
+                    doc.status ? "bg-green-500" : "bg-gray-400"
                   }`}
                 ></span>
                 <span className="text-xs text-gray-600 dark:text-gray-300">

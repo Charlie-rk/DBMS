@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   Link2,
   UserPlus,
+  MessageCircle,
 } from "lucide-react";
 import { HiMenu } from "react-icons/hi";
 import { Link, useLocation } from "react-router-dom";
@@ -41,7 +42,7 @@ const sidebarGroups = [
       { text: "Doctors",path:"/admin/all-doctor", icon: <Users size={20} />, value: "Doctors" },
       { text: "Patients",path:"/admin/all-patient", icon: <User size={20} />, value: "Patients" },
       { text: "Departments",path:"/admin/all-department", icon: <List size={20} />, value: "Departments" },
-      { text: "Schedule",path:"admin/all-patient", icon: <Calendar size={20} />, value: "Schedule" },
+      { text: "Messages",path:"/admin/message", icon: <MessageCircle  size={20} />, value: "Messages" },
       { text: "Front Desk Operators",path:"/admin/all-fdo", icon: <ClipboardCheck size={20} />, value: "Front Desk Operators" },
       { text: "Entry Data Operators",path:"/admin/all-edo", icon: <FileText size={20} />, value: "Entry Data Operators" },
       { text: "Human Resources",path:"admin/all-patinet", icon: <Building size={20} />, value: "Human Resources" },
