@@ -444,3 +444,44 @@ export async function fetchPatientsByDoctor(req, res, next) {
     next(err);
   }
 }
+
+
+
+export async function fetchPatientGenderByDoctor(req, res, next) {
+  const { doctorId, gender } = req.body;
+
+  if (!doctorId || !gender) {
+    return res.status(400).json({ error: 'doctorId and gender are required' });
+  }
+
+  try {
+    // Step 1: Get distinct patient IDs from appointments for the given doctor
+    const { data: appointments, error: appointmentError } = await supabase
+      .from('appointments')
+      .select('patient_id')
+      .eq('doctor_id', doctorId)
+      .eq('status', 'accepted'); 
+
+    if (appointmentError) throw appointmentError;
+
+    const patientIds = appointments.map(appt => appt.patient_id);
+
+    if (patientIds.length === 0) {
+      return res.status(200).json({ count: 0 });
+    }
+
+    // Step 2: Count patients with matching gender and within the above patient IDs
+    const { count, error: patientError } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true })
+      .eq('gender', gender)
+      .in('id', patientIds);
+
+    if (patientError) throw patientError;
+
+    return res.status(200).json({ count });
+  } catch (error) {
+    console.error('Error fetching gender count:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
