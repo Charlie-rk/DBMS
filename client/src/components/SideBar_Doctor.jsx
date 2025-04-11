@@ -21,7 +21,7 @@ import { HiMenu } from "react-icons/hi";
 // Define doctor sidebar items with associated paths
 const doctorSidebarItems = [
   { text: "Dashboard", path: "/doctor", icon: <LayoutGrid /> },
-  { text: "Appointment", path: "/doctor/appointment", icon: <CalendarDays /> },
+  { text: "Appointment", path: "/doctor/appoint", icon: <CalendarDays /> },
   { text: "Patients", path: "/doctor/patients", icon: <Users /> },
   { text: "Messages", path: "/doctor/messages", icon: <MessageCircle /> },
   { text: "Medications", path: "/doctor/medications", icon: <Pill /> },

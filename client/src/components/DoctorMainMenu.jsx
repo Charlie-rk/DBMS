@@ -6,6 +6,7 @@ import { Routes, Route } from 'react-router-dom';
 import DoctorHome from '../pages/DoctorHome';
 import Messages from '../pages/Message';
 import AllPatient_Doctor from '../pages/AllPatient_Doctor';
+import DoctorAppointments from '../pages/DoctorAppointments';
 
 // Import other doctor pages or use placeholders
 // import DoctorAppointmentPage from '../pages/DoctorAppointmentPage';
@@ -25,6 +26,7 @@ const DoctorMainMenu = () => {
         <Route path="/" element={<DoctorHome />} />
         <Route path="/messages" element={<Messages/>} />
         <Route path="/patients" element={<AllPatient_Doctor/>} />
+        <Route path="/appoint" element={<DoctorAppointments/>} />
 
         {/* <Route path="/appointment" element={<DoctorAppointmentPage />} />
         <Route path="/patients" element={<DoctorPatientsPage />} />
