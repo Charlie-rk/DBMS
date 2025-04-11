@@ -60,7 +60,17 @@ const DoctorHome = () => {
 
   // Appointment requests state – fetched from backend
   const [appointmentRequests, setAppointmentRequests] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("2025-08-06");
+  // Initialize selectedDate with the system current date formatted as YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  // Add state variable to control showing limited or all appointments
+  const [showAllAppointments, setShowAllAppointments] = useState(false);
+
+  // Monthly performance metrics
+  const [monthlyAccepted, setMonthlyAccepted] = useState(0);
+  const [monthlyNew, setMonthlyNew] = useState(0);
+
 
   // Recent Patients state; expects updated response from /api/doctor/recent-patients
   const [recentPatients, setRecentPatients] = useState([]);
@@ -69,6 +79,25 @@ const DoctorHome = () => {
   const maxAppointments = 150;
   const [bookedAppointments, setBookedAppointments] = useState(60);
   const [currentTab, setCurrentTab] = useState("Dashboard");
+   // Get current month and year
+   const currentDate = new Date();
+   const currentMonth = currentDate.getMonth() + 1; // January is 0; we need 1 based
+   const currentYear = currentDate.getFullYear();
+   const monthNames = [
+     "January",
+     "February",
+     "March",
+     "April",
+     "May",
+     "June",
+     "July",
+     "August",
+     "September",
+     "October",
+     "November",
+     "December",
+   ];
+ 
 
   // Fetch live status, appointments and recent patients when currentUser is available
   useEffect(() => {
@@ -115,7 +144,43 @@ const DoctorHome = () => {
         })
         .catch((err) => console.error("Error fetching recent patients:", err));
     }
-  }, [currentUser]);
+      // Fetch monthly accepted appointments
+      fetch("/api/doctor/count-monthly-appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctorId: currentUser.id,
+          month: currentMonth,
+          year: currentYear,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setMonthlyAccepted(data.acceptedAppointments);
+        })
+        .catch((err) =>
+          console.error("Error fetching monthly appointments:", err)
+        );
+
+      // Fetch monthly accepted appointments with new patients
+      fetch("/api/doctor/count-monthly-appointments/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctorId: currentUser.id,
+          month: currentMonth,
+          year: currentYear,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setMonthlyNew(data.acceptedAppointmentsWithNewPatients);
+        })
+        .catch((err) =>
+          console.error("Error fetching monthly new appointments:", err)
+        );
+    
+  }, [currentUser, currentMonth, currentYear]);
 
   // Toggle live status by calling backend endpoint
   const handleStatusToggle = async () => {
@@ -175,6 +240,36 @@ const DoctorHome = () => {
     const aptDate = new Date(apt.appointment_date).toISOString().split("T")[0];
     return aptDate === selectedDate;
   });
+
+  // Sort appointment requests by priority: pending > accepted > declined
+  const sortedAppointments = appointmentRequests.slice().sort((a, b) => {
+    const priority = { pending: 1, accepted: 2, declined: 3 };
+    return (priority[a.status] || 4) - (priority[b.status] || 4);
+  });
+
+  // Decide how many appointments to show based on toggle state
+  const appointmentsToDisplay = showAllAppointments
+    ? sortedAppointments
+    : sortedAppointments.slice(0, 5);
+
+    // Calculate monthly consultations based on appointmentRequests within the current month/year.
+    const monthlyConsultations = appointmentRequests.filter((apt) => {
+      const aptDate = new Date(apt.appointment_date);
+      return (
+        aptDate.getMonth() + 1 === currentMonth &&
+        aptDate.getFullYear() === currentYear
+      );
+    }).length;
+  
+    // Calculate doctor efficiency as the percentage of accepted appointments among monthly consultations.
+    const doctorEfficiency =
+      monthlyConsultations > 0
+        ? Math.round((monthlyAccepted / monthlyConsultations) * 100)
+        : 0;
+  
+    // For average consultation time, use a fixed value (or compute if data is available)
+    const avgConsultationTime = "15 mins";
+    
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -251,9 +346,10 @@ const DoctorHome = () => {
                     dataKey="presentYear"
                     name="Present Year"
                     stroke="#6366F1"
-                    strokeWidth={3}
+                    strokeWidth={2}
                     fill="url(#presentFill)"
                     activeDot={{ r: 8 }}
+                    strokeLinecap="round"
                   />
                   <Area
                     type="monotone"
@@ -261,9 +357,10 @@ const DoctorHome = () => {
                     name="Last Year"
                     stroke="#f87171"
                     strokeDasharray="5 5"
-                    strokeWidth={3}
+                    strokeWidth={2}
                     fill="url(#lastFill)"
                     activeDot={{ r: 8 }}
+                    strokeLinecap="round"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -278,65 +375,68 @@ const DoctorHome = () => {
             />
           </div>
 
-        {/* Appointment Requests Section */}
-<div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
-  <div className="flex justify-between items-center mb-4">
-    <h3 className="font-semibold rounded-lg px-1 py-[2px] bg-sky-400 text-white dark:bg-sky-800">
-      Appointment Requests
-    </h3>
-    <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 cursor-pointer rounded-2xl px-1">
-      See All
-    </span>
-  </div>
-  <div className="space-y-2">
-    {appointmentRequests.map((req, index) => (
-      <div
-        key={index}
-        className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
-      >
-        <div>
-          <div className="font-bold text-gray-800 dark:text-gray-200">
-            {req.patient_name || "Patient Name"}
-          </div>
-          <div className="text-gray-500 dark:text-gray-400">
-            {new Date(req.appointment_date).toLocaleString()}
-          </div>
-          {req.reason && (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Reason: {req.reason}
+          {/* Appointment Requests Section */}
+          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold rounded-lg px-1 py-[2px] bg-sky-400 text-white dark:bg-sky-800">
+                Appointment Requests
+              </h3>
+              <span
+                onClick={() => setShowAllAppointments((prev) => !prev)}
+                className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 cursor-pointer rounded-2xl px-1"
+              >
+                {showAllAppointments ? "Show Less" : "See All"}
+              </span>
             </div>
-          )}
-        </div>
-        {req.status === "pending" ? (
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => handleAccept(index)}
-              className="bg-sky-300 dark:bg-sky-600 text-black dark:text-white px-3 py-1 rounded"
-            >
-              Accept
-            </button>
-            <button
-              onClick={() => handleDecline(index)}
-              className="bg-red-400 dark:bg-red-600 text-black dark:text-white px-3 py-1 rounded"
-            >
-              Decline
-            </button>
+            <div className="space-y-2">
+              {appointmentsToDisplay.map((req, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
+                >
+                  <div>
+                    <div className="font-bold text-gray-800 dark:text-gray-200">
+                      {req.patient_name || "Patient Name"}
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400">
+                      {new Date(req.appointment_date).toLocaleString()}
+                    </div>
+                    {req.reason && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Reason: {req.reason}
+                      </div>
+                    )}
+                  </div>
+                  {req.status === "pending" ? (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleAccept(index)}
+                        className="bg-sky-300 dark:bg-sky-600 text-black dark:text-white px-3 py-1 rounded"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleDecline(index)}
+                        className="bg-red-400 dark:bg-red-600 text-black dark:text-white px-3 py-1 rounded"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`px-2 py-1 rounded ${
+                        req.status === "accepted"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                      }`}
+                    >
+                      {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div
-            className={`px-2 py-1 rounded ${
-              req.status === "accepted"
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-            }`}
-          >
-            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-</div>
 
           {/* Appointments with Date Filter */}
           <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
@@ -375,89 +475,105 @@ const DoctorHome = () => {
             )}
           </div>
 
-        {/* Recent Patients Section */}
-<div className="col-span-8 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
-  <h3 className="font-bold mb-4 text-gray-800 dark:text-gray-200">
-    Recent Patients
-  </h3>
-  <table className="w-full">
-    <thead className="bg-gray-100 dark:bg-gray-700">
-      <tr>
-        {["Patient Name", "Appointment Date", "Reason", "Status"].map(
-          (header, index) => (
-            <th key={index} className="p-2 text-left text-gray-800 dark:text-gray-200">
-              {header}
-            </th>
-          )
-        )}
-      </tr>
-    </thead>
-    <tbody>
-      {recentPatients.length === 0 ? (
-        <tr>
-          <td colSpan="4" className="p-2 text-gray-500 dark:text-gray-400">
-            No recent patients available.
-          </td>
-        </tr>
-      ) : (
-        recentPatients.map((patient, index) => (
-          <tr
-            key={index}
-            className="border-b border-gray-200 dark:border-gray-700"
-          >
-            <td className="p-2 text-gray-800 dark:text-gray-200">
-              {patient.patientInfo?.name || patient.name || "N/A"}
-            </td>
-            <td className="p-2 text-gray-800 dark:text-gray-200">
-              {patient.appointment_date
-                ? new Date(patient.appointment_date).toLocaleString()
-                : "N/A"}
-            </td>
-            <td className="p-2 text-gray-800 dark:text-gray-200">
-              {patient.reason || "N/A"}
-            </td>
-            <td className="p-2 text-gray-800 dark:text-gray-200">
-              {patient.status
-                ? patient.status.charAt(0).toUpperCase() + patient.status.slice(1)
-                : "N/A"}
-            </td>
-          </tr>
-        ))
-      )}
-    </tbody>
-  </table>
-</div>
+          {/* Recent Patients Section */}
+          <div className="col-span-8 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
+            <h3 className="font-bold mb-4 text-gray-800 dark:text-gray-200">
+              Recent Patients
+            </h3>
+            <table className="w-full">
+              <thead className="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                  {["Patient Name", "Appointment Date", "Reason", "Status"].map(
+                    (header, index) => (
+                      <th key={index} className="p-2 text-left text-gray-800 dark:text-gray-200">
+                        {header}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {recentPatients.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="p-2 text-gray-500 dark:text-gray-400">
+                      No recent patients available.
+                    </td>
+                  </tr>
+                ) : (
+                  recentPatients.map((patient, index) => (
+                    <tr
+                      key={index}
+                      className="border-b border-gray-200 dark:border-gray-700"
+                    >
+                      <td className="p-2 text-gray-800 dark:text-gray-200">
+                        {patient.patientInfo?.name || patient.name || "N/A"}
+                      </td>
+                      <td className="p-2 text-gray-800 dark:text-gray-200">
+                        {patient.appointment_date
+                          ? new Date(patient.appointment_date).toLocaleString()
+                          : "N/A"}
+                      </td>
+                      <td className="p-2 text-gray-800 dark:text-gray-200">
+                        {patient.reason || "N/A"}
+                      </td>
+                      <td className="p-2 text-gray-800 dark:text-gray-200">
+                        {patient.status
+                          ? patient.status.charAt(0).toUpperCase() + patient.status.slice(1)
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Daily Performance and Metrics */}
           <div className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
             <div className="mb-4">
               <h3 className="font-bold text-gray-800 dark:text-gray-200">
-                Daily Performance
+                Monthly Performance
               </h3>
-              <span className="text-gray-500 dark:text-gray-400">August 2025</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                {monthNames[currentMonth - 1]} {currentYear}
+              </span>
             </div>
+            {/* Total consultations for the month */}
             <div className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-              42 Consultations
+              {monthlyConsultations} Consultations
             </div>
             <div className="grid grid-cols-2 gap-4">
+              {/* New Patients (from accepted appointments with new patients endpoint) */}
               <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded text-center">
-                <div className="text-xl text-gray-800 dark:text-gray-200">12</div>
-                <div className="text-gray-600 dark:text-gray-300">New Patients</div>
+                <div className="text-xl text-gray-800 dark:text-gray-200">
+                  {monthlyNew}
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  New Patients
+                </div>
               </div>
+              {/* Treated & Discharged (from count-monthly-appointments endpoint) */}
               <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded text-center">
-                <div className="text-xl text-gray-800 dark:text-gray-200">7</div>
-                <div className="text-gray-600 dark:text-gray-300">Treated & Discharged</div>
+                <div className="text-xl text-gray-800 dark:text-gray-200">
+                  {monthlyAccepted}
+                </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  Treated & Discharged
+                </div>
               </div>
             </div>
             <div className="mt-4 text-sm text-gray-700 dark:text-gray-300">
               <p>
-                Avg Consultation Time: <span className="font-bold">15 mins</span>
+                Avg Consultation Time:{" "}
+                <span className="font-bold">{avgConsultationTime}</span>
               </p>
               <p>
-                Doctor Efficiency: <span className="font-bold">85%</span>
+                Doctor Efficiency:{" "}
+                <span className="font-bold">{doctorEfficiency}%</span>
               </p>
             </div>
           </div>
+
         </div>
       </div>
     </div>

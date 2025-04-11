@@ -18,6 +18,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useSelector } from "react-redux";
 
 // Custom Tooltip component for Recharts
 const CustomTooltip = ({ active, payload, label }) => {
@@ -44,7 +45,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function DoctorAppointments() {
   // Simulated current user; in your app, obtain this from auth context or props.
-  const currentUser = { id: 26 };
+  const { currentUser } = useSelector((state) => state.user);
+  // const currentUserid = currentUser.id;
 
   // States for appointments, chart data, and slide-over patient details.
   const [appointments, setAppointments] = useState([]);

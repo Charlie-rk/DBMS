@@ -228,6 +228,7 @@ export async function fetchRecentPatientsByDoctor(req, res, next) {
   try {
     // Get current time and timestamp for one week ago
     const currTime = new Date();
+    console.log(currTime)
     const prevWeekTime = new Date(currTime.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     console.log(`Doctor ID: ${doctorId}`);

@@ -10,7 +10,7 @@ export default function DoctorRoute() {
   const { currentUser } = useSelector((state) => state.user);
   
   // Check if the user is a Doctor
-  if (!currentUser || currentUser.role !== "Doctor") {
+  if (!currentUser || currentUser.role !== "doctor") {
     return <Navigate to="/sign-in" />;
   }
   

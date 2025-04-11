@@ -47,7 +47,7 @@ export default function App() {
     switch (currentUser.role) {
       case 'Front Desk Operator':
         return <FDODashboard />;
-      case 'Doctor':
+      case 'doctor':
         return <DoctorDashboard />;
       case 'Data Entry Operator':
         return <EDODashboard />;
@@ -69,13 +69,13 @@ export default function App() {
     <Routes>  
          {/* <Route path='/' element={<Home/>} /> */}
 
-         <Route path='/form' element={<Form/>} />
+         {/* <Route path='/form' element={<Form/>} />
          <Route path='/patient' element={<AllPatient/>} />
          <Route path='/doctor/*' element={<DoctorDashboard/>} />
          <Route path='/fdo/*' element={<FDODashboard/>} />
          <Route path="/deo/*" element={<EDODashboard />} />
          <Route path="/admin/*" element={<Dashboard />} />
-         <Route path="/medication" element={<Medication />} />
+         <Route path="/medication" element={<Medication />} /> */}
          {/* <Route path="/mess" element={<MessageSend />} /> */}
          {/* <Route path="/profile" element={<Profile />} /> */}
 
@@ -91,8 +91,8 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path='/admin/*' element={<AdminRoute />} />
           <Route path='/fdo/*' element={<FDORoute />} />
-          <Route path='/doctor_dashboard' element={<DoctorRoute />} />
-          {/* <Route path='/deo/*' element={<DEORoute />} /> */}
+          <Route path='/doctor/*' element={<DoctorRoute />} />
+          <Route path='/deo/*' element={<DEORoute />} />
         </Route>
 
     </Routes>
