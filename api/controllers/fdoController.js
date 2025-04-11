@@ -97,7 +97,7 @@ export async function scheduleAppointment(req, res, next) {
       .eq('slot', slot)
       .neq('status', 'declined')
       .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
-      .lt('appointment_date', `${appointmentDate}T23:59:59Z`);
+      .lte('appointment_date', `${appointmentDate}T23:59:59Z`);
     
     if (countError) throw countError;
 
@@ -744,7 +744,9 @@ export async function getSlotDistributionByDate(req, res, next) {
         .select('*', { count: 'exact', head: true })
         .eq('doctor_id', doctorId)
         .eq('slot', slot)
-        .eq('status', 'accepted');
+        .eq('status', 'accepted')
+        .gte('appointment_date', `${date}T00:00:00Z`)
+        .lte('appointment_date', `${date}T23:59:59Z`);
 
       if (acceptedError) throw acceptedError;
 
@@ -754,7 +756,9 @@ export async function getSlotDistributionByDate(req, res, next) {
         .select('*', { count: 'exact', head: true })
         .eq('doctor_id', doctorId)
         .eq('slot', slot)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .gte('appointment_date', `${date}T00:00:00Z`)
+        .lte('appointment_date', `${date}T23:59:59Z`);
 
       if (pendingError) throw pendingError;
 
