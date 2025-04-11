@@ -9,6 +9,10 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { RiMessage2Fill } from "react-icons/ri";
 
+import { io } from "socket.io-client";
+
+const socket = io();
+
 const MySwal = withReactContent(Swal);
 
 export default function Alldoctor() {
@@ -66,6 +70,13 @@ export default function Alldoctor() {
 
     fetchDoctors();
   }, []);
+
+  useEffect(() => {
+    // Register the current user with the socket server
+    if (currentUser && currentUser.username) {
+      socket.emit('register', currentUser.username);
+    }
+  }, [currentUser]);
 
   // Filter doctors based on department and search query
   const filteredDoctors = useMemo(() => {

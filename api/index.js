@@ -1,98 +1,4 @@
-// import express from 'express';
-// import dotenv from 'dotenv';
-// import cookieParser from 'cookie-parser';
-// import path from 'path';
-// import { createClient } from '@supabase/supabase-js';
-// import pkg from 'pg';
-// const { Client } = pkg;
 
-// dotenv.config();
-
-// const __dirname = path.resolve();
-// const app = express();
-
-// app.use(express.json());
-// app.use(express.static(path.join(__dirname, '/client/dist')));
-// app.use(cookieParser());
-
-// // // Supabase configuration
-// // const supabaseUrl = 'https://tvgasdupkqffhvqzurwy.supabase.co';
-// // const supabaseKey = process.env.SUPABASE_KEY;
-// // const supabase = createClient(supabaseUrl, supabaseKey);
-
-// // Use the provided connection string (password URL-encoded)
-// // const SUPABASE_DB_URL = "postgresql://postgres:Charlie%401275@db.sbpfqvpwpwmbzucacozv.supabase.co:5432/postgres";
-// // const SUPABASE_DB_URL="postgresql://postgres:Lieu10ants!@db.tvgasdupkqffhvqzurwy.supabase.co:5432/postgres"
-// // const SUPABASE_DB_URL = "postgresql://postgres:Lieu10ants%21@db.tvgasdupkqffhvqzurwy.supabase.co:5432/postgres";
-// const SUPABASE_DB_URL = "postgresql://postgres:Lieu10ants%21@db.tvgasdupkqffhvqzurwy.supabase.co:5432/postgres"
-// // const SUPABASE_DB_URL = "postgresql://postgres:Lieu10ants%21@db.duvfxetywmvzsihtwevf.supabase.co:5432/postgres";
-
-
-// // Function to create the users table using pg
-// async function createUserTable() {
-//   const client = new Client({
-//     connectionString: SUPABASE_DB_URL,
-//   });
-  
-//   try {
-//     await client.connect();
-//     console.log("Hi");
-//     const createTableQuery = `
-//     CREATE TABLE IF NOT EXISTS users (
-//       id SERIAL PRIMARY KEY,
-//       username VARCHAR(255) UNIQUE,
-//       email VARCHAR(255) UNIQUE NOT NULL,
-//       password VARCHAR(255) NOT NULL,
-//       profile_picture VARCHAR(255) DEFAULT 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
-//       is_admin BOOLEAN DEFAULT false,
-//       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-//       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-//       );
-//       `;
-//       const result = await client.query(createTableQuery);
-//       console.log('Table created or already exists:', result);
-//       return result;
-//     } catch (err) {
-//       console.error('Error creating table:', err);
-//       throw err;
-//     } finally {
-//       await client.end();
-//     }
-//   }
-  
-//   const port = process.env.PORT || 3000;
-//   app.listen(port, () => {
-//   console.log("debgug 1");
-//   console.log(`Server is listening on port ${port}`);
-// });
-
-// // Route "/" triggers the table creation process
-// app.get('/', async (req, res) => {
-//   try {
-//     console.log("Received GET request to /");
-//     const tableResult = await createUserTable();
-//     res.json({ message: 'User table created or already exists', tableResult });
-//   } catch (error) {
-//     console.error("Error in / route:", error);
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// // Fallback route for SPA (Single Page Application)
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
-// });
-
-// // Error-handling middleware
-// app.use((err, req, res, next) => {
-//   const statusCode = err.statusCode || 500;
-//   const message = err.message || 'Internal Server Error';
-//   res.status(statusCode).json({
-//     success: false,
-//     statusCode,
-//     message,
-//   });
-// });
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -117,6 +23,10 @@ import userRoute from './routes/userRoute.js';
 import deoRoute from './routes/deoRoute.js';
 import { createNotificationTable } from './models/notificationModel.js';
 // import { verifyToken } from './utilis/verifyUser';
+
+
+import http from 'http';
+import { Server } from 'socket.io';
 
 
 dotenv.config();
@@ -170,7 +80,50 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Adjust the allowed origin(s) in production for security
+    methods: ["GET", "POST"],
+  },
+});
+
+// Global mapping: username -> array of socket IDs
+const userSocketMap = {};
+
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+
+  // Register event – client emits this after connecting
+  socket.on('register', (username) => {
+    if (username) {
+      userSocketMap[username] = userSocketMap[username] || [];
+      userSocketMap[username].push(socket.id);
+      socket.username = username;
+      console.log(`User ${username} connected with socket ${socket.id}`);
+    }
+  });
+
+  // Clean up when a socket disconnects
+  socket.on('disconnect', () => {
+    if (socket.username && userSocketMap[socket.username]) {
+      userSocketMap[socket.username] = userSocketMap[socket.username].filter(
+        (id) => id !== socket.id
+      );
+      console.log(`User ${socket.username} disconnected from socket ${socket.id}`);
+    }
+  });
+});
+
+
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+// const port = process.env.PORT || 3000;
+server.listen(port, () => {
   console.log(`✅ Server listening on http://localhost:${port}`);
 });
+
+
+// Exporting io and userSocketMap can be useful in other modules.
+export { io, userSocketMap };

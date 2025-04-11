@@ -1,10 +1,20 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { Button, Modal, TextInput, Textarea } from "flowbite-react";
 import {
-  ThumbsUp, Heart, Smile, Frown, Zap, AlertTriangle, MessageSquare,
-  Send, SmilePlus, Paperclip
+  ThumbsUp,
+  Heart,
+  Smile,
+  Frown,
+  Zap,
+  AlertTriangle,
+  MessageSquare,
+  Send,
+  SmilePlus,
+  Paperclip,
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { io } from "socket.io-client";
 
 export default function Messages() {
   const [messages, setMessages] = useState([]);
@@ -18,6 +28,39 @@ export default function Messages() {
   const { currentUser } = useSelector((state) => state.user);
   const usernameForApi = currentUser?.username || "charlie";
 
+  // Setup Socket.IO connection and listen for notification events
+  useEffect(() => {
+    // Create a new socket connection. Adjust the URL if necessary.
+    const socket = io("http://localhost:3000", {
+      transports: ["websocket"], // force websocket connection
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket connected with id:", socket.id);
+      // Register current user with the socket server
+      socket.emit("register", usernameForApi);
+      console.log(`Emitted 'register' event for user: ${usernameForApi}`);
+    });
+
+    socket.on("notification", (notification) => {
+      console.log("Received notification via socket:", notification);
+      // Update your notification state; prepend new notification to list
+      setMessages((prevMessages) => [notification, ...prevMessages]);
+    });
+
+    // Debug log on disconnect
+    socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+    });
+
+    // Clean-up function: disconnect the socket when component unmounts or username changes.
+    return () => {
+      console.log("Cleaning up socket connection");
+      socket.disconnect();
+    };
+  }, [usernameForApi]);
+
+  // If you want to load existing notifications once (fallback for offline or initial load)
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
@@ -41,8 +84,9 @@ export default function Messages() {
             minute: "2-digit",
           }),
           date: new Date(notification.created_at).toLocaleDateString(),
-          status: notification.status
+          status: notification.status,
         }));
+        console.log("Fetched notifications:", mappedMessages);
         setMessages(mappedMessages);
       } catch (error) {
         console.error("Error fetching notifications:", error);
@@ -84,9 +128,13 @@ export default function Messages() {
         const errData = await response.json();
         throw new Error(errData.error || "Failed to send message");
       }
+      const newNotification = await response.json();
       console.log(
         `Message sent to ${replyTo.sender}: Subject: ${replySubject} | Message: ${replyContent}`
       );
+
+      // Optimistically update messages state (if you want the sender to see his own message immediately)
+      setMessages((prevMessages) => [newNotification, ...prevMessages]);
       setShowReplyModal(false);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -97,7 +145,7 @@ export default function Messages() {
   // Group messages by date
   const groupMessagesByDate = () => {
     const grouped = {};
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       if (!grouped[msg.date]) {
         grouped[msg.date] = [];
       }
@@ -112,67 +160,75 @@ export default function Messages() {
     <div className="h-screen flex flex-col bg-gray-100 dark:bg-gray-800">
       {/* Header */}
       <div className="bg-white dark:bg-gray-700 shadow py-4 px-6">
-        <h1 className="text-xl font-semibold text-gray-800 dark:text-white">Messages</h1>
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-white">
+          Messages
+        </h1>
         <p className="text-sm text-gray-500 dark:text-gray-300">
           {messages.length} conversations
         </p>
       </div>
-      
+
       {/* Message List */}
       <div className="flex-1 overflow-y-auto p-4">
-        {Object.keys(groupedMessages).map(date => (
+        {Object.keys(groupedMessages).map((date) => (
           <div key={date} className="mb-6">
             <div className="flex justify-center mb-4">
               <span className="bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 text-xs px-3 py-1 rounded-full">
                 {date}
               </span>
             </div>
-            
+
             {groupedMessages[date].map((msg) => (
               <div key={msg.id} className="mb-4">
                 <div className="flex items-start">
                   <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white flex-shrink-0 mr-2">
                     {msg.sender.charAt(0).toUpperCase()}
                   </div>
-                  
+
                   <div className="max-w-3/4">
                     <div className="flex items-center mb-1">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">{msg.sender}</p>
-                      <span className="ml-2 text-xs text-gray-500">{msg.time}</span>
+                      <p className="font-medium text-gray-800 dark:text-gray-200">
+                        {msg.sender}
+                      </p>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {msg.time}
+                      </span>
                     </div>
-                    
+
                     <div className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow">
                       {msg.subject && (
                         <div className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
                           {msg.subject}
                         </div>
                       )}
-                      <p className="text-gray-700 dark:text-gray-300">{msg.message}</p>
+                      <p className="text-gray-700 dark:text-gray-300">
+                        {msg.message}
+                      </p>
                     </div>
-                    
+
                     <div className="mt-2 flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleReact(msg.id, "Like")}
                         className="text-gray-500 hover:text-blue-500 text-xs flex items-center"
                       >
                         <ThumbsUp size={14} className="mr-1" />
                         Like
                       </button>
-                      <button 
+                      <button
                         onClick={() => openReplyModal(msg)}
                         className="text-gray-500 hover:text-green-500 text-xs flex items-center"
                       >
                         <MessageSquare size={14} className="mr-1" />
                         Reply
                       </button>
-                      <button 
+                      <button
                         className="text-gray-500 hover:text-yellow-500 text-xs flex items-center"
                       >
                         <SmilePlus size={14} className="mr-1" />
                         React
                       </button>
                     </div>
-                    
+
                     {reactions[msg.id] && (
                       <div className="mt-1 ml-2 text-xs text-blue-600 dark:text-blue-400">
                         Reacted with {reactions[msg.id]}
@@ -185,15 +241,15 @@ export default function Messages() {
           </div>
         ))}
       </div>
-      
+
       {/* Message Input */}
       <div className="bg-white dark:bg-gray-700 p-4 border-t border-gray-200 dark:border-gray-600">
         <div className="flex items-center">
           <button className="text-gray-500 hover:text-blue-500 mr-2">
             <Paperclip size={20} />
           </button>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Type a message..."
             className="flex-1 border border-gray-300 dark:border-gray-500 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
           />
@@ -220,14 +276,16 @@ export default function Messages() {
                   {replyTo.sender}
                 </span>
               </div>
-              
+
               <div className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mb-4">
                 <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   {replyTo.subject}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{replyTo.message}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {replyTo.message}
+                </p>
               </div>
-              
+
               <TextInput
                 id="replySubject"
                 placeholder="Subject"
@@ -242,7 +300,7 @@ export default function Messages() {
                 onChange={(e) => setReplyContent(e.target.value)}
                 rows={4}
               />
-              
+
               <div className="flex justify-end gap-3 mt-4">
                 <Button color="gray" onClick={() => setShowReplyModal(false)}>
                   Cancel

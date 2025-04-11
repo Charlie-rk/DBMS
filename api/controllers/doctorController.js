@@ -219,7 +219,7 @@ export async function changeAppointmentStatus(req, res, next) {
 
 export async function fetchRecentPatientsByDoctor(req, res, next) {
   const { doctorId } = req.body;
-  console.log(doctorId);
+  // console.log(doctorId);
 
   if (!doctorId) {
     return res.status(400).json({ error: 'doctorId is required' });
@@ -228,10 +228,10 @@ export async function fetchRecentPatientsByDoctor(req, res, next) {
   try {
     // Get current time and timestamp for one week ago
     const currTime = new Date();
-    console.log(currTime)
+    // console.log(currTime)
     const prevWeekTime = new Date(currTime.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    console.log(`Doctor ID: ${doctorId}`);
+    // console.log(`Doctor ID: ${doctorId}`);
 
     // Fetch accepted appointments in the last week for this doctor
     // Fetch all appointment fields (including patient_id)
@@ -244,7 +244,7 @@ export async function fetchRecentPatientsByDoctor(req, res, next) {
       .lte('appointment_date', currTime.toISOString());
 
     if (appointmentError) throw appointmentError;
-    console.log(appointments);
+    // console.log(appointments);
 
     if (!appointments || appointments.length === 0) {
       return res.status(200).json({ appointments: [] });
@@ -283,7 +283,7 @@ export async function fetchRecentPatientsByDoctor(req, res, next) {
 
 export async function getAllAppointmentsByDoctor(req, res, next) {
   const { doctorId } = req.body;
-  console.log(doctorId);
+  // console.log(doctorId);
   try {
     // Fetch appointments for the doctor
     const { data: appointments, error: appointmentError, count } = await supabase
