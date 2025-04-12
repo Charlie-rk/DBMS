@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutGrid,
@@ -38,6 +38,13 @@ const SideBar_Doctor = () => {
 
   const toggleSidebar = () => setIsOpen(!isOpen);
   const toggleMobileSidebar = () => setMobileOpen(!mobileOpen);
+  // Effect to collapse the sidebar when the Messages tab is active
+  useEffect(() => {
+    if (location.pathname === "/doctor/messages") {
+      setIsOpen(false);
+    }
+  }, [location]);
+
 
   return (
     <div>

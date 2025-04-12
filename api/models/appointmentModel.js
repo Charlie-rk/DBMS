@@ -38,6 +38,7 @@ export async function createAppointmentTable() {
         reason TEXT,
         slot INT,
         status appointment_status DEFAULT 'pending',
+        emergency bool DEFAULT false,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );

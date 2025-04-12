@@ -109,8 +109,8 @@ export async function sendNotification(req, res, next) {
   console.log("Send notification request:", req.body);
   const { username, sender, subject, message } = req.body;
 
-  if (!username || !subject || !message) {
-    return next(errorHandler(400, 'Username, subject, and message are required'));
+  if (!username || !message) {
+    return next(errorHandler(400, 'Username, and message are required'));
   }
 
   try {

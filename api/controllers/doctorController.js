@@ -124,8 +124,11 @@ export async function getMonthlyAcceptedAppointmentsWithNewPatientsByDoctor(req,
     next(err);
   }
 }
+
 export async function changeAppointmentStatus(req, res, next) {
+  console.log("updating status of appointment");
   let { appointmentId, status } = req.body;
+  console.log(req.body);
   if (!appointmentId || !status) {
     return res.status(400).json({ error: "Missing appointmentId or status" });
   }
@@ -151,6 +154,7 @@ export async function changeAppointmentStatus(req, res, next) {
 
     // If status is not 'accepted', skip patient count update
     if (status !== 'accepted') {
+      console.log("Decline update done!");
       return res.status(200).json({ message: 'Status updated successfully', data: updatedAppointment });
     }
 
@@ -202,6 +206,7 @@ export async function changeAppointmentStatus(req, res, next) {
     if (updateDeptError) {
       return res.status(500).json({ error: updateDeptError.message });
     }
+  console.log("update done!");
 
     return res.status(200).json({
       message: 'Status updated and department patient count incremented.',

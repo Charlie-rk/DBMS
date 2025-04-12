@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   X,
   Menu,
@@ -72,6 +72,13 @@ const AdminSidebar = ({ }) => {
   const toggleSidebar = () => setIsOpen(!isOpen);
   const [mobileOpen, setMobileOpen] = useState(false); // For mobile overlay
   const toggleMobileSidebar = () => setMobileOpen(!mobileOpen);
+  // Effect to collapse the sidebar when the Messages tab is active
+  useEffect(() => {
+    if (location.pathname === "/admin/message") {
+      setIsOpen(false);
+    }
+  }, [location]);
+
   return (
 
     <>

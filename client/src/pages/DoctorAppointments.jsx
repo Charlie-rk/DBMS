@@ -2,7 +2,12 @@
 /* eslint-disable react/no-unescaped-entities */
 import React, { useState, useEffect } from "react";
 import { Card, Button, Spinner } from "flowbite-react";
-import { FaUserMd, FaCheckCircle, FaTimesCircle, FaHourglassHalf } from "react-icons/fa"; // additional icons for stats
+import { 
+  FaUserMd, 
+  FaCheckCircle, 
+  FaTimesCircle, 
+  FaHourglassHalf 
+} from "react-icons/fa";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import Backdrop from "@mui/material/Backdrop";
@@ -19,12 +24,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useSelector } from "react-redux";
+import { AlertCircle } from "lucide-react";
 
-// Custom Tooltip component for Recharts
+// Updated Custom Tooltip component to display emergency count as well.
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    // Assuming data order: accepted, declined, pending
-    const [acceptedData, declinedData, pendingData] = payload;
+    // Destructure payload. The order of the items should match the order of the <Area> components.
+    const [acceptedData, declinedData, pendingData, emergencyData] = payload;
     return (
       <div className="bg-white dark:bg-gray-700 p-2 rounded shadow-md text-sm dark:text-gray-200">
         <p className="font-semibold mb-1">Date: {label}</p>
@@ -37,6 +43,9 @@ const CustomTooltip = ({ active, payload, label }) => {
         <p className="text-purple-700 dark:text-purple-300">
           Pending: {pendingData.value}
         </p>
+        <p className="text-orange-700 dark:text-orange-300">
+          Emergency: {emergencyData.value}
+        </p>
       </div>
     );
   }
@@ -44,11 +53,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function DoctorAppointments() {
-  // Simulated current user; in your app, obtain this from auth context or props.
   const { currentUser } = useSelector((state) => state.user);
-  // const currentUserid = currentUser.id;
-
-  // States for appointments, chart data, and slide-over patient details.
   const [appointments, setAppointments] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
@@ -56,16 +61,17 @@ export default function DoctorAppointments() {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [patientDetail, setPatientDetail] = useState(null);
 
-  // Global loading state.
   const globalLoading = loadingAppointments || detailLoading;
 
-  // Overall appointment counts for statistics.
+  // Overall appointment counts
   const acceptedCount = appointments.filter((a) => a.status === "accepted").length;
   const declinedCount = appointments.filter((a) => a.status === "declined").length;
   const pendingCount = appointments.filter((a) => a.status === "pending").length;
   const totalAppointments = appointments.length;
-  // A static total available (for demonstration)
-  const totalAvailable = 100;
+  const totalAvailable = 100; // static for demonstration
+
+  // New metric: emergency count (for card display)
+  const emergencyCount = appointments.filter((a) => a.emergency).length;
 
   // Escape key and body scroll handling for slide-over.
   useEffect(() => {
@@ -119,19 +125,27 @@ export default function DoctorAppointments() {
 
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [currentUser]);
 
-  // Compute chart data by grouping appointments by date.
+  // Compute chart data by grouping appointments by formatted date and include a timestamp for sorting.
   useEffect(() => {
     if (appointments.length === 0) {
       setChartData([]);
       return;
     }
-    // Group appointments by formatted date string.
     const groups = appointments.reduce((acc, appt) => {
-      const dateKey = formatDate(appt.appointment_date);
+      // Create a Date object and generate a local date string.
+      const dateObj = new Date(appt.appointment_date);
+      const dateKey = dateObj.toLocaleDateString();
+      // Use timestamp from the dateObj for sorting.
       if (!acc[dateKey]) {
-        acc[dateKey] = { accepted: 0, declined: 0, pending: 0 };
+        acc[dateKey] = { 
+          accepted: 0, 
+          declined: 0, 
+          pending: 0, 
+          emergency: 0,
+          timestamp: dateObj.getTime(),
+        };
       }
       if (appt.status === "accepted") {
         acc[dateKey].accepted += 1;
@@ -140,16 +154,27 @@ export default function DoctorAppointments() {
       } else if (appt.status === "pending") {
         acc[dateKey].pending += 1;
       }
+      // Increase the emergency count if the appointment is marked emergency.
+      if (appt.emergency) {
+        acc[dateKey].emergency += 1;
+      }
       return acc;
     }, {});
 
-    // Convert grouped data into an array for Recharts.
-    const chartArray = Object.keys(groups).map((date) => ({
-      date,
-      accepted: groups[date].accepted,
-      declined: groups[date].declined,
-      pending: groups[date].pending,
-    }));
+    // Transform the groups into an array and sort by the timestamp.
+    const chartArray = Object.keys(groups)
+      .map((date) => ({
+        date,
+        accepted: groups[date].accepted,
+        declined: groups[date].declined,
+        pending: groups[date].pending,
+        emergency: groups[date].emergency,
+        timestamp: groups[date].timestamp,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp)
+      // Optionally, remove the timestamp property if not needed by the chart.
+      .map(({ timestamp, ...rest }) => rest);
+      
     setChartData(chartArray);
   }, [appointments]);
 
@@ -193,8 +218,8 @@ export default function DoctorAppointments() {
         </span>
       </div>
 
-      {/* Initial Four Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {/* Metric Cards: using a 5-column grid */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         {/* Total Appointments Card */}
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-700 hover:bg-slate-200">
           <div className="flex items-center space-x-3">
@@ -251,10 +276,24 @@ export default function DoctorAppointments() {
             </div>
           </div>
         </Card>
+        {/* Emergency Card */}
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-700 hover:bg-slate-200">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+            <div>
+              <p className="bg-sky-200 dark:bg-sky-500 rounded-md px-1 text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Emergency
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {emergencyCount}
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Overview Card with AreaChart */}
-      <Card className="w-full  p-4 bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 rounded-lg text-gray-800 dark:text-gray-200 mb-6">
+      {/* Overview Card with AreaChart for Appointments by Date */}
+      <Card className="w-full p-4 bg-white dark:bg-gray-800 shadow-xl hover:shadow-slate-500 rounded-lg text-gray-800 dark:text-gray-200 mb-6">
         {/* Top Row: Title & Main Stat */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
@@ -280,34 +319,68 @@ export default function DoctorAppointments() {
             <span className="text-purple-700 dark:text-purple-300">
               Pending: {pendingCount}
             </span>
+            <span className="text-orange-700 dark:text-orange-300">
+              Emergency: {emergencyCount}
+            </span>
           </div>
         </div>
-        {/* Area Chart with three areas: accepted, declined, pending */}
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="acceptedFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#047857" stopOpacity={0.7} />
-                <stop offset="100%" stopColor="#34D399" stopOpacity={0.2} />
-              </linearGradient>
-              <linearGradient id="declinedFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#b91c1c" stopOpacity={0.7} />
-                <stop offset="100%" stopColor="#f87171" stopOpacity={0.2} />
-              </linearGradient>
-              <linearGradient id="pendingFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6b21a8" stopOpacity={0.7} />
-                <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.2} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.1)" />
-            <XAxis dataKey="date" stroke="gray" />
-            <YAxis stroke="gray" />
-            <RechartsTooltip content={<CustomTooltip />} />
-            <Area type="monotone" dataKey="accepted" stroke="#047857" fill="url(#acceptedFill)" strokeWidth={2} />
-            <Area type="monotone" dataKey="declined" stroke="#b91c1c" fill="url(#declinedFill)" strokeDasharray="5 5" strokeWidth={2} />
-            <Area type="monotone" dataKey="pending" stroke="#6b21a8" fill="url(#pendingFill)" strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
+       {/* Area Chart */}
+<ResponsiveContainer width="100%" height={300}>
+  <AreaChart data={chartData}>
+    <defs>
+      <linearGradient id="acceptedFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#87CEEB" stopOpacity={0.7} />
+        <stop offset="100%" stopColor="#87CEFA" stopOpacity={0.2} />
+      </linearGradient>
+      <linearGradient id="declinedFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#808080" stopOpacity={0.7} />
+        <stop offset="100%" stopColor="#A9A9A9" stopOpacity={0.2} />
+      </linearGradient>
+      <linearGradient id="pendingFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#8A2BE2" stopOpacity={0.7} />
+        <stop offset="100%" stopColor="#9370DB" stopOpacity={0.2} />
+      </linearGradient>
+      <linearGradient id="emergencyFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FF4500" stopOpacity={0.7} />
+        <stop offset="100%" stopColor="#FF6347" stopOpacity={0.2} />
+      </linearGradient>
+    </defs>
+    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.1)" />
+    <XAxis dataKey="date" stroke="gray" />
+    <YAxis stroke="gray" />
+    <RechartsTooltip content={<CustomTooltip />} />
+    <Area 
+      type="monotone" 
+      dataKey="accepted" 
+      stroke="#87CEEB" 
+      fill="url(#acceptedFill)" 
+      strokeWidth={2} 
+    />
+    <Area 
+      type="monotone" 
+      dataKey="declined" 
+      stroke="#808080" 
+      fill="url(#declinedFill)" 
+      strokeDasharray="5 5" 
+      strokeWidth={2} 
+    />
+    <Area 
+      type="monotone" 
+      dataKey="pending" 
+      stroke="#8A2BE2" 
+      fill="url(#pendingFill)" 
+      strokeWidth={2} 
+    />
+    <Area 
+      type="monotone" 
+      dataKey="emergency" 
+      stroke="#FF4500" 
+      fill="url(#emergencyFill)" 
+      strokeWidth={2} 
+    />
+  </AreaChart>
+</ResponsiveContainer>
+
       </Card>
 
       {/* Appointments Table */}
@@ -341,11 +414,17 @@ export default function DoctorAppointments() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {formatDate(appt.appointment_date)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 flex items-center">
                   {appt.patient_name}
+                  {appt.emergency && (
+                    <span className="ml-2 text-red-500 flex items-center">
+                      <AlertCircle size={16} className="mr-1" />
+                      Emergency
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                  {appt.slot}
+                  {appt.slot || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                   {appt.reason}
@@ -435,10 +514,13 @@ export default function DoctorAppointments() {
                   </h3>
                   <div className="space-y-3">
                     {patientDetail.appointments.map((appt) => (
-                      <div key={appt.id} className="p-3 border rounded-md dark:border-gray-600 bg-green-50 dark:bg-green-900 shadow-sm">
+                      <div
+                        key={appt.id}
+                        className="p-3 border rounded-md dark:border-gray-600 bg-green-50 dark:bg-green-900 shadow-sm"
+                      >
                         <p className="text-gray-800 dark:text-gray-200">
                           <span className="font-semibold">Date:</span> {formatDate(appt.appointment_date)} |{" "}
-                          <span className="font-semibold">Slot:</span> {appt.slot}
+                          <span className="font-semibold">Slot:</span> {appt.slot ?? "-"}
                         </p>
                         <p className="text-gray-700 dark:text-gray-300">
                           <span className="font-semibold">Reason:</span> {appt.reason}
@@ -446,12 +528,22 @@ export default function DoctorAppointments() {
                         <p className="text-gray-700 dark:text-gray-300">
                           <span className="font-semibold">Status:</span> {appt.status}
                         </p>
+                        {appt.emergency && (
+                          <p className="text-red-500 dark:text-red-400 font-bold">
+                            <AlertCircle size={16} className="inline mr-1" />
+                            Emergency Appointment
+                          </p>
+                        )}
+                        {appt.doctor && (
+                          <p className="text-gray-700 dark:text-gray-300">
+                            <span className="font-semibold">Doctor:</span> {appt.doctor.name} (Dept: {appt.doctor.specialisation})
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
               {/* Additional sections (Admissions, Tests, Treatments, Reports) can be added similarly */}
             </div>
           ) : (

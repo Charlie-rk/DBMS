@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { createActivity } from './userController.js';
+import nodemailer from "nodemailer";
+import { errorHandler } from '../utilis/error.js';
+import { io } from '../index.js';
 
 dotenv.config();
 
@@ -15,6 +18,58 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
  * - Calculate and store the patient's age.
  * - Set patient status to 'registered'.
  */
+// Create a mail transporter (move credentials to your .env file)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'rustampavri1275@gmail.com',
+    pass: 'djyh phga iwhf nkyr', // Note: Move to environment variables
+  },
+});
+
+
+/**
+ * Helper function: Handle extra tasks for emergency appointments.
+ * - Emits a real-time alert via Socket.IO.
+ * - Sends an email alert to the provided email address.
+ */
+async function handleEmergencyAppointmentExtra(appointment, email) {
+  // (a) Emit a socket notification (you might want to target a specific user or broadcast to all)
+  io.emit('emergencyAppointment', appointment);
+  console.log(`Emitted emergencyAppointment for appointment ${appointment.id}`);
+
+  // (b) Send email alert (customize the email content as needed)
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: 'Emergency Appointment Scheduled',
+    html: `
+      <h2>Emergency Appointment Alert</h2>
+      <p>An emergency appointment has been scheduled.</p>
+      <p>
+        <strong>Appointment ID:</strong> ${appointment.id}<br/>
+        <strong>Doctor ID:</strong> ${appointment.doctor_id}<br/>
+        <strong>Patient ID:</strong> ${appointment.patient_id}<br/>
+        <strong>Time:</strong> ${appointment.appointment_date}
+      </p>
+      <p>Please take immediate action.</p>
+    `,
+  };
+
+  // transporter.sendMail(mailOptions, (error, info) => {
+  //   if (error) {
+  //     console.error('Error sending emergency email:', error);
+  //   } else {
+  //     console.log('Emergency email sent:', info.response);
+  //   }
+  // });
+}
+
+
+
+
+
+
 
 ////////done//////////may be we can use sql for age counting////////
 export async function registerPatient(req, res, next) {
@@ -77,72 +132,106 @@ export async function registerPatient(req, res, next) {
  * - Placeholder for running an algorithm to determine available slots.
  * - Sends back the created appointment record.
  */
-
-//////////algorithm reamining & doctor's appointment information also //////////////
 export async function scheduleAppointment(req, res, next) {
-  console.log("Scheduling");
-  const { fdo, patientId, doctorId, appointmentDate, slot, condition } = req.body;
+  console.log("Scheduling appointment");
+  const { fdo, patientId, doctorId, appointmentDate, slot, condition, emergency } = req.body;
+
   console.log(req.body);
-  
-  if (!fdo || !patientId || !doctorId || !appointmentDate || !slot || !condition) {
+
+  // For emergency appointments, slot is not required.
+  if (!fdo || !patientId || !doctorId || !appointmentDate || !condition || (!emergency && !slot)) {
     return res.status(400).json({ error: 'All appointment fields are required.' });
   }
 
   try {
-    // Count existing pending appointments for the doctor in the same slot and date
-    const { count, error: countError } = await supabase
-      .from('appointments')
-      .select('id', { count: 'exact', head: true })
-      .eq('doctor_id', doctorId)
-      .eq('slot', slot)
-      .neq('status', 'declined')
-      .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
-      .lte('appointment_date', `${appointmentDate}T23:59:59Z`);
-    
-    if (countError) throw countError;
+    let appointmentDateTime;
 
-    const totalCount = count ?? 0;
-    if (totalCount >= 10) {
-      return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
+    if (emergency) {
+      // For emergency appointments, schedule immediately (using current time).
+      appointmentDateTime = new Date().toISOString();
+    } else {
+      // Count existing pending appointments for the doctor in the same slot and date.
+      const { count, error: countError } = await supabase
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('doctor_id', doctorId)
+        .eq('slot', slot)
+        .neq('status', 'declined')
+        .gte('appointment_date', `${appointmentDate}T00:00:00Z`)
+        .lte('appointment_date', `${appointmentDate}T23:59:59Z`);
+      
+      if (countError) throw countError;
+
+      const totalCount = count ?? 0;
+      if (totalCount >= 10) {
+        return res.status(400).json({ error: 'No available appointment slots for this time slot.' });
+      }
+
+      // Determine base time based on slot.
+      let baseHour;
+      if (slot === 1) baseHour = 9;
+      else if (slot === 2) baseHour = 14;
+      else if (slot === 3) baseHour = 18;
+      else return res.status(400).json({ error: 'Invalid slot provided.' });
+
+      const baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
+      appointmentDateTime = new Date(baseTime.getTime() + (totalCount * 15 * 60 * 1000)).toISOString();
     }
 
-    // Determine base time based on slot
-    let baseHour;
-    if (slot === 1) baseHour = 9;
-    else if (slot === 2) baseHour = 14;
-    else if (slot === 3) baseHour = 18;
-    else return res.status(400).json({ error: 'Invalid slot provided.' });
+    // Build the payload. For emergency appointments, slot is not included.
+    const appointmentPayload = {
+      patient_id: patientId,
+      doctor_id: doctorId,
+      appointment_date: appointmentDateTime,
+      reason: condition,
+      status: 'pending',
+      emergency: emergency
+    };
 
-    const baseTime = new Date(`${appointmentDate}T${String(baseHour).padStart(2, '0')}:00:00Z`);
-    const appointmentDateTime = new Date(baseTime.getTime() + (totalCount * 15 * 60 * 1000)).toISOString();
+    if (!emergency) {
+      appointmentPayload.slot = slot;
+    }
 
-    // Insert the new appointment
+    // Insert the new appointment.
     const { data: appointmentData, error: insertError } = await supabase
       .from('appointments')
-      .insert([{
-        patient_id: patientId,
-        doctor_id: doctorId,
-        appointment_date: appointmentDateTime,
-        reason: condition,
-        slot,
-        status: 'pending'
-      }])
+      .insert([ appointmentPayload ])
       .select();
 
     if (insertError) throw insertError;
 
-    // Log activity
+    // Log activity.
     await createActivity(fdo, `Appointment Scheduled for Patient ID: ${patientId}`);
-  console.log("Scheduling Done");
-   
+// Get the scheduled appointment record.
+const scheduledAppointment = appointmentData[0];
+    if (emergency) {
+      // Fetch the doctor's email from the users table based on doctor_id.
+      const { data: doctorData, error: doctorError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', doctorId)
+        .single();
+
+      if (doctorError || !doctorData) {
+        console.error("Error fetching doctor's email:", doctorError);
+        // Fallback to a default email if needed.
+        doctorData = { email: "emergency@yourdomain.com" };
+      }
+
+      const emergencyEmail = doctorData.email;
+      await handleEmergencyAppointmentExtra(scheduledAppointment, emergencyEmail);
+    }
+
     res.status(200).json({
-      message: 'Appointment scheduled successfully and department patient count updated.',
+      message: emergency
+        ? 'Emergency appointment scheduled successfully. Please proceed immediately to the emergency department.'
+        : 'Appointment scheduled successfully and department patient count updated.',
       appointment: appointmentData[0],
       scheduledTime: appointmentDateTime
     });
-
+    
   } catch (err) {
-    console.error("Error in scheduleAppointment_new:", err);
+    console.error("Error in scheduleAppointment:", err);
     next(err);
   }
 }
@@ -310,19 +399,11 @@ export async function getRoomsSummary(req, res, next) {
   }
 }
 
-
-/**
- * Seed Rooms Data:
- * Inserts room data for multiple departments.
- * For each department (assumed to have IDs 1 to 10), three room types are added:
- *  - Premium: total_count = 30
- *  - Executive: total_count = 40
- *  - General: total_count = 50
- */
 export async function seedRooms(req, res, next) {
-  console.log("seeding rooms");
+  console.log("Adding Emergency room type for each department");
+
   try {
-    // Define 10 departments with assumed IDs and names
+    // Define the 10 departments
     const departments = [
       { id: 1, name: 'Cardiology' },
       { id: 2, name: 'Neurology' },
@@ -335,30 +416,60 @@ export async function seedRooms(req, res, next) {
       { id: 9, name: 'Pulmonology' },
       { id: 10, name: 'Urology' }
     ];
-    
-    // Prepare room data for each department
-    const roomsToInsert = [];
+
+    const emergencyRoomsResults = [];
+
     for (const dept of departments) {
-      roomsToInsert.push(
-        { department_id: dept.id, room_type: 'Premium', total_count: 30, occupied_count: 0 },
-        { department_id: dept.id, room_type: 'Executive', total_count: 40, occupied_count: 0 },
-        { department_id: dept.id, room_type: 'General', total_count: 50, occupied_count: 0 }
-      );
+      // Check if an Emergency room record already exists for this department
+      const { data: existing, error: fetchError } = await supabase
+        .from('rooms')
+        .select('id')
+        .eq('department_id', dept.id)
+        .eq('room_type', 'Emergency')
+        .maybeSingle();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (existing) {
+        // Update the existing Emergency room record
+        const { data: updated, error: updateError } = await supabase
+          .from('rooms')
+          .update({ total_count: 10, occupied_count: 0 })
+          .eq('id', existing.id)
+          .select();
+
+        if (updateError) {
+          throw updateError;
+        }
+        emergencyRoomsResults.push(updated[0]);
+      } else {
+        // Insert a new Emergency room record
+        const { data: inserted, error: insertError } = await supabase
+          .from('rooms')
+          .insert({
+            department_id: dept.id,
+            room_type: 'Emergency',
+            total_count: 10,  // Adjust the count as needed
+            occupied_count: 0
+          })
+          .select();
+
+        if (insertError) {
+          throw insertError;
+        }
+        emergencyRoomsResults.push(inserted[0]);
+      }
     }
-    
-    // Insert the rooms data into the "rooms" table
-    const { data, error } = await supabase
-      .from('rooms')
-      .insert(roomsToInsert)
-      .select();
-      
-    if (error) throw error;
-    
-    res.status(200).json({ message: 'Rooms seeded successfully.', rooms: data });
+
+    res.status(200).json({ message: 'Emergency rooms added/updated successfully.', rooms: emergencyRoomsResults });
   } catch (err) {
     next(err);
   }
 }
+
+
 
 /**
  * Seed Departments Data:

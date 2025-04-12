@@ -32,7 +32,12 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import AllPatient from './pages/AllPatient';
 // Import socket.io client
 import { io } from 'socket.io-client';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
+const MySwal = withReactContent(Swal);
 export default function App() {
   const { currentUser } = useSelector((state) => state.user);
   console.log(currentUser);
@@ -74,6 +79,19 @@ export default function App() {
         // Handle the notification as needed, for example updating your redux state.
       });
 
+   // Socket listener for emergency appointment alert
+socket.on("emergencyAppointment", (appointment) => {
+  console.log("Received emergency appointment alert", appointment);
+  MySwal.fire({
+    icon: "warning",
+    title: "Emergency Appointment Alert",
+    text: `Emergency Appointment scheduled for Patient ID: ${appointment.patient_id}. Please check immediately!`,
+    showCloseButton: true,
+    confirmButtonText: "Close"
+  });
+});
+  
+
       // Cleanup the socket connection when the component unmounts or the user changes.
       return () => {
         socket.disconnect();
@@ -87,6 +105,7 @@ export default function App() {
       <ScrollToTop />
       <Header />
       <BackToTop />
+      <ToastContainer />
       <Routes>
         <Route path="/" element={ currentUser ? getDashboardComponent() : <SignIn /> } />
         <Route path="/about" element={<About />} />

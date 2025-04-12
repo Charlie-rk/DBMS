@@ -12,9 +12,10 @@ function AppointmentPage() {
     patientId: '',
     doctorId: '',
     appointmentDate: '',
-    slot: '',
+    slot: '',              // Will be used only for non-emergency appointments.
     appointmentNumber: null,
     condition: '',
+    emergency: false,      // Mark appointment as emergency.
   });
   const [doctors, setDoctors] = useState([]);
   const [slotData, setSlotData] = useState(null);
@@ -24,7 +25,7 @@ function AppointmentPage() {
   const [schedulingLoading, setSchedulingLoading] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
 
-  // Fetch doctor info from backend
+  // Fetch doctor info from backend.
   useEffect(() => {
     fetch('/api/admin/get-all-users?role=doctor')
       .then((res) => res.json())
@@ -34,9 +35,10 @@ function AppointmentPage() {
       .catch((error) => console.error('Error fetching doctors:', error));
   }, []);
 
-  // Fetch slot distribution when doctor and date are selected
+  // Fetch slot distribution only when doctor and date are selected.
+  // This is used only for non-emergency appointments.
   useEffect(() => {
-    if (appointmentData.doctorId && appointmentData.appointmentDate) {
+    if (!appointmentData.emergency && appointmentData.doctorId && appointmentData.appointmentDate) {
       fetch('/api/fdo/get-slot-distribution', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,9 +49,8 @@ function AppointmentPage() {
       })
         .then((res) => res.json())
         .then((data) => {
-          // Convert returned slot distribution object into an array.
           const slotsArray = Object.keys(data).map((key) => ({
-            slot: key, 
+            slot: key,
             ...data[key],
           }));
           setSlotData(slotsArray);
@@ -58,16 +59,23 @@ function AppointmentPage() {
           console.error('Error fetching slot distribution:', error)
         );
     }
-  }, [appointmentData.doctorId, appointmentData.appointmentDate]);
+  }, [appointmentData.doctorId, appointmentData.appointmentDate, appointmentData.emergency]);
 
   const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    // If emergency is toggled on, reset any selected slot.
+    if(e.target.name === 'emergency' && value){
+      setSelectedSlot(null);
+      setAppointmentNumber(null);
+      setAppointmentData(prev => ({ ...prev, slot: '' }));
+    }
     setAppointmentData({
       ...appointmentData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
   };
 
-  // Opens the modal if required fields are filled.
+  // Opens the slot selection modal only if appointment is not emergency.
   const openModal = (e) => {
     e.preventDefault();
     if (
@@ -75,7 +83,6 @@ function AppointmentPage() {
       appointmentData.doctorId &&
       appointmentData.appointmentDate
     ) {
-      // Ensure slot data is available
       if (!slotData) {
         MySwal.fire({
           icon: "info",
@@ -99,13 +106,11 @@ function AppointmentPage() {
   // Handles selection of a slot from the modal.
   const handleSlotSelect = (slot) => {
     setSelectedSlot(slot);
-    // Calculate predicted appointment number: (accepted + pending) + 1.
     setAppointmentNumber(slot.accepted + slot.pending + 1);
   };
 
   // Confirms the selected slot and updates the appointment data.
   const confirmAppointment = () => {
-    // Remove the "slot" prefix and convert to a number before storing.
     const slotNumber = Number(selectedSlot.slot.replace('slot', ''));
     const updatedData = {
       ...appointmentData,
@@ -114,31 +119,29 @@ function AppointmentPage() {
     };
     setAppointmentData(updatedData);
     setShowModal(false);
-    // Reset temporary selection
     setSelectedSlot(null);
     setAppointmentNumber(null);
   };
 
-  // Final submission for scheduling appointment
+  // Final submission for scheduling appointment.
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    // For emergency appointments, slot is not required.
     if (
       !appointmentData.patientId ||
       !appointmentData.doctorId ||
       !appointmentData.appointmentDate ||
-      !appointmentData.slot ||
+      (!appointmentData.emergency && !appointmentData.slot) ||
       !appointmentData.condition
     ) {
       MySwal.fire({
         icon: "error",
-        title: "Please fill in all appointment details.",
+        title: "Please fill in all required appointment details.",
         timer: 1500,
         showConfirmButton: false,
       });
       return;
     }
-    console.log(appointmentData);
     const numericPatientId = Number(appointmentData.patientId);
     const numericDoctorId = Number(appointmentData.doctorId);
 
@@ -147,12 +150,15 @@ function AppointmentPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fdo: currentUser.username, 
+        fdo: currentUser.username,
         patientId: numericPatientId,
         doctorId: numericDoctorId,
         appointmentDate: appointmentData.appointmentDate,
-        slot: appointmentData.slot, // now a number (1, 2, or 3)
+        // For non-emergency appointments, slot will be a valid number.
+        // For emergency appointments, slot may be omitted or set to null.
+        slot: appointmentData.emergency ? null : appointmentData.slot,
         condition: appointmentData.condition,
+        emergency: appointmentData.emergency,
       }),
     })
       .then((res) => {
@@ -167,11 +173,13 @@ function AppointmentPage() {
         setSchedulingLoading(false);
         MySwal.fire({
           icon: "success",
-          title: "Appointment scheduled successfully!",
+          title: appointmentData.emergency
+            ? "Emergency appointment scheduled successfully! Please proceed directly to the emergency room."
+            : "Appointment scheduled successfully!",
           timer: 1500,
           showConfirmButton: false,
         });
-        // Optionally reset the form:
+        // Reset the form.
         setAppointmentData({
           patientId: '',
           doctorId: '',
@@ -179,6 +187,7 @@ function AppointmentPage() {
           slot: '',
           appointmentNumber: null,
           condition: '',
+          emergency: false,
         });
         setSlotData(null);
       })
@@ -260,18 +269,34 @@ function AppointmentPage() {
             required
           />
         </div>
-        {/* Button to check slot availability */}
-        <div>
-          <Button
-            onClick={openModal}
-            outline
-            className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
-          >
-            Check Availability
-          </Button>
+        {/* Emergency Checkbox */}
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="emergency"
+            checked={appointmentData.emergency}
+            onChange={handleChange}
+            id="emergency"
+            className="mr-2"
+          />
+          <label htmlFor="emergency" className="text-gray-700 dark:text-gray-300">
+            Mark as Emergency Appointment
+          </label>
         </div>
-        {/* Display selected slot & appointment number if available */}
-        {appointmentData.slot && (
+        {/* For non-emergency appointments, allow slot availability check */}
+        {!appointmentData.emergency && (
+          <div>
+            <Button
+              onClick={openModal}
+              outline
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+            >
+              Check Availability
+            </Button>
+          </div>
+        )}
+        {/* Display selected slot & appointment number if available (non-emergency) */}
+        {!appointmentData.emergency && appointmentData.slot && (
           <div className="p-4 border rounded bg-gray-50 dark:bg-gray-700">
             <p className="text-gray-800 dark:text-gray-200">
               Selected Slot: <strong>{appointmentData.slot}</strong>
@@ -289,88 +314,104 @@ function AppointmentPage() {
             disabled={schedulingLoading}
             className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
           >
-            {schedulingLoading ? "Scheduling..." : "Schedule Appointment"}
+            {schedulingLoading
+              ? "Scheduling..."
+              : appointmentData.emergency
+              ? "Schedule Emergency Appointment"
+              : "Schedule Appointment"}
           </Button>
         </div>
       </form>
 
-      {/* Modal for available slots */}
-      <Modal
-        show={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setSelectedSlot(null);
-          setAppointmentNumber(null);
-        }}
-      >
-        <Modal.Header>Available Slots</Modal.Header>
-        <Modal.Body>
-          {slotData ? (
-            selectedSlot ? (
-              <div>
-                <p className="mb-2 text-gray-800 dark:text-gray-200">
-                  You selected slot:{" "}
-                  <strong>{selectedSlot.slot.replace('slot', '')}</strong>
-                </p>
-                <p className="mb-2 text-gray-800 dark:text-gray-200">
-                  Total appointments: {selectedSlot.total}
-                </p>
-                <p className="mb-2 text-gray-800 dark:text-gray-200">
-                  Already booked (accepted + pending):{" "}
-                  {selectedSlot.accepted + selectedSlot.pending}
-                </p>
-                <p className="mb-2 text-gray-800 dark:text-gray-200">
-                  Your appointment number will be:{" "}
-                  <strong>{appointmentNumber}</strong>
-                </p>
-              </div>
-            ) : (
-              <div>
-                {slotData.map((slotItem) => (
-                  <div
-                    key={slotItem.slot}
-                    className="mb-4 border p-2 rounded"
-                  >
-                    <p className="text-gray-800 dark:text-gray-200">
-                      Slot: {slotItem.slot.replace('slot', '')}
+      {/* Modal for available slots (only for non-emergency appointments) */}
+      {!appointmentData.emergency && (
+        <Modal
+          show={showModal}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedSlot(null);
+            setAppointmentNumber(null);
+          }}
+        >
+          <Modal.Header>Available Slots</Modal.Header>
+          <Modal.Body>
+            {slotData ? (
+              selectedSlot ? (
+                <div>
+                  <p className="mb-2 text-gray-800 dark:text-gray-200">
+                    You selected slot:{" "}
+                    <strong>{selectedSlot.slot.replace('slot', '')}</strong>
+                  </p>
+                  {selectedSlot.room_type && (
+                    <p className="mb-2 text-gray-800 dark:text-gray-200">
+                      Room Type: <strong>{selectedSlot.room_type}</strong>
                     </p>
-                    <p className="text-gray-800 dark:text-gray-200">
-                      Total appointments: {slotItem.total}
-                    </p>
-                    <p className="text-gray-800 dark:text-gray-200">
-                      Already booked:{" "}
-                      {slotItem.accepted + slotItem.pending}
-                    </p>
-                    <p className="text-gray-800 dark:text-gray-200">
-                      Available: {slotItem.available}
-                    </p>
-                    <div className="mt-2">
-                      <Button
-                        onClick={() => handleSlotSelect(slotItem)}
-                        outline
-                      >
-                        Select this Slot
-                      </Button>
+                  )}
+                  <p className="mb-2 text-gray-800 dark:text-gray-200">
+                    Total appointments: {selectedSlot.total}
+                  </p>
+                  <p className="mb-2 text-gray-800 dark:text-gray-200">
+                    Already booked (accepted + pending):{" "}
+                    {selectedSlot.accepted + selectedSlot.pending}
+                  </p>
+                  <p className="mb-2 text-gray-800 dark:text-gray-200">
+                    Your appointment number will be:{" "}
+                    <strong>{appointmentNumber}</strong>
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {slotData.map((slotItem) => (
+                    <div
+                      key={slotItem.slot}
+                      className="mb-4 border p-2 rounded"
+                    >
+                      <p className="text-gray-800 dark:text-gray-200">
+                        Slot: {slotItem.slot.replace('slot', '')}
+                      </p>
+                      {slotItem.room_type && (
+                        <p className="text-gray-800 dark:text-gray-200">
+                          Room Type: {slotItem.room_type}
+                        </p>
+                      )}
+                      <p className="text-gray-800 dark:text-gray-200">
+                        Total appointments: {slotItem.total}
+                      </p>
+                      <p className="text-gray-800 dark:text-gray-200">
+                        Already booked:{" "}
+                        {slotItem.accepted + slotItem.pending}
+                      </p>
+                      <p className="text-gray-800 dark:text-gray-200">
+                        Available: {slotItem.available}
+                      </p>
+                      <div className="mt-2">
+                        <Button
+                          onClick={() => handleSlotSelect(slotItem)}
+                          outline
+                        >
+                          Select this Slot
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : (
-            <div>Loading slots...</div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          {selectedSlot && (
-            <Button
-              onClick={confirmAppointment}
-              className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
-            >
-              Confirm Appointment
-            </Button>
-          )}
-        </Modal.Footer>
-      </Modal>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div>Loading slots...</div>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            {selectedSlot && (
+              <Button
+                onClick={confirmAppointment}
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+              >
+                Confirm Appointment
+              </Button>
+            )}
+          </Modal.Footer>
+        </Modal>
+      )}
     </div>
   );
 }

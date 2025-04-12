@@ -7,7 +7,8 @@ import {
   Calendar, 
   Phone, 
   MapPin, 
-  CheckCircle 
+  CheckCircle, 
+  AlertCircle 
 } from "lucide-react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -48,20 +49,21 @@ const MySwal = withReactContent(Swal);
 export default function AllPatient_Doctor() {
   const { currentUser } = useSelector((state) => state.user);
   const [patients, setPatients] = useState([]);
-  const [chartData, setChartData] = useState({});
+  const [chartData, setChartData] = useState([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [showDetailPanel, setShowDetailPanel] = useState(false); // New state for slide-over panel
+  const [showDetailPanel, setShowDetailPanel] = useState(false); // For slide-over panel
   const [patientDetail, setPatientDetail] = useState(null);
 
   // Compute overall loading state
   const globalLoading = loadingPatients || detailLoading;
 
-  // Compute statistics using patient info from the appointments fetched
+  // Compute basic statistics using fetched appointments
   const totalPatients = patients.length;
   const dischargedPatients = patients.filter((app) => 
     app.patientInfo && app.patientInfo.status === "discharged"
   ).length;
+  // Average age computed from patientInfo values (from each appointment)
   const avgAge =
     patients.length > 0
       ? Math.round(
@@ -75,54 +77,69 @@ export default function AllPatient_Doctor() {
     patients.length > 0
       ? patients.reduce((acc, app) => acc + (Number(app.patientInfo?.visit_no) || 0), 0)
       : 0;
+  // New metric: emergency count (number of appointments flagged as emergency)
+  const emergencyCount = patients.filter((app) => app.emergency).length;
 
   // Escape key handler for slideover
   useEffect(() => {
     const handleEscapeKey = (e) => {
-      if (e.key === 'Escape' && showDetailPanel) {
+      if (e.key === "Escape" && showDetailPanel) {
         setShowDetailPanel(false);
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey);
+    document.addEventListener("keydown", handleEscapeKey);
     return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener("keydown", handleEscapeKey);
     };
   }, [showDetailPanel]);
 
   // Prevent body scrolling when slideover is open
   useEffect(() => {
     if (showDetailPanel) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     }
-
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     };
   }, [showDetailPanel]);
 
   // Prepare chart data for "Patients Age Distribution"
-  const prepareChartData = (patientArr) => {
-    const bins = { "0-10": 0, "11-20": 0, "21-30": 0, "31-40": 0, "41-50": 0, "51+": 0 };
-    patientArr.forEach((p) => {
-      const age = Number(p.age) || 0;
-      if (age <= 10) bins["0-10"] += 1;
-      else if (age <= 20) bins["11-20"] += 1;
-      else if (age <= 30) bins["21-30"] += 1;
-      else if (age <= 40) bins["31-40"] += 1;
-      else if (age <= 50) bins["41-50"] += 1;
-      else bins["51+"] += 1;
+  // This version computes for each age range both the total count and the emergency count.
+  const prepareChartData = (appointments) => {
+    const bins = {
+      "0-10": { total: 0, emergency: 0 },
+      "11-20": { total: 0, emergency: 0 },
+      "21-30": { total: 0, emergency: 0 },
+      "31-40": { total: 0, emergency: 0 },
+      "41-50": { total: 0, emergency: 0 },
+      "51+": { total: 0, emergency: 0 }
+    };
+
+    appointments.forEach((app) => {
+      const age = Number(app.patientInfo?.age) || 0;
+      let range = "";
+      if (age <= 10) range = "0-10";
+      else if (age <= 20) range = "11-20";
+      else if (age <= 30) range = "21-30";
+      else if (age <= 40) range = "31-40";
+      else if (age <= 50) range = "41-50";
+      else range = "51+";
+
+      bins[range].total += 1;
+      if (app.emergency) {
+        bins[range].emergency += 1;
+      }
     });
 
-    // Convert bins object to an array for Recharts
-    const areaChartData = Object.keys(bins).map((range) => ({
+    const dataForChart = Object.keys(bins).map((range) => ({
       ageRange: range,
-      count: bins[range],
+      total: bins[range].total,
+      emergency: bins[range].emergency,
     }));
-
-    setChartData(areaChartData);
+    setChartData(dataForChart);
   };
 
   // Fetch patients seen by current doctor
@@ -137,11 +154,7 @@ export default function AllPatient_Doctor() {
       const data = await res.json();
       if (data?.appointments) {
         setPatients(data.appointments);
-        // Extract patient info from each appointment for chart data
-        const patientArr = data.appointments
-          .map((app) => app.patientInfo)
-          .filter(Boolean);
-        prepareChartData(patientArr);
+        prepareChartData(data.appointments);
       }
     } catch (error) {
       console.error("Error fetching patients:", error);
@@ -174,7 +187,7 @@ export default function AllPatient_Doctor() {
       const res = await fetch(`/api/fdo/patient-history/${patientId}`);
       const data = await res.json();
       setPatientDetail(data.history);
-      setShowDetailPanel(true); // Show the slide-over panel
+      setShowDetailPanel(true);
     } catch (error) {
       console.error("Error fetching patient history:", error);
       MySwal.fire({
@@ -186,6 +199,25 @@ export default function AllPatient_Doctor() {
       setDetailLoading(false);
     }
   };
+
+  // Get current month and year for any required date filters
+  const currentDateObj = new Date();
+  const currentMonth = currentDateObj.getMonth() + 1;
+  const currentYear = currentDateObj.getFullYear();
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen relative">
@@ -207,7 +239,7 @@ export default function AllPatient_Doctor() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-700 hover:bg-slate-200">
           <div className="flex items-center space-x-3">
             <User className="w-8 h-8 text-blue-500" />
@@ -239,7 +271,7 @@ export default function AllPatient_Doctor() {
             <Calendar className="w-8 h-8 text-purple-500" />
             <div>
               <p className="bg-sky-200 dark:bg-sky-500 rounded-md px-1 text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Average Age
+                Avg Age
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {avgAge}
@@ -260,9 +292,23 @@ export default function AllPatient_Doctor() {
             </div>
           </div>
         </Card>
+        {/* New Emergency Metric Card */}
+        <Card className="bg-white dark:bg-gray-800 p-4 shadow-2xl hover:shadow-slate-700 hover:bg-slate-200">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+            <div>
+              <p className="bg-sky-200 dark:bg-sky-500 rounded-md px-1 text-lg font-semibold text-gray-800 dark:text-gray-200">
+                Emergency
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {emergencyCount}
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Graph Analytics: Patients Age Distribution */}
+      {/* Graph Analytics: Patients Age Distribution with Emergency Data */}
       <div className="mb-8 bg-white dark:bg-gray-800 shadow rounded-lg p-4">
         <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
           <span className="inline-block bg-sky-200 dark:bg-sky-600 rounded px-1 border-b-2">
@@ -276,26 +322,33 @@ export default function AllPatient_Doctor() {
               margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
             >
               <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="totalFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.7} />
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.2} />
+                </linearGradient>
+                <linearGradient id="emergencyFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.7} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.2} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
               <XAxis dataKey="ageRange" stroke="gray" />
               <YAxis stroke="gray" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#fff",
-                  borderColor: "#ccc",
-                  borderRadius: "4px",
-                }}
+              <Tooltip contentStyle={{ backgroundColor: "#fff", borderColor: "#ccc", borderRadius: "4px" }} />
+              <Area
+                type="monotone"
+                dataKey="total"
+                name="Total"
+                stroke="#3b82f6"
+                fill="url(#totalFill)"
+                strokeWidth={2}
               />
               <Area
                 type="monotone"
-                dataKey="count"
-                stroke="#3b82f6"
-                fill="url(#colorCount)"
+                dataKey="emergency"
+                name="Emergency"
+                stroke="#ef4444"
+                fill="url(#emergencyFill)"
                 strokeWidth={2}
               />
             </AreaChart>
@@ -347,8 +400,14 @@ export default function AllPatient_Doctor() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     {p.visit_no}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 flex items-center">
                     {p.name}
+                    {app.emergency && (
+                      <span className="ml-2 text-red-500 flex items-center">
+                        <AlertCircle size={16} className="mr-1" />
+                        Emergency
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {p.mobile}
@@ -384,7 +443,7 @@ export default function AllPatient_Doctor() {
         </table>
       </div>
 
-      {/* Backdrop Overlay */}
+      {/* Backdrop Overlay for Slide-over */}
       {showDetailPanel && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ease-in-out"
@@ -440,6 +499,11 @@ export default function AllPatient_Doctor() {
                   <p>
                     <span className="font-semibold">Status:</span> {patientDetail.patient.status}
                   </p>
+                  {/* Emergency condition: if any appointment is flagged as emergency */}
+                  <p>
+                    <span className="font-semibold">Emergency:</span>{" "}
+                    {patientDetail.appointments && patientDetail.appointments.some(appt => appt.emergency) ? "Yes" : "No"}
+                  </p>
                 </div>
               </div>
 
@@ -456,7 +520,7 @@ export default function AllPatient_Doctor() {
                         className="p-3 border rounded-md dark:border-gray-600 bg-green-50 dark:bg-green-900 shadow-sm"
                       >
                         <p className="text-gray-800 dark:text-gray-200">
-                          <span className="font-semibold">Date:</span> {formatDate(appt.appointment_date)} | <span className="font-semibold">Slot:</span> {appt.slot}
+                          <span className="font-semibold">Date:</span> {formatDate(appt.appointment_date)} | <span className="font-semibold">Slot:</span> {appt.slot ?? "-"}
                         </p>
                         <p className="text-gray-700 dark:text-gray-300">
                           <span className="font-semibold">Reason:</span> {appt.reason}
@@ -467,6 +531,12 @@ export default function AllPatient_Doctor() {
                         {appt.doctor && (
                           <p className="text-gray-700 dark:text-gray-300">
                             <span className="font-semibold">Doctor:</span> {appt.doctor.name} (Dept: {appt.doctor.specialisation})
+                          </p>
+                        )}
+                        {appt.emergency && (
+                          <p className="text-red-500 dark:text-red-400 font-bold">
+                            <AlertCircle size={16} className="inline mr-1" />
+                            Emergency Appointment
                           </p>
                         )}
                       </div>

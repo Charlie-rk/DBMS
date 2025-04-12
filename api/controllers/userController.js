@@ -130,3 +130,38 @@ export async function createActivity(username, description) {
       next(error);
     }
   };
+
+  export const getUserProfile = async (req, res, next) => {
+    const { username } = req.params;
+  
+    try {
+      // Use Supabase to select all fields and filter by the username parameter
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username);
+  
+      // Log data and error for debugging purposes
+      console.log("data", data);
+      console.log("error", error);
+  
+      if (error) {
+        return next(errorHandler(500, error.message));
+      }
+  
+      if (!data || data.length === 0) {
+        return next(errorHandler(404, 'User not found'));
+      }
+  
+      // Remove the password field before sending the response
+      const userProfile = { ...data[0] };
+      delete userProfile.password;
+  
+      console.log("done");
+  
+      res.status(200).json(userProfile);
+    } catch (err) {
+      next(err);
+    }
+  };
+  

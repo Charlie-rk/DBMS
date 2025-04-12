@@ -13,3 +13,12 @@
     @apply !mr-0 flex-1 py-5 outline-none;
   }
   
+  .hide-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hide-scroll {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  

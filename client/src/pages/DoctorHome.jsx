@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, AlertCircle } from "lucide-react";
 import SideBar_Doctor from "../components/SideBar_Doctor";
 import Profile_Doctor from "../components/Profile_Doctor";
 // Recharts imports for area chart
@@ -64,13 +64,12 @@ const DoctorHome = () => {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  // Add state variable to control showing limited or all appointments
+  // Toggle showing limited or all appointments
   const [showAllAppointments, setShowAllAppointments] = useState(false);
 
   // Monthly performance metrics
   const [monthlyAccepted, setMonthlyAccepted] = useState(0);
   const [monthlyNew, setMonthlyNew] = useState(0);
-
 
   // Recent Patients state; expects updated response from /api/doctor/recent-patients
   const [recentPatients, setRecentPatients] = useState([]);
@@ -79,25 +78,27 @@ const DoctorHome = () => {
   const maxAppointments = 150;
   const [bookedAppointments, setBookedAppointments] = useState(60);
   const [currentTab, setCurrentTab] = useState("Dashboard");
-   // Get current month and year
-   const currentDate = new Date();
-   const currentMonth = currentDate.getMonth() + 1; // January is 0; we need 1 based
-   const currentYear = currentDate.getFullYear();
-   const monthNames = [
-     "January",
-     "February",
-     "March",
-     "April",
-     "May",
-     "June",
-     "July",
-     "August",
-     "September",
-     "October",
-     "November",
-     "December",
-   ];
- 
+  // Get current month and year
+  const currentDateObj = new Date();
+  const currentMonth = currentDateObj.getMonth() + 1; // January is 0; we need 1-based
+  const currentYear = currentDateObj.getFullYear();
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  // New state to track per-appointment update loading
+  const [updatingStatus, setUpdatingStatus] = useState({});
 
   // Fetch live status, appointments and recent patients when currentUser is available
   useEffect(() => {
@@ -122,12 +123,11 @@ const DoctorHome = () => {
       })
         .then((res) => res.json())
         .then((data) => {
-          // Optionally filter or sort appointments here
           setAppointmentRequests(data.appointments || []);
         })
         .catch((err) => console.error("Error fetching appointments:", err));
 
-      // Fetch recent patients (updated endpoint returns appointments with patient_name and reason)
+      // Fetch recent patients
       fetch("/api/doctor/recent-patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,7 +135,6 @@ const DoctorHome = () => {
       })
         .then((res) => res.json())
         .then((data) => {
-          // Check whether the response includes an "appointments" or "patients" key
           if (data.appointments) {
             setRecentPatients(data.appointments);
           } else if (data.patients) {
@@ -144,42 +143,42 @@ const DoctorHome = () => {
         })
         .catch((err) => console.error("Error fetching recent patients:", err));
     }
-      // Fetch monthly accepted appointments
-      fetch("/api/doctor/count-monthly-appointments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          doctorId: currentUser.id,
-          month: currentMonth,
-          year: currentYear,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setMonthlyAccepted(data.acceptedAppointments);
-        })
-        .catch((err) =>
-          console.error("Error fetching monthly appointments:", err)
-        );
 
-      // Fetch monthly accepted appointments with new patients
-      fetch("/api/doctor/count-monthly-appointments/new", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          doctorId: currentUser.id,
-          month: currentMonth,
-          year: currentYear,
-        }),
+    // Fetch monthly accepted appointments
+    fetch("/api/doctor/count-monthly-appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        doctorId: currentUser.id,
+        month: currentMonth,
+        year: currentYear,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setMonthlyAccepted(data.acceptedAppointments);
       })
-        .then((res) => res.json())
-        .then((data) => {
-          setMonthlyNew(data.acceptedAppointmentsWithNewPatients);
-        })
-        .catch((err) =>
-          console.error("Error fetching monthly new appointments:", err)
-        );
-    
+      .catch((err) =>
+        console.error("Error fetching monthly appointments:", err)
+      );
+
+    // Fetch monthly new appointments
+    fetch("/api/doctor/count-monthly-appointments/new", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        doctorId: currentUser.id,
+        month: currentMonth,
+        year: currentYear,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setMonthlyNew(data.acceptedAppointmentsWithNewPatients);
+      })
+      .catch((err) =>
+        console.error("Error fetching monthly new appointments:", err)
+      );
   }, [currentUser, currentMonth, currentYear]);
 
   // Toggle live status by calling backend endpoint
@@ -202,37 +201,50 @@ const DoctorHome = () => {
     }
   };
 
-  // Update appointment status for an appointment request
-  const updateAppointment = async (index, newStatus) => {
-    const appointmentId = appointmentRequests[index].id;
+  // Utility: Format date to locale-specific string.
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleDateString();
+  };
+
+  // Update appointment status using appointment ID (with loader)
+  const updateAppointment = async (appointmentId, newStatus) => {
+    setUpdatingStatus(prev => ({ ...prev, [appointmentId]: true }));
     try {
-      const response = await fetch("/api/doctor/change-appointment-status", {
+      const res = await fetch("/api/doctor/change-appointment-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointmentId, status: newStatus }),
       });
-      if (response.ok) {
-        const result = await response.json();
-        // Update local state for the appointment request
-        setAppointmentRequests((prev) => {
-          const newReqs = [...prev];
-          newReqs[index].status = newStatus;
-          return newReqs;
-        });
-      } else {
-        console.error("Failed to update appointment status");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Error updating status");
       }
+      const result = await res.json();
+      setAppointmentRequests(prev =>
+        prev.map(app =>
+          app.id === appointmentId ? { ...app, status: newStatus } : app
+        )
+      );
     } catch (error) {
-      console.error("Error updating appointment status", error);
+      console.error("Error updating appointment status:", error);
+      const MySwal = withReactContent(Swal);
+      MySwal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to update appointment status.",
+      });
+    } finally {
+      setUpdatingStatus(prev => ({ ...prev, [appointmentId]: false }));
     }
   };
 
-  const handleAccept = (index) => {
-    updateAppointment(index, "accepted");
+  const handleAccept = (appointmentId) => {
+    updateAppointment(appointmentId, "accepted");
   };
 
-  const handleDecline = (index) => {
-    updateAppointment(index, "declined");
+  const handleDecline = (appointmentId) => {
+    updateAppointment(appointmentId, "declined");
   };
 
   // Filter appointments by selected date (comparing ISO date strings)
@@ -252,24 +264,23 @@ const DoctorHome = () => {
     ? sortedAppointments
     : sortedAppointments.slice(0, 5);
 
-    // Calculate monthly consultations based on appointmentRequests within the current month/year.
-    const monthlyConsultations = appointmentRequests.filter((apt) => {
-      const aptDate = new Date(apt.appointment_date);
-      return (
-        aptDate.getMonth() + 1 === currentMonth &&
-        aptDate.getFullYear() === currentYear
-      );
-    }).length;
-  
-    // Calculate doctor efficiency as the percentage of accepted appointments among monthly consultations.
-    const doctorEfficiency =
-      monthlyConsultations > 0
-        ? Math.round((monthlyAccepted / monthlyConsultations) * 100)
-        : 0;
-  
-    // For average consultation time, use a fixed value (or compute if data is available)
-    const avgConsultationTime = "15 mins";
-    
+  // Calculate monthly consultations based on appointmentRequests within current month/year.
+  const monthlyConsultations = appointmentRequests.filter((apt) => {
+    const aptDate = new Date(apt.appointment_date);
+    return (
+      aptDate.getMonth() + 1 === currentMonth &&
+      aptDate.getFullYear() === currentYear
+    );
+  }).length;
+
+  // Calculate doctor efficiency as the percentage of accepted appointments among monthly consultations.
+  const doctorEfficiency =
+    monthlyConsultations > 0
+      ? Math.round((monthlyAccepted / monthlyConsultations) * 100)
+      : 0;
+
+  // Fixed average consultation time.
+  const avgConsultationTime = "15 mins";
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -389,14 +400,20 @@ const DoctorHome = () => {
               </span>
             </div>
             <div className="space-y-2">
-              {appointmentsToDisplay.map((req, index) => (
+              {appointmentsToDisplay.map((req, idx) => (
                 <div
-                  key={index}
+                  key={req.id}
                   className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
                 >
                   <div>
-                    <div className="font-bold text-gray-800 dark:text-gray-200">
+                    <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center">
                       {req.patient_name || "Patient Name"}
+                      {req.emergency && (
+                        <span className="ml-2 text-red-500 flex items-center">
+                          <AlertCircle size={16} className="mr-1" />
+                          Emergency
+                        </span>
+                      )}
                     </div>
                     <div className="text-gray-500 dark:text-gray-400">
                       {new Date(req.appointment_date).toLocaleString()}
@@ -410,16 +427,18 @@ const DoctorHome = () => {
                   {req.status === "pending" ? (
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handleAccept(index)}
+                        onClick={() => handleAccept(req.id)}
                         className="bg-sky-300 dark:bg-sky-600 text-black dark:text-white px-3 py-1 rounded"
+                        disabled={updatingStatus[req.id]}
                       >
-                        Accept
+                        {updatingStatus[req.id] ? <span className="animate-spin"><svg className="h-5 w-5 text-black dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg></span> : "Accept"}
                       </button>
                       <button
-                        onClick={() => handleDecline(index)}
+                        onClick={() => handleDecline(req.id)}
                         className="bg-red-400 dark:bg-red-600 text-black dark:text-white px-3 py-1 rounded"
+                        disabled={updatingStatus[req.id]}
                       >
-                        Decline
+                        {updatingStatus[req.id] ? <span className="animate-spin"><svg className="h-5 w-5 text-black dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg></span> : "Decline"}
                       </button>
                     </div>
                   ) : (
@@ -456,13 +475,19 @@ const DoctorHome = () => {
                 No appointments for this date.
               </div>
             ) : (
-              filteredAppointments.map((apt, index) => (
+              filteredAppointments.map((apt) => (
                 <div
-                  key={index}
+                  key={apt.id}
                   className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
                 >
-                  <div className="font-bold text-gray-800 dark:text-gray-200">
+                  <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center">
                     {apt.patient_name || "Patient Name"}
+                    {apt.emergency && (
+                      <span className="ml-2 text-red-500 flex items-center">
+                        <AlertCircle size={16} className="mr-1" />
+                        Emergency
+                      </span>
+                    )}
                   </div>
                   <div className="text-gray-500 dark:text-gray-400">
                     {new Date(apt.appointment_date).toLocaleTimeString([], {
@@ -500,13 +525,19 @@ const DoctorHome = () => {
                     </td>
                   </tr>
                 ) : (
-                  recentPatients.map((patient, index) => (
+                  recentPatients.map((patient) => (
                     <tr
-                      key={index}
+                      key={patient.id}
                       className="border-b border-gray-200 dark:border-gray-700"
                     >
-                      <td className="p-2 text-gray-800 dark:text-gray-200">
+                      <td className="p-2 text-gray-800 dark:text-gray-200 flex items-center">
                         {patient.patientInfo?.name || patient.name || "N/A"}
+                        {patient.emergency && (
+                          <span className="ml-2 text-red-500 flex items-center">
+                            <AlertCircle size={16} className="mr-1" />
+                            Emergency
+                          </span>
+                        )}
                       </td>
                       <td className="p-2 text-gray-800 dark:text-gray-200">
                         {patient.appointment_date
@@ -538,12 +569,10 @@ const DoctorHome = () => {
                 {monthNames[currentMonth - 1]} {currentYear}
               </span>
             </div>
-            {/* Total consultations for the month */}
             <div className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
               {monthlyConsultations} Consultations
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {/* New Patients (from accepted appointments with new patients endpoint) */}
               <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded text-center">
                 <div className="text-xl text-gray-800 dark:text-gray-200">
                   {monthlyNew}
@@ -552,7 +581,6 @@ const DoctorHome = () => {
                   New Patients
                 </div>
               </div>
-              {/* Treated & Discharged (from count-monthly-appointments endpoint) */}
               <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded text-center">
                 <div className="text-xl text-gray-800 dark:text-gray-200">
                   {monthlyAccepted}

@@ -1,123 +1,185 @@
-/* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from "react";
-import { Button, Modal, TextInput, Textarea } from "flowbite-react";
-import {
-  ThumbsUp,
-  Heart,
-  Smile,
-  Frown,
-  Zap,
-  AlertTriangle,
-  MessageSquare,
-  Send,
-  SmilePlus,
-  Paperclip,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
+import { Send, ThumbsUp, SmilePlus, Info } from "lucide-react";
+import { Button, TextInput } from "flowbite-react";
 
-export default function Messages() {
-  const [messages, setMessages] = useState([]);
-  const [reactions, setReactions] = useState({});
-  const [showReplyModal, setShowReplyModal] = useState(false);
-  const [replyTo, setReplyTo] = useState(null);
-  const [replySubject, setReplySubject] = useState("");
-  const [replyContent, setReplyContent] = useState("");
-
-  // Get current user from Redux store
+export default function ChatPage() {
+  // Redux: current user info
   const { currentUser } = useSelector((state) => state.user);
   const usernameForApi = currentUser?.username || "charlie";
 
-  // Setup Socket.IO connection and listen for notification events
+  // Socket state
+  const [socket, setSocket] = useState(null);
+
+  // Left panel: conversation list
+  const [conversationList, setConversationList] = useState([]);
+
+  // Selected conversation partner and messages for that conversation
+  const [selectedPartner, setSelectedPartner] = useState(null);
+  const [messages, setMessages] = useState([]);
+
+  // Right panel: partner's full profile info (fetched from backend)
+  const [partnerInfo, setPartnerInfo] = useState(null);
+
+  // New message input value
+  const [newMessage, setNewMessage] = useState("");
+
+  // Reactions dictionary (messageId: reaction)
+  const [reactions, setReactions] = useState({});
+
+  // Right panel visibility toggle state
+  const [showRightPanel, setShowRightPanel] = useState(false);
+  
+  // Ref for message container scrolling
+  const messageContainerRef = useRef(null);
+
+  //------------------------------------------------------------------------------
+  // 1. ESTABLISH SOCKET CONNECTION & LISTEN TO EVENTS
+  //------------------------------------------------------------------------------
   useEffect(() => {
-    // Create a new socket connection. Adjust the URL if necessary.
-    const socket = io("http://localhost:3000", {
-      transports: ["websocket"], // force websocket connection
+    if (!usernameForApi) return;
+
+    const newSocket = io("http://localhost:3000", {
+      transports: ["websocket"],
     });
 
-    socket.on("connect", () => {
-      console.log("Socket connected with id:", socket.id);
-      // Register current user with the socket server
-      socket.emit("register", usernameForApi);
-      console.log(`Emitted 'register' event for user: ${usernameForApi}`);
+    newSocket.on("connect", () => {
+      console.log("Socket connected with id:", newSocket.id);
+      newSocket.emit("register", usernameForApi);
+      console.log(`Emitted 'register' for user: ${usernameForApi}`);
     });
 
-    socket.on("notification", (notification) => {
-      console.log("Received notification via socket:", notification);
-      // Update your notification state; prepend new notification to list
-      setMessages((prevMessages) => [notification, ...prevMessages]);
+    // Listen for new message notifications
+    newSocket.on("notification", (notification) => {
+      console.log("Received notification:", notification);
+      // Check if notification belongs to current conversation
+      if (
+        (notification.sender === selectedPartner &&
+          notification.username === usernameForApi) ||
+        (notification.sender === usernameForApi &&
+          notification.username === selectedPartner)
+      ) {
+        // Append new message at the bottom
+        setMessages((prev) => [...prev, notification]);
+      } else {
+        console.log("Notification for other conversation", notification);
+      }
     });
 
-    // Debug log on disconnect
-    socket.on("disconnect", (reason) => {
+    // Listen for reaction updates
+    newSocket.on("reactionUpdate", ({ messageId, reaction }) => {
+      console.log("Received reaction update:", messageId, reaction);
+      setReactions((prev) => ({ ...prev, [messageId]: reaction }));
+    });
+
+    newSocket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason);
     });
 
-    // Clean-up function: disconnect the socket when component unmounts or username changes.
+    setSocket(newSocket);
+
     return () => {
       console.log("Cleaning up socket connection");
-      socket.disconnect();
+      newSocket.disconnect();
     };
-  }, [usernameForApi]);
+  }, [usernameForApi, selectedPartner]);
 
-  // If you want to load existing notifications once (fallback for offline or initial load)
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const payload = { username: usernameForApi };
-        const response = await fetch("/api/user/get-all-notifications", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-          throw new Error("Failed to fetch notifications");
-        }
-        const data = await response.json();
-        const mappedMessages = data.map((notification) => ({
-          id: notification.id,
-          sender: notification.sender,
-          subject: notification.subject,
-          message: notification.message,
-          time: new Date(notification.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          date: new Date(notification.created_at).toLocaleDateString(),
-          status: notification.status,
-        }));
-        console.log("Fetched notifications:", mappedMessages);
-        setMessages(mappedMessages);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
-
-    fetchNotifications();
-  }, [usernameForApi]);
-
-  const handleReact = (id, reaction) => {
-    setReactions((prev) => ({ ...prev, [id]: reaction }));
-  };
-
-  const openReplyModal = (msg) => {
-    setReplyTo(msg);
-    setReplySubject("");
-    setReplyContent("");
-    setShowReplyModal(true);
-  };
-
-  const handleSendReply = async () => {
-    if (!replySubject.trim() || !replyContent.trim()) {
-      alert("Subject and Message cannot be empty!");
-      return;
+  //------------------------------------------------------------------------------
+  // 2. FETCH CONVERSATION LIST (LEFT SIDEBAR)
+  //------------------------------------------------------------------------------
+  const fetchConversationList = useCallback(async () => {
+    try {
+      const payload = { currentUsername: usernameForApi };
+      const response = await fetch("/api/user/get-conversation1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("Failed to fetch conversation list");
+      const data = await response.json();
+      console.log("Fetched conversation list:", data);
+      setConversationList(data);
+    } catch (err) {
+      console.error("Error fetching conversation list:", err);
     }
+  }, [usernameForApi]);
+
+  useEffect(() => {
+    if (usernameForApi) {
+      fetchConversationList();
+    }
+  }, [usernameForApi, fetchConversationList]);
+
+  //------------------------------------------------------------------------------
+  // 3. FETCH MESSAGES FOR SELECTED PARTNER (MAIN CHAT PANEL)
+  //------------------------------------------------------------------------------
+  const fetchConversationMessages = useCallback(async (partner) => {
     try {
       const payload = {
-        username: replyTo.sender,
+        currentUsername: usernameForApi,
+        conversationPartner: partner,
+      };
+      const response = await fetch("/api/user/get-conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("Failed to fetch messages");
+      const data = await response.json();
+      console.log("Fetched conversation messages:", data);
+      setMessages(data);
+
+      // Mark messages addressed to the current user and are unread as read
+      data.forEach((msg) => {
+        if (msg.status === "unread" && msg.username === usernameForApi) {
+          markAsRead(msg.id);
+        }
+      });
+    } catch (err) {
+      console.error("Error fetching conversation messages:", err);
+    }
+  }, [usernameForApi]);
+
+  // Called when user selects a conversation partner
+  const selectPartner = (partner) => {
+    setSelectedPartner(partner);
+    setMessages([]);
+    setPartnerInfo(null);
+    fetchConversationMessages(partner);
+    fetchPartnerInfo(partner);
+    // Reset the right panel view when a new partner is selected
+    setShowRightPanel(false);
+  };
+
+  //------------------------------------------------------------------------------
+  // 4. FETCH SELECTED PARTNER PROFILE (RIGHT PANEL)
+  //------------------------------------------------------------------------------
+  const fetchPartnerInfo = async (partner) => {
+    try {
+      const response = await fetch(`/api/user/getUserProfile/${partner}`, {
+        method: "GET",
+      });
+      if (!response.ok) throw new Error("Failed to fetch partner info");
+      const data = await response.json();
+      console.log("Fetched partner info:", data);
+      setPartnerInfo(data);
+    } catch (err) {
+      console.error("Error fetching partner info:", err);
+    }
+  };
+
+  //------------------------------------------------------------------------------
+  // 5. SENDING A NEW MESSAGE (including send on Enter key press)
+  //------------------------------------------------------------------------------
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedPartner) return;
+    try {
+      const payload = {
+        username: selectedPartner,
         sender: usernameForApi,
-        subject: replySubject,
-        message: replyContent,
+        subject: "", // Modify if needed
+        message: newMessage.trim(),
       };
       const response = await fetch("/api/user/send-notification", {
         method: "POST",
@@ -128,191 +190,400 @@ export default function Messages() {
         const errData = await response.json();
         throw new Error(errData.error || "Failed to send message");
       }
-      const newNotification = await response.json();
-      console.log(
-        `Message sent to ${replyTo.sender}: Subject: ${replySubject} | Message: ${replyContent}`
-      );
-
-      // Optimistically update messages state (if you want the sender to see his own message immediately)
-      setMessages((prevMessages) => [newNotification, ...prevMessages]);
-      setShowReplyModal(false);
+      const newMsg = await response.json();
+      console.log("Message sent:", newMsg);
+      setMessages((prev) => [...prev, newMsg]);
+      setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("Failed to send message. Please try again.");
+      alert("Failed to send message");
     }
   };
 
-  // Group messages by date
-  const groupMessagesByDate = () => {
-    const grouped = {};
-    messages.forEach((msg) => {
-      if (!grouped[msg.date]) {
-        grouped[msg.date] = [];
-      }
-      grouped[msg.date].push(msg);
-    });
-    return grouped;
+  // Key press handler for sending a message on Enter
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // prevent newline
+      handleSendMessage();
+    }
   };
 
-  const groupedMessages = groupMessagesByDate();
+  //------------------------------------------------------------------------------
+  // 6. MARK MESSAGE AS READ (for each unread notification)
+  //------------------------------------------------------------------------------
+  const markAsRead = async (notificationId) => {
+    try {
+      const response = await fetch("/api/user/mark-notification-seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationId }),
+      });
+      if (!response.ok) throw new Error("Failed to mark as read");
+      console.log(`Message ${notificationId} marked as read`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  //------------------------------------------------------------------------------
+  // 7. REACT TO A MESSAGE (updates broadcast to all clients)
+  //------------------------------------------------------------------------------
+  const handleReact = async (msgId, reaction) => {
+    try {
+      const response = await fetch("/api/user/react-to-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: msgId, reaction }),
+      });
+      if (!response.ok) throw new Error("Failed to update reaction");
+      setReactions((prev) => ({ ...prev, [msgId]: reaction }));
+      console.log(`Reaction for message ${msgId} set to ${reaction}`);
+    } catch (err) {
+      console.error("Error updating reaction:", err);
+    }
+  };
+
+  // Utility: Get first letter of name for avatar
+  const getNameInitial = (conv) => {
+    if (conv.firstName) return conv.firstName.charAt(0).toUpperCase();
+    return conv.partner.charAt(0).toUpperCase();
+  };
+
+  // Utility: Generate a background color based on username for avatar
+  const getAvatarColor = (username) => {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
+      'bg-pink-500', 'bg-yellow-500', 'bg-red-500',
+      'bg-indigo-500', 'bg-teal-500'
+    ];
+    const index = username.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+  
+  // Auto-scroll to bottom of message container when messages change
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTop =
+        messageContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  //------------------------------------------------------------------------------
+  // RENDER UI
+  //------------------------------------------------------------------------------
+  // Determine the width of the main chat panel based on right panel visibility.
+  const chatPanelWidthClass = showRightPanel ? "w-1/2" : "w-3/4";
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100 dark:bg-gray-800">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-700 shadow py-4 px-6">
-        <h1 className="text-xl font-semibold text-gray-800 dark:text-white">
-          Messages
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-300">
-          {messages.length} conversations
-        </p>
-      </div>
-
-      {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {Object.keys(groupedMessages).map((date) => (
-          <div key={date} className="mb-6">
-            <div className="flex justify-center mb-4">
-              <span className="bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 text-xs px-3 py-1 rounded-full">
-                {date}
-              </span>
-            </div>
-
-            {groupedMessages[date].map((msg) => (
-              <div key={msg.id} className="mb-4">
-                <div className="flex items-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white flex-shrink-0 mr-2">
-                    {msg.sender.charAt(0).toUpperCase()}
-                  </div>
-
-                  <div className="max-w-3/4">
-                    <div className="flex items-center mb-1">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">
-                        {msg.sender}
-                      </p>
-                      <span className="ml-2 text-xs text-gray-500">
-                        {msg.time}
-                      </span>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow">
-                      {msg.subject && (
-                        <div className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                          {msg.subject}
-                        </div>
-                      )}
-                      <p className="text-gray-700 dark:text-gray-300">
-                        {msg.message}
-                      </p>
-                    </div>
-
-                    <div className="mt-2 flex space-x-2">
-                      <button
-                        onClick={() => handleReact(msg.id, "Like")}
-                        className="text-gray-500 hover:text-blue-500 text-xs flex items-center"
-                      >
-                        <ThumbsUp size={14} className="mr-1" />
-                        Like
-                      </button>
-                      <button
-                        onClick={() => openReplyModal(msg)}
-                        className="text-gray-500 hover:text-green-500 text-xs flex items-center"
-                      >
-                        <MessageSquare size={14} className="mr-1" />
-                        Reply
-                      </button>
-                      <button
-                        className="text-gray-500 hover:text-yellow-500 text-xs flex items-center"
-                      >
-                        <SmilePlus size={14} className="mr-1" />
-                        React
-                      </button>
-                    </div>
-
-                    {reactions[msg.id] && (
-                      <div className="mt-1 ml-2 text-xs text-blue-600 dark:text-blue-400">
-                        Reacted with {reactions[msg.id]}
-                      </div>
-                    )}
-                  </div>
-                </div>
+    <div className="flex h-screen w-full bg-white dark:bg-gray-900">
+      {/* LEFT SIDEBAR: Conversation List */}
+      <div className="flex flex-col w-1/6 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+            Messages
+          </h2>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {conversationList.map((conv) => (
+            <div
+              key={conv.partner}
+              className={`cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 ${
+                selectedPartner === conv.partner
+                  ? "bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-500"
+                  : ""
+              }`}
+              onClick={() => selectPartner(conv.partner)}
+            >
+              {/* Avatar with first letter */}
+              <div className={`w-12 h-12 rounded-full ${getAvatarColor(conv.partner)} flex items-center justify-center text-white font-bold text-xl shadow-md`}>
+                {getNameInitial(conv)}
               </div>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* Message Input */}
-      <div className="bg-white dark:bg-gray-700 p-4 border-t border-gray-200 dark:border-gray-600">
-        <div className="flex items-center">
-          <button className="text-gray-500 hover:text-blue-500 mr-2">
-            <Paperclip size={20} />
-          </button>
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="flex-1 border border-gray-300 dark:border-gray-500 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-          />
-          <button className="ml-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2">
-            <Send size={20} />
-          </button>
+              <div className="flex flex-col flex-grow overflow-hidden">
+                <span className="font-medium text-gray-800 dark:text-gray-200 truncate">
+                  {conv.partner}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {conv.subject || "Click to view conversation"}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Reply Modal */}
-      <Modal show={showReplyModal} onClose={() => setShowReplyModal(false)} popup>
-        <Modal.Header />
-        <Modal.Body>
-          {replyTo && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                Reply to {replyTo.sender}
-              </h2>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                  {replyTo.sender.charAt(0).toUpperCase()}
-                </div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  {replyTo.sender}
-                </span>
+      {/* MAIN CHAT PANEL */}
+      <div className={`${chatPanelWidthClass} bg-gray-50 dark:bg-gray-900 flex flex-col`}>
+        {/* Chat Header */}
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between bg-white dark:bg-gray-800 shadow-sm">
+          {selectedPartner ? (
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full ${getAvatarColor(selectedPartner)} flex items-center justify-center text-white font-bold`}>
+                {selectedPartner.charAt(0).toUpperCase()}
               </div>
-
-              <div className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mb-4">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {replyTo.subject}
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  {replyTo.message}
+              <div>
+                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                  {selectedPartner}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {partnerInfo?.role || "Online"}
                 </p>
               </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Select a conversation
+            </p>
+          )}
+          {selectedPartner && (
+            <Button
+              color="light"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => setShowRightPanel((prev) => !prev)}
+            >
+              <Info size={18} />
+              {showRightPanel ? "Hide Info" : "Info"}
+            </Button>
+          )}
+        </div>
 
+        {/* Chat Messages */}
+        <div 
+          ref={messageContainerRef}
+          className="flex-1 overflow-y-auto hide-scroll p-4 space-y-3 bg-gray-50 dark:bg-gray-900"
+        >
+          {messages.map((msg, index) => {
+            const isMe = msg.sender === usernameForApi;
+            const reaction = reactions[msg.id] || msg.reaction || null;
+            const isLastInGroup = index === messages.length - 1 ||
+              messages[index + 1].sender !== msg.sender;
+            const isFirstInGroup = index === 0 ||
+              messages[index - 1].sender !== msg.sender;
+            
+            // Determine border radius based on position in message group
+            let borderRadiusClass = "rounded-lg";
+            if (isMe) {
+              borderRadiusClass = isLastInGroup 
+                ? "rounded-tl-lg rounded-bl-lg rounded-tr-lg rounded-br-none" 
+                : "rounded-tl-lg rounded-tr-lg rounded-bl-lg";
+            } else {
+              borderRadiusClass = isLastInGroup 
+                ? "rounded-tr-lg rounded-br-lg rounded-tl-lg rounded-bl-none"
+                : "rounded-tr-lg rounded-br-lg rounded-tl-lg";
+            }
+
+            return (
+              <div
+                key={msg.id}
+                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+              >
+                {!isMe && isFirstInGroup && (
+                  <div className={`w-8 h-8 rounded-full ${getAvatarColor(msg.sender)} flex items-center justify-center text-white text-xs font-bold mr-2`}>
+                    {msg.sender.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                {!isMe && !isFirstInGroup && <div className="w-8 mr-2"></div>}
+                
+                <div className="flex flex-col max-w-xs">
+                  <div
+                    className={`p-3 ${borderRadiusClass} shadow-sm ${
+                      isMe
+                        ? "bg-blue-600 text-white"
+                        : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    }`}
+                  >
+                    {msg.subject && (
+                      <div className="text-xs font-semibold mb-1">
+                        {msg.subject}
+                      </div>
+                    )}
+                    <div className="text-sm">{msg.message}</div>
+                  </div>
+                  {reaction && (
+                    <div className={`mt-1 text-xs font-medium ${isMe ? "text-right" : "text-left"} text-gray-500`}>
+                      {reaction === "Like" ? "👍" : "❤️"}
+                    </div>
+                  )}
+                </div>
+                
+                {!isMe && (
+                  <button
+                    className="ml-2 text-gray-400 hover:text-blue-500 transition-colors"
+                    onClick={() => handleReact(msg.id, "Like")}
+                  >
+                    <ThumbsUp size={16} />
+                  </button>
+                )}
+                {isMe && (
+                  <button
+                    className="ml-2 text-gray-400 hover:text-pink-500 transition-colors"
+                    onClick={() => handleReact(msg.id, "Love")}
+                  >
+                    <SmilePlus size={16} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Message Input */}
+        {selectedPartner && (
+          <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="flex items-center space-x-2">
               <TextInput
-                id="replySubject"
-                placeholder="Subject"
-                value={replySubject}
-                onChange={(e) => setReplySubject(e.target.value)}
-                className="mb-3"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-1"
               />
-              <Textarea
-                id="replyContent"
-                placeholder="Type your reply here..."
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                rows={4}
-              />
+              <Button 
+                color="blue" 
+                onClick={handleSendMessage}
+                className="px-4"
+              >
+                <Send size={18} />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
-              <div className="flex justify-end gap-3 mt-4">
-                <Button color="gray" onClick={() => setShowReplyModal(false)}>
-                  Cancel
-                </Button>
-                <Button color="blue" onClick={handleSendReply}>
-                  <Send size={16} className="mr-2" /> Send
-                </Button>
+      {/* RIGHT PANEL: Selected Partner Info */}
+      {showRightPanel && (
+        <div className="flex flex-col w-1/4 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-200">
+                Profile Information
+              </h3>
+              <Button 
+                size="xs" 
+                color="light" 
+                onClick={() => setShowRightPanel(false)}
+                className="text-gray-500"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+          
+          {partnerInfo ? (
+            <div className="p-4 space-y-6">
+              {/* Avatar & Name Section */}
+              <div className="flex flex-col items-center text-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                <img
+                  src={partnerInfo.profile_picture }
+                  alt={partnerInfo.name || partnerInfo.username}
+                  className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 mb-4 shadow-md"
+                />
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                  {partnerInfo.name || partnerInfo.username}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">@{partnerInfo.username}</p>
+              </div>
+              
+              {/* Contact Information */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-1 rounded mr-2">
+                    📞
+                  </span>
+                  Contact Information
+                </h4>
+                <div className="space-y-2 pl-2">
+                  <div className="flex items-center text-sm">
+                    <span className="w-20 text-gray-500 dark:text-gray-400">Email:</span>
+                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.email}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="w-20 text-gray-500 dark:text-gray-400">Mobile:</span>
+                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.mobile}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Personal Information */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                  <span className="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-1 rounded mr-2">
+                    👤
+                  </span>
+                  Personal Details
+                </h4>
+                <div className="space-y-2 pl-2">
+                  <div className="flex items-center text-sm">
+                    <span className="w-20 text-gray-500 dark:text-gray-400">Gender:</span>
+                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.gender}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="w-20 text-gray-500 dark:text-gray-400">Birthday:</span>
+                    <span className="text-gray-800 dark:text-gray-200">
+                      {new Date(partnerInfo.dob).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Address Information */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 p-1 rounded mr-2">
+                    🏠
+                  </span>
+                  Address
+                </h4>
+                <div className="text-sm text-gray-800 dark:text-gray-200 pl-2">
+                  {partnerInfo.street}, {partnerInfo.city},<br />
+                  {partnerInfo.state}, {partnerInfo.country}<br />
+                  PIN: {partnerInfo.pin_code}
+                </div>
+              </div>
+              
+              {/* Professional Information */}
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                  <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 p-1 rounded mr-2">
+                    💼
+                  </span>
+                  Professional Details
+                </h4>
+                <div className="space-y-2 pl-2">
+                  <div className="flex items-center text-sm">
+                    <span className="w-28 text-gray-500 dark:text-gray-400">Role:</span>
+                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.role}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="w-28 text-gray-500 dark:text-gray-400">Specialization:</span>
+                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.specialisation}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="w-28 text-gray-500 dark:text-gray-400">Department:</span>
+                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.department}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="w-28 text-gray-500 dark:text-gray-400">Experience:</span>
+                    <span className="text-gray-800 dark:text-gray-200">
+                      {partnerInfo.yoe} year{partnerInfo.yoe > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span className="w-28 text-gray-500 dark:text-gray-400">Salary:</span>
+                    <span className="text-gray-800 dark:text-gray-200">
+                      ₹{partnerInfo.salary.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+          ) : (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              Loading user information...
+            </div>
           )}
-        </Modal.Body>
-      </Modal>
+        </div>
+      )}
     </div>
   );
 }
