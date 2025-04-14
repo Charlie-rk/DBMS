@@ -146,11 +146,53 @@ export async function registerUser(req, res, next) {
     role,
     specialization,
     department,
-    experience
+    experience,
   } = req.body;
 
   console.log("Received:");
   console.log(req.body);
+
+  // Define required fields for all users
+  const basicRequiredFields = { 
+    name,
+    username,
+    email,
+    mobile, // contact number
+    gender,
+    dob,
+    pin_code,
+    street,
+    city,
+    state,
+    country,
+    role,
+  };
+
+  // Gather missing basic fields (empty string, undefined, or null)
+  const missingBasicFields = Object.entries(basicRequiredFields)
+    .filter(([key, value]) => value === undefined || value === null || value === "")
+    .map(([key]) => key);
+
+  // If the role is Doctor, then additional fields are required.
+  const missingDoctorFields = [];
+  if (role === "Doctor") {
+    if (!department || department === "") {
+      missingDoctorFields.push("department");
+    }
+    if (!specialization || specialization === "") {
+      missingDoctorFields.push("specialization");
+    }
+    if (!experience || experience === "") {
+      missingDoctorFields.push("experience");
+    }
+  }
+
+  const missingFields = [...missingBasicFields, ...missingDoctorFields];
+  if (missingFields.length > 0) {
+    return res.status(400).json({
+      error: `Missing required fields: ${missingFields.join(", ")}`
+    });
+  }
 
   try {
     console.log("Processing registration...");
@@ -158,13 +200,13 @@ export async function registerUser(req, res, next) {
     // Set salary based on role
     let salary;
     switch (role) {
-      case 'Doctor':
+      case "Doctor":
         salary = 100000;
         break;
-      case 'Front Desk Operator':
+      case "Front Desk Operator":
         salary = 50000;
         break;
-      case 'Data Entry Operator':
+      case "Data Entry Operator":
         salary = 30000;
         break;
       default:
@@ -191,29 +233,28 @@ export async function registerUser(req, res, next) {
       salary,
       password: generateRandomPassword(6),
       profile_picture: "https://example.com/profile.png",
-      is_admin: false
+      is_admin: false,
     };
 
     console.log("Registering user with transformed data:", newUser);
-    sendWelcomeEmail(newUser, "Secret123");
 
     const { data, error } = await supabase
-      .from('users')
+      .from("users")
       .insert(newUser)
-      .select('*');
+      .select("*");
 
     if (error) {
       throw error;
     }
 
-    sendWelcomeEmail(data, "Secret123");
+    sendWelcomeEmail(data, "<Your-role>123");
     console.log("Insertion result:", data);
+
     res.status(201).json({ user: data });
   } catch (err) {
     next(err);
   }
 }
-
 
 
 /**

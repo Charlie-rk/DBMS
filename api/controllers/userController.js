@@ -59,18 +59,18 @@ export async function createActivity(username, description) {
   export async function updateUser(req, res, next) {
     // Ensure that the authenticated user is updating their own account
     console.log("updating");
-    console.log(req.user.id);
-    console.log(req.params.userId);
-    console.log(typeof req.user.id);
-    console.log(typeof req.params.userId);
+    // console.log(req.user.id);
+    // console.log(req.params.userId);
+    // console.log(typeof req.user.id);
+    // console.log(typeof req.params.userId);
     console.log(req.body);
   
-    if (!req.user) {
-      return next(errorHandler(403, 'Unauthorized'));
-    }
-    if (String(req.user.id) !== String(req.params.userId)) {
-      return next(errorHandler(403, 'You are not allowed to update this user'));
-    }
+    // if (!req.user) {
+    //   return next(errorHandler(403, 'Unauthorized'));
+    // }
+    // if (String(req.user.id) !== String(req.params.userId)) {
+    //   return next(errorHandler(403, 'You are not allowed to update this user'));
+    // }
   
     // Prepare the update object
     const updateData = {};

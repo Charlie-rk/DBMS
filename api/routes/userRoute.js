@@ -38,7 +38,7 @@ const router = express.Router();
 // }
   
 router.post('/recent-activities', fetchRecentActivitiesOfUser);
-router.put('/update/:userId',verifyToken,updateUser);
+router.put('/update/:userId',updateUser);
 router.post('/signout', signout);
 router.post('/get-all-notifications', fetchNotifications);             // Get notifications for a user
 router.post('/send-notification', sendNotification);                // Send a notification

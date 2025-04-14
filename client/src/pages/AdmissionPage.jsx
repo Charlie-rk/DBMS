@@ -212,7 +212,7 @@ function AdmissionPage() {
             <p>Loading room summary...</p>
           ) : (
             filteredRooms.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-100 ">
                 {filteredRooms.map((room) => (
                   <div key={room.room_id} className="p-4 border border-gray-300 dark:border-gray-700 rounded shadow">
                     <div className="flex justify-between items-center mb-2">
@@ -224,7 +224,9 @@ function AdmissionPage() {
                       <p>Occupied: {room.occupied_count}</p>
                       <p>Available: {room.available_rooms}</p>
                     </div>
-                    <Button onClick={() => handleSelectRoom(room)} className="mt-2" outline>
+                    <Button onClick={() => handleSelectRoom(room)}  outline 
+                     className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800 mt-2"
+                      >
                       Select Room
                     </Button>
                   </div>

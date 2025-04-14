@@ -273,11 +273,10 @@ export default function ChatPage() {
   //------------------------------------------------------------------------------
   // Determine the width of the main chat panel based on right panel visibility.
   const chatPanelWidthClass = showRightPanel ? "w-1/2" : "w-3/4";
-
   return (
-    <div className="flex h-screen w-full bg-white dark:bg-gray-900">
+    <div className="flex h-screen w-full bg-sky-100 dark:bg-gray-900">
       {/* LEFT SIDEBAR: Conversation List */}
-      <div className="flex flex-col w-1/6 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+      <div className="flex flex-col w-1/6 border-r border-gray-200 dark:border-gray-700 bg-sky-100 dark:bg-gray-800">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
             Messages
@@ -295,7 +294,11 @@ export default function ChatPage() {
               onClick={() => selectPartner(conv.partner)}
             >
               {/* Avatar with first letter */}
-              <div className={`w-12 h-12 rounded-full ${getAvatarColor(conv.partner)} flex items-center justify-center text-white font-bold text-xl shadow-md`}>
+              <div
+                className={`w-12 h-12 rounded-full ${getAvatarColor(
+                  conv.partner
+                )} flex items-center justify-center text-white font-bold text-xl shadow-md`}
+              >
                 {getNameInitial(conv)}
               </div>
               <div className="flex flex-col flex-grow overflow-hidden">
@@ -310,280 +313,329 @@ export default function ChatPage() {
           ))}
         </div>
       </div>
-
-      {/* MAIN CHAT PANEL */}
-      <div className={`${chatPanelWidthClass} bg-gray-50 dark:bg-gray-900 flex flex-col`}>
-        {/* Chat Header */}
-        <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between bg-white dark:bg-gray-800 shadow-sm">
-          {selectedPartner ? (
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full ${getAvatarColor(selectedPartner)} flex items-center justify-center text-white font-bold`}>
-                {selectedPartner.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                  {selectedPartner}
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {partnerInfo?.role || "Online"}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Select a conversation
-            </p>
-          )}
-          {selectedPartner && (
-            <Button
-              color="light"
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={() => setShowRightPanel((prev) => !prev)}
-            >
-              <Info size={18} />
-              {showRightPanel ? "Hide Info" : "Info"}
-            </Button>
-          )}
-        </div>
-
-        {/* Chat Messages */}
-        <div 
-          ref={messageContainerRef}
-          className="flex-1 overflow-y-auto hide-scroll p-4 space-y-3 bg-gray-50 dark:bg-gray-900"
+  
+      {/* Container for Main Chat Panel and Right Panel */}
+      <div className="flex flex-1">
+        {/* MAIN CHAT PANEL */}
+        <div
+          className={`${
+            showRightPanel ? "w-2/3" : "w-full"
+          } bg-gray-50 dark:bg-gray-900 flex flex-col`}
         >
-          {messages.map((msg, index) => {
-            const isMe = msg.sender === usernameForApi;
-            const reaction = reactions[msg.id] || msg.reaction || null;
-            const isLastInGroup = index === messages.length - 1 ||
-              messages[index + 1].sender !== msg.sender;
-            const isFirstInGroup = index === 0 ||
-              messages[index - 1].sender !== msg.sender;
-            
-            // Determine border radius based on position in message group
-            let borderRadiusClass = "rounded-lg";
-            if (isMe) {
-              borderRadiusClass = isLastInGroup 
-                ? "rounded-tl-lg rounded-bl-lg rounded-tr-lg rounded-br-none" 
-                : "rounded-tl-lg rounded-tr-lg rounded-bl-lg";
-            } else {
-              borderRadiusClass = isLastInGroup 
-                ? "rounded-tr-lg rounded-br-lg rounded-tl-lg rounded-bl-none"
-                : "rounded-tr-lg rounded-br-lg rounded-tl-lg";
-            }
-
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+          {/* Chat Header */}
+          <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between bg-white dark:bg-gray-800 shadow-sm">
+            {selectedPartner ? (
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-full ${getAvatarColor(
+                    selectedPartner
+                  )} flex items-center justify-center text-white font-bold`}
+                >
+                  {selectedPartner.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                    {selectedPartner}
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {partnerInfo?.role || "Online"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Select a conversation
+              </p>
+            )}
+            {selectedPartner && (
+              <Button
+                color="light"
+                size="sm"
+                className="flex items-center gap-1"
+                onClick={() => setShowRightPanel((prev) => !prev)}
               >
-                {!isMe && isFirstInGroup && (
-                  <div className={`w-8 h-8 rounded-full ${getAvatarColor(msg.sender)} flex items-center justify-center text-white text-xs font-bold mr-2`}>
-                    {msg.sender.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                {!isMe && !isFirstInGroup && <div className="w-8 mr-2"></div>}
-                
-                <div className="flex flex-col max-w-xs">
-                  <div
-                    className={`p-3 ${borderRadiusClass} shadow-sm ${
-                      isMe
-                        ? "bg-blue-600 text-white"
-                        : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                    }`}
-                  >
-                    {msg.subject && (
-                      <div className="text-xs font-semibold mb-1">
-                        {msg.subject}
-                      </div>
-                    )}
-                    <div className="text-sm">{msg.message}</div>
-                  </div>
-                  {reaction && (
-                    <div className={`mt-1 text-xs font-medium ${isMe ? "text-right" : "text-left"} text-gray-500`}>
-                      {reaction === "Like" ? "👍" : "❤️"}
+                <Info size={18} />
+                {showRightPanel ? "Hide Info" : "Info"}
+              </Button>
+            )}
+          </div>
+  
+          {/* Chat Messages */}
+          <div
+            ref={messageContainerRef}
+            className="flex-1 overflow-y-auto hide-scroll p-4 space-y-3 bg-gray-50 dark:bg-gray-900"
+          >
+            {messages.map((msg, index) => {
+              const isMe = msg.sender === usernameForApi;
+              const reaction = reactions[msg.id] || msg.reaction || null;
+              const isLastInGroup =
+                index === messages.length - 1 ||
+                messages[index + 1].sender !== msg.sender;
+              const isFirstInGroup =
+                index === 0 || messages[index - 1].sender !== msg.sender;
+  
+              // Determine border radius based on position in message group
+              let borderRadiusClass = "rounded-lg";
+              if (isMe) {
+                borderRadiusClass = isLastInGroup
+                  ? "rounded-tl-lg rounded-bl-lg rounded-tr-lg rounded-br-none"
+                  : "rounded-tl-lg rounded-tr-lg rounded-bl-lg";
+              } else {
+                borderRadiusClass = isLastInGroup
+                  ? "rounded-tr-lg rounded-br-lg rounded-tl-lg rounded-bl-none"
+                  : "rounded-tr-lg rounded-br-lg rounded-tl-lg";
+              }
+  
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                >
+                  {!isMe && isFirstInGroup && (
+                    <div
+                      className={`w-8 h-8 rounded-full ${getAvatarColor(
+                        msg.sender
+                      )} flex items-center justify-center text-white text-xs font-bold mr-2`}
+                    >
+                      {msg.sender.charAt(0).toUpperCase()}
                     </div>
                   )}
+                  {!isMe && !isFirstInGroup && <div className="w-8 mr-2"></div>}
+  
+                  <div className="flex flex-col max-w-xs">
+                    <div
+                      className={`p-3 ${borderRadiusClass} shadow-sm ${
+                        isMe
+                          ? "bg-blue-600 text-white"
+                          : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      {msg.subject && (
+                        <div className="text-xs font-semibold mb-1">
+                          {msg.subject}
+                        </div>
+                      )}
+                      <div className="text-sm">{msg.message}</div>
+                    </div>
+                    {reaction && (
+                      <div
+                        className={`mt-1 text-xs font-medium ${
+                          isMe ? "text-right" : "text-left"
+                        } text-gray-500`}
+                      >
+                        {reaction === "Like" ? "👍" : "❤️"}
+                      </div>
+                    )}
+                  </div>
+  
+                  {!isMe && (
+                    <button
+                      className="ml-2 text-gray-400 hover:text-blue-500 transition-colors"
+                      onClick={() => handleReact(msg.id, "Like")}
+                    >
+                      <ThumbsUp size={16} />
+                    </button>
+                  )}
+                  {isMe && (
+                    <button
+                      className="ml-2 text-gray-400 hover:text-pink-500 transition-colors"
+                      onClick={() => handleReact(msg.id, "Love")}
+                    >
+                      <SmilePlus size={16} />
+                    </button>
+                  )}
                 </div>
-                
-                {!isMe && (
-                  <button
-                    className="ml-2 text-gray-400 hover:text-blue-500 transition-colors"
-                    onClick={() => handleReact(msg.id, "Like")}
-                  >
-                    <ThumbsUp size={16} />
-                  </button>
-                )}
-                {isMe && (
-                  <button
-                    className="ml-2 text-gray-400 hover:text-pink-500 transition-colors"
-                    onClick={() => handleReact(msg.id, "Love")}
-                  >
-                    <SmilePlus size={16} />
-                  </button>
-                )}
+              );
+            })}
+          </div>
+  
+          {/* Message Input */}
+          {selectedPartner && (
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div className="flex items-center space-x-2">
+                <TextInput
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="flex-1"
+                />
+                <Button color="blue" onClick={handleSendMessage} className="px-4">
+                  <Send size={18} />
+                </Button>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Message Input */}
-        {selectedPartner && (
-          <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <div className="flex items-center space-x-2">
-              <TextInput
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="flex-1"
-              />
-              <Button 
-                color="blue" 
-                onClick={handleSendMessage}
-                className="px-4"
-              >
-                <Send size={18} />
-              </Button>
             </div>
+          )}
+        </div>
+  
+        {/* RIGHT PANEL: Selected Partner Info */}
+        {showRightPanel && (
+          <div className="w-1/3 border-l border-gray-200 dark:border-gray-700 bg-sky-100 dark:bg-gray-800 overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-200">
+                  Profile Information
+                </h3>
+                <Button
+                  size="xs"
+                  color="light"
+                  onClick={() => setShowRightPanel(false)}
+                  className="text-gray-500"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+  
+            {partnerInfo ? (
+              <div className="p-4 space-y-6">
+                {/* Avatar & Name Section */}
+                <div className="flex flex-col items-center text-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                  <img
+                    src={partnerInfo.profile_picture}
+                    alt={partnerInfo.name || partnerInfo.username}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 mb-4 shadow-md"
+                  />
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    {partnerInfo.name || partnerInfo.username}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    @{partnerInfo.username}
+                  </p>
+                </div>
+  
+                {/* Contact Information */}
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                    <span className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-1 rounded mr-2">
+                      📞
+                    </span>
+                    Contact Information
+                  </h4>
+                  <div className="space-y-2 pl-2">
+                    <div className="flex items-center text-sm">
+                      <span className="w-20 text-gray-500 dark:text-gray-400">
+                        Email:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.email}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="w-20 text-gray-500 dark:text-gray-400">
+                        Mobile:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.mobile}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+  
+                {/* Personal Information */}
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                    <span className="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-1 rounded mr-2">
+                      👤
+                    </span>
+                    Personal Details
+                  </h4>
+                  <div className="space-y-2 pl-2">
+                    <div className="flex items-center text-sm">
+                      <span className="w-20 text-gray-500 dark:text-gray-400">
+                        Gender:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.gender}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="w-20 text-gray-500 dark:text-gray-400">
+                        Birthday:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {new Date(partnerInfo.dob).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+  
+                {/* Address Information */}
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                    <span className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 p-1 rounded mr-2">
+                      🏠
+                    </span>
+                    Address
+                  </h4>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 pl-2">
+                    {partnerInfo.street}, {partnerInfo.city},<br />
+                    {partnerInfo.state}, {partnerInfo.country}
+                    <br />
+                    PIN: {partnerInfo.pin_code}
+                  </div>
+                </div>
+  
+                {/* Professional Information */}
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
+                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
+                    <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 p-1 rounded mr-2">
+                      💼
+                    </span>
+                    Professional Details
+                  </h4>
+                  <div className="space-y-2 pl-2">
+                    <div className="flex items-center text-sm">
+                      <span className="w-28 text-gray-500 dark:text-gray-400">
+                        Role:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.role}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="w-28 text-gray-500 dark:text-gray-400">
+                        Specialization:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.specialisation}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="w-28 text-gray-500 dark:text-gray-400">
+                        Department:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.department}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="w-28 text-gray-500 dark:text-gray-400">
+                        Experience:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        {partnerInfo.yoe} year{partnerInfo.yoe > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="w-28 text-gray-500 dark:text-gray-400">
+                        Salary:
+                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">
+                        ₹{partnerInfo.salary.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                Loading user information...
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* RIGHT PANEL: Selected Partner Info */}
-      {showRightPanel && (
-        <div className="flex flex-col w-1/4 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-200">
-                Profile Information
-              </h3>
-              <Button 
-                size="xs" 
-                color="light" 
-                onClick={() => setShowRightPanel(false)}
-                className="text-gray-500"
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-          
-          {partnerInfo ? (
-            <div className="p-4 space-y-6">
-              {/* Avatar & Name Section */}
-              <div className="flex flex-col items-center text-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                <img
-                  src={partnerInfo.profile_picture }
-                  alt={partnerInfo.name || partnerInfo.username}
-                  className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 mb-4 shadow-md"
-                />
-                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-                  {partnerInfo.name || partnerInfo.username}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">@{partnerInfo.username}</p>
-              </div>
-              
-              {/* Contact Information */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
-                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
-                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-1 rounded mr-2">
-                    📞
-                  </span>
-                  Contact Information
-                </h4>
-                <div className="space-y-2 pl-2">
-                  <div className="flex items-center text-sm">
-                    <span className="w-20 text-gray-500 dark:text-gray-400">Email:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.email}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <span className="w-20 text-gray-500 dark:text-gray-400">Mobile:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.mobile}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Personal Information */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
-                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
-                  <span className="bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-1 rounded mr-2">
-                    👤
-                  </span>
-                  Personal Details
-                </h4>
-                <div className="space-y-2 pl-2">
-                  <div className="flex items-center text-sm">
-                    <span className="w-20 text-gray-500 dark:text-gray-400">Gender:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.gender}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <span className="w-20 text-gray-500 dark:text-gray-400">Birthday:</span>
-                    <span className="text-gray-800 dark:text-gray-200">
-                      {new Date(partnerInfo.dob).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Address Information */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
-                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
-                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 p-1 rounded mr-2">
-                    🏠
-                  </span>
-                  Address
-                </h4>
-                <div className="text-sm text-gray-800 dark:text-gray-200 pl-2">
-                  {partnerInfo.street}, {partnerInfo.city},<br />
-                  {partnerInfo.state}, {partnerInfo.country}<br />
-                  PIN: {partnerInfo.pin_code}
-                </div>
-              </div>
-              
-              {/* Professional Information */}
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg shadow-sm">
-                <h4 className="text-md font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center">
-                  <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 p-1 rounded mr-2">
-                    💼
-                  </span>
-                  Professional Details
-                </h4>
-                <div className="space-y-2 pl-2">
-                  <div className="flex items-center text-sm">
-                    <span className="w-28 text-gray-500 dark:text-gray-400">Role:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.role}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <span className="w-28 text-gray-500 dark:text-gray-400">Specialization:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.specialisation}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <span className="w-28 text-gray-500 dark:text-gray-400">Department:</span>
-                    <span className="text-gray-800 dark:text-gray-200">{partnerInfo.department}</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <span className="w-28 text-gray-500 dark:text-gray-400">Experience:</span>
-                    <span className="text-gray-800 dark:text-gray-200">
-                      {partnerInfo.yoe} year{partnerInfo.yoe > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <span className="w-28 text-gray-500 dark:text-gray-400">Salary:</span>
-                    <span className="text-gray-800 dark:text-gray-200">
-                      ₹{partnerInfo.salary.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              Loading user information...
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
-}
+}  

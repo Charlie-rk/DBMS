@@ -7,6 +7,7 @@ import RegistrationPage from '../pages/RegistrationPage';
 import AppointmentPage from '../pages/AppointmentPage';
 import AdmissionPage from '../pages/AdmissionPage';
 import DischargePage from '../pages/DischargePage';
+import Message from '../pages/Message';
 
 const FDOMainMenu = () => {
   return (
@@ -17,7 +18,7 @@ const FDOMainMenu = () => {
         <Route path="/appointment" element={<AppointmentPage />} />
         <Route path="/admission" element={<AdmissionPage />} />
         <Route path="/discharge" element={<DischargePage />} />
-        <Route path="/payment" element={<div>Payment Page ( i will not come Coming Soon)</div>} />
+        <Route path="/messages" element={<Message/>} />
         <Route path="/widgets" element={<div>Widgets Page (Coming Soon)</div>} />
         <Route path="/settings" element={<div>Settings Page (Coming Soon)</div>} />
         <Route path="/security" element={<div>Security Page (Coming Soon)</div>} />

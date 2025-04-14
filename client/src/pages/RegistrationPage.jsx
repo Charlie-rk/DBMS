@@ -1,12 +1,14 @@
 /* eslint-disable no-unused-vars */
 import { Button, Modal } from 'flowbite-react';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { User, Phone, MapPin, Calendar } from 'lucide-react';
 import { Backdrop } from '@mui/material';
 import CustomSpinner from '../components/CustomSpinner';
+// import ReactToPrint from 'react-to-print'; // New import for printing
+import { ReactToPrint } from 'react-to-print';
 
 const MySwal = withReactContent(Swal);
 
@@ -26,6 +28,9 @@ function RegistrationPage() {
     gender: '',
     isExisting: false,
   });
+
+  // Ref for printing the patient details
+  const printRef = useRef();
 
   const handleChange = (e) => {
     setFormData({ 
@@ -101,14 +106,13 @@ function RegistrationPage() {
     <>
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md shadow-slate-600 dark:shadow-slate-700">
         {loading && (
-                <Backdrop
-                  sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-                  open={true}
-                >
-                  {/* <CircularProgress color="inherit" /> */}
-                  <CustomSpinner />
-                </Backdrop>
-              )}
+          <Backdrop
+            sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={true}
+          >
+            <CustomSpinner />
+          </Backdrop>
+        )}
         <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
           Patient Registration
         </h2>
@@ -217,7 +221,7 @@ function RegistrationPage() {
             Patient Details
           </Modal.Header>
           <Modal.Body>
-            <div className="space-y-4">
+            <div ref={printRef} className="space-y-4">
               <div className="flex items-center space-x-2">
                 <User className="w-5 h-5 text-blue-500" />
                 <span><strong>ID:</strong> {patientData.id}</span>
@@ -236,7 +240,10 @@ function RegistrationPage() {
               </div>
               <div className="flex items-center space-x-2">
                 <Calendar className="w-5 h-5 text-blue-500" />
-                <span><strong>DOB:</strong> {new Date(patientData.dob).toLocaleDateString()}</span>
+                <span>
+                  <strong>DOB:</strong>{" "}
+                  {new Date(patientData.dob).toLocaleDateString()}
+                </span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="w-5 h-5" />
@@ -256,10 +263,19 @@ function RegistrationPage() {
               </div>
             </div>
           </Modal.Body>
-          <Modal.Footer>
+          <Modal.Footer className="flex justify-between">
             <Button onClick={() => setShowModal(false)}>
               Close
             </Button>
+            <ReactToPrint
+              trigger={() => (
+                <Button className="bg-green-500 hover:bg-green-600 text-white">
+                  Print Details
+                </Button>
+              )}
+              content={() => printRef.current}
+              pageStyle="@media print { body { -webkit-print-color-adjust: exact; } }"
+            />
           </Modal.Footer>
         </Modal>
       )}

@@ -36,6 +36,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import PrintTest from './pages/PrintTest';
 
 const MySwal = withReactContent(Swal);
 export default function App() {
@@ -106,10 +107,12 @@ socket.on("emergencyAppointment", (appointment) => {
       <Header />
       <BackToTop />
       <ToastContainer />
-      <Routes>
+      <Routes>  
+      {/* </> */}
         <Route path="/" element={ currentUser ? getDashboardComponent() : <SignIn /> } />
         <Route path="/about" element={<About />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/print" element={<PrintTest />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route element={<PrivateRoute />}>
           {/* Protected Routes */}

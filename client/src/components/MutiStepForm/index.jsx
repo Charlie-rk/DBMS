@@ -4,39 +4,38 @@
 import { Backdrop } from "@mui/material";
 import { Button } from "flowbite-react";
 import React, { useState } from "react";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import CustomSpinner from "../CustomSpinner";
+
+const MySwal = withReactContent(Swal);
 
 const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [multiStepFormData, setMultiStepFormData] = useState(initialValue || {});
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Dummy function to send form data to a backend endpoint
   const sendFormData = async (data) => {
     console.log(data);
-    try {
-      const response = await fetch("/api/admin/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const result = await response.json();
-      console.log("Success:", result);
-      // Additional success handling can be added here.
-    } catch (error) {
-      console.error("Error submitting form data:", error);
-      // Handle errors as needed.
+    const response = await fetch("/api/admin/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
     }
+    const result = await response.json();
+    console.log("Success:", result);
+    return result;
   };
 
-  // Inline validation function based on the current step
+  // Inline validation function for each step
   const validateStep = () => {
     let errs = {};
     if (currentStep === 0) {
@@ -53,7 +52,7 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
         errs.email = "Email is invalid";
       }
       if (!multiStepFormData.mobile) {
-        errs.gender = "Please Provide Contact no.";
+        errs.mobile = "Please provide contact no.";
       }
       if (!multiStepFormData.gender) {
         errs.gender = "Select a gender";
@@ -83,31 +82,89 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
       if (!multiStepFormData.role) {
         errs.role = "Select a role";
       }
+      // Additional check for doctor-specific inputs if role is Doctor
       if (multiStepFormData.role === "Doctor") {
-        if (
-          !multiStepFormData.specialization ||
-          multiStepFormData.specialization.length < 3
-        ) {
+        if (!multiStepFormData.department) {
+          errs.department = "Department is required";
+        }
+        if (!multiStepFormData.specialization || multiStepFormData.specialization.length < 3) {
           errs.specialization = "Specialization must be at least 3 characters";
+        }
+        if (!multiStepFormData.experience) {
+          errs.experience = "Years of Experience is required";
         }
       }
     }
     return errs;
   };
 
-  const onFinalSubmit = async () => {
-    setHasSubmitted(true);
-    // Send all collected data to the dummy endpoint
-    await sendFormData(multiStepFormData);
-    // Optionally, clear the form data after submission:
-    // setMultiStepFormData(initialValue);
+  // Overall validation before calling backend (checks all important fields)
+  const validateAllFields = () => {
+    const missingFields = [];
+    // Basic required fields
+    if (!multiStepFormData.name) missingFields.push("name");
+    if (!multiStepFormData.username) missingFields.push("username");
+    if (!multiStepFormData.email) missingFields.push("email");
+    if (!multiStepFormData.mobile) missingFields.push("mobile");
+    if (!multiStepFormData.gender) missingFields.push("gender");
+    if (!multiStepFormData.dob) missingFields.push("dob");
+    if (!multiStepFormData.pin_code) missingFields.push("pin_code");
+    if (!multiStepFormData.street) missingFields.push("street");
+    if (!multiStepFormData.city) missingFields.push("city");
+    if (!multiStepFormData.state) missingFields.push("state");
+    if (!multiStepFormData.country) missingFields.push("country");
+    if (!multiStepFormData.role) missingFields.push("role");
+    // Doctor-specific fields
+    if (multiStepFormData.role === "Doctor") {
+      if (!multiStepFormData.department) missingFields.push("department");
+      if (!multiStepFormData.specialization) missingFields.push("specialization");
+      if (!multiStepFormData.experience) missingFields.push("experience");
+    }
+    return missingFields;
   };
 
-  // Handle moving to the next step (or submitting on the final step)
+  const onFinalSubmit = async () => {
+    // Check for missing fields before calling the backend
+    const missing = validateAllFields();
+    if (missing.length > 0) {
+      MySwal.fire({
+        icon: "error",
+        title: "Incomplete Form",
+        text: `Please fill in all required details: ${missing.join(", ")}`,
+      });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Send all collected data to the backend endpoint
+      await sendFormData(multiStepFormData);
+      // If successful, update the submission state
+      setHasSubmitted(true);
+    } catch (error) {
+      console.error("Error submitting form data:", error);
+      // Server error alert if backend responds with error
+      MySwal.fire({
+        icon: "error",
+        title: "Server Error",
+        text: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle moving to the next step (or submission at the final step)
   const handleNext = () => {
     const errs = validateStep();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
+      // Fire an alert for the current step if details are missing.
+      MySwal.fire({
+        icon: "error",
+        title: "Incomplete Details",
+        text: "Please fill in all required fields before proceeding.",
+      });
       return;
     }
     setErrors({});
@@ -164,15 +221,12 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
   return (
     <div className="max-w-4xl mx-auto p-4 rounded-lg shadow-2xl shadow-blue-500 grid grid-cols-1 md:grid-cols-3 h-[700px] overflow-hidden">
       {/* Sidebar with background image and gradient overlay */}
-
       {loading && (
         <Backdrop
           sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
           open={true}
-          
         >
-          {/* <CircularProgress color="inherit" /> */}
-          <CustomSpinner  />
+          <CustomSpinner />
         </Backdrop>
       )}
       <aside
@@ -205,15 +259,22 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
             </div>
             <div className="flex justify-end gap-4 mt-4">
               {currentStep > 0 && (
-                  <Button  onClick={handlePrev} outline  className="bg-gradient-to-r dark:from-slate-200 dark:to-slate-600 from-slate-900 to-slate-700 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800">
-                   Go Back
-          </Button>
-        
+                <Button
+                  onClick={handlePrev}
+                  outline
+                  className="bg-gradient-to-r dark:from-slate-200 dark:to-slate-600 from-slate-900 to-slate-700 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+                >
+                  Go Back
+                </Button>
               )}
-              <Button onClick={handleNext} outline  className="bg-gradient-to-r  from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800">
-              {currentStep === steps.length - 1 ? "Confirm" : "Next Step"}
-      </Button>
-            
+              <Button
+                onClick={handleNext}
+                outline
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+                disabled={loading}
+              >
+                {currentStep === steps.length - 1 ? "Confirm" : "Next Step"}
+              </Button>
             </div>
           </>
         )}

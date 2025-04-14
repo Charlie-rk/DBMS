@@ -451,216 +451,393 @@ export default function AllPatient_Doctor() {
         />
       )}
 
-      {/* Slide-over Panel for Patient Details */}
-      <div
-        className={`fixed top-0 right-0 h-full w-1/2 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-all duration-500 ease-out ${
-          showDetailPanel ? "translate-x-0" : "translate-x-full"
-        } overflow-hidden`}
+    {/* Slide-over Panel for Patient Details */}
+<div
+  className={`fixed top-0 right-0 h-full w-1/2 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-all duration-500 ease-in-out ${
+    showDetailPanel ? "translate-x-0" : "translate-x-full"
+  } overflow-hidden`}
+>
+  {/* Header of Slide-over with gradient */}
+  <div className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-700 dark:to-purple-800 p-4 flex justify-between items-center shadow-md">
+    <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+      <User className="w-6 h-6 animate-pulse" />
+      <span>Patient Details</span>
+    </h2>
+    <button
+      onClick={() => setShowDetailPanel(false)}
+      className="rounded-full p-2 bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-all duration-300 hover:rotate-90 transform"
+      aria-label="Close panel"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        {/* Header of Slide-over */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-            Patient Details
-          </h2>
-          <button
-            onClick={() => setShowDetailPanel(false)}
-            className="rounded-full p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  {/* Patient Detail Content */}
+  <div className="p-4 overflow-y-auto h-[calc(100%-4rem)] bg-gray-50 dark:bg-gray-900">
+    {patientDetail ? (
+      <div className="space-y-6">
+        {/* Patient Basic Info Card with upgraded design */}
+        <div className="rounded-lg p-5 shadow-lg bg-gradient-to-br from-sky-100 to-blue-100 dark:from-sky-800 dark:to-blue-900 border-l-4 border-blue-500 dark:border-blue-400 transform transition-all duration-300 hover:shadow-xl">
+          <div className="flex items-center mb-3">
+            <div className="p-2 bg-blue-500 dark:bg-blue-600 rounded-full mr-3">
+              <User className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+              {patientDetail.patient.name}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 text-gray-700 dark:text-gray-300">
+            <div className="flex items-center">
+              <Phone className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium">Mobile:</span>&nbsp;
+              <span>{patientDetail.patient.mobile}</span>
+            </div>
+            <div className="flex items-center">
+              <MapPin className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium">Address:</span>&nbsp;
+              <span>{patientDetail.patient.address}</span>
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="font-medium">Gender:</span>&nbsp;
+              <span>{patientDetail.patient.gender}</span>
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="font-medium">Age:</span>&nbsp;
+              <span>{patientDetail.patient.age} years</span>
+            </div>
+            <div className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium">DOB:</span>&nbsp;
+              <span>{formatDate(patientDetail.patient.dob)}</span>
+            </div>
+            <div className="flex items-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium">Status:</span>&nbsp;
+              <span className={`${
+                patientDetail.patient.status === "discharged" 
+                  ? "text-green-600 dark:text-green-400" 
+                  : "text-yellow-600 dark:text-yellow-400"
+              } font-semibold`}>
+                {patientDetail.patient.status}
+              </span>
+            </div>
+          </div>
         </div>
-        
-        {/* Patient Detail Content */}
-        <div className="p-4 overflow-y-auto h-[calc(100%-4rem)]">
-          {patientDetail ? (
-            <div className="space-y-6">
-              {/* Patient Basic Info */}
-              <div className="border border-gray-300 rounded-md p-4 shadow-md bg-sky-50 dark:bg-sky-900">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 pb-2 border-b border-sky-400">
-                  {patientDetail.patient.name}
-                </h2>
-                <div className="mt-2 space-y-1 text-gray-700 dark:text-gray-300 text-sm">
-                  <p>
-                    <span className="font-semibold">Mobile:</span> {patientDetail.patient.mobile}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Address:</span> {patientDetail.patient.address}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Gender:</span> {patientDetail.patient.gender}{" "}
-                    | <span className="font-semibold">Age:</span> {patientDetail.patient.age}
-                  </p>
-                  <p>
-                    <span className="font-semibold">DOB:</span> {formatDate(patientDetail.patient.dob)}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Status:</span> {patientDetail.patient.status}
-                  </p>
-                  {/* Emergency condition: if any appointment is flagged as emergency */}
-                  <p>
-                    <span className="font-semibold">Emergency:</span>{" "}
-                    {patientDetail.appointments && patientDetail.appointments.some(appt => appt.emergency) ? "Yes" : "No"}
-                  </p>
-                </div>
+
+        {/* Appointments with enhanced styling */}
+        {patientDetail.appointments && patientDetail.appointments.length > 0 && (
+          <div className="transform transition-all duration-300 hover:translate-y-1">
+            <h3 className="flex items-center mb-4 text-xl font-semibold">
+              <div className="p-2 bg-gradient-to-r from-green-400 to-green-600 dark:from-green-600 dark:to-green-800 rounded-lg text-white mr-2">
+                <Calendar className="w-5 h-5" />
               </div>
-
-              {/* Appointments */}
-              {patientDetail.appointments && patientDetail.appointments.length > 0 && (
-                <div>
-                  <h3 className="inline-block bg-green-200 dark:bg-green-700 rounded px-2 py-1 border-b-2 border-green-600 text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    Appointments
-                  </h3>
-                  <div className="space-y-3">
-                    {patientDetail.appointments.map((appt) => (
-                      <div
-                        key={appt.id}
-                        className="p-3 border rounded-md dark:border-gray-600 bg-green-50 dark:bg-green-900 shadow-sm"
-                      >
-                        <p className="text-gray-800 dark:text-gray-200">
-                          <span className="font-semibold">Date:</span> {formatDate(appt.appointment_date)} | <span className="font-semibold">Slot:</span> {appt.slot ?? "-"}
-                        </p>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold">Reason:</span> {appt.reason}
-                        </p>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold">Status:</span> {appt.status}
-                        </p>
-                        {appt.doctor && (
-                          <p className="text-gray-700 dark:text-gray-300">
-                            <span className="font-semibold">Doctor:</span> {appt.doctor.name} (Dept: {appt.doctor.specialisation})
-                          </p>
-                        )}
-                        {appt.emergency && (
-                          <p className="text-red-500 dark:text-red-400 font-bold">
-                            <AlertCircle size={16} className="inline mr-1" />
-                            Emergency Appointment
-                          </p>
-                        )}
-                      </div>
-                    ))}
+              <span className="bg-gradient-to-r from-green-100 to-green-200 dark:from-green-800 dark:to-green-900 px-3 py-1 rounded-lg">
+                Appointments
+              </span>
+            </h3>
+            <div className="space-y-3">
+              {patientDetail.appointments.map((appt) => (
+                <div
+                  key={appt.id}
+                  className="p-4 border-l-4 border-green-500 dark:border-green-400 rounded-lg bg-gradient-to-r from-green-50 to-white dark:from-green-900 dark:to-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
+                      <span className="font-semibold">Date:</span>&nbsp;
+                      <span>{formatDate(appt.appointment_date)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold">Slot:</span>&nbsp;
+                      <span>{appt.slot}</span>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Admissions */}
-              {patientDetail.admissions && patientDetail.admissions.length > 0 && (
-                <div>
-                  <h3 className="inline-block bg-yellow-200 dark:bg-yellow-700 rounded px-2 py-1 border-b-2 border-yellow-500 text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    Admissions
-                  </h3>
-                  <div className="space-y-3">
-                    {patientDetail.admissions.map((adm) => (
-                      <div
-                        key={adm.id}
-                        className="p-3 border rounded-md dark:border-gray-600 bg-yellow-50 dark:bg-yellow-900 shadow-sm"
-                      >
-                        <p className="text-gray-800 dark:text-gray-200">
-                          <span className="font-semibold">Admission Date:</span> {formatDate(adm.admission_date)} | <span className="font-semibold">Discharge:</span> {formatDate(adm.discharge_date)}
-                        </p>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold">Notes:</span> {adm.notes}
-                        </p>
-                        {adm.room && (
-                          <p className="text-gray-700 dark:text-gray-300">
-                            <span className="font-semibold">Room Type:</span> {adm.room.room_type} (Total: {adm.room.total_count}, Occupied: {adm.room.occupied_count})
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                  <div className="mt-2">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span className="font-semibold">Reason:</span>&nbsp;
+                      <span>{appt.reason}</span>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Tests */}
-              {patientDetail.tests && patientDetail.tests.length > 0 && (
-                <div>
-                  <h3 className="inline-block bg-red-200 dark:bg-red-700 rounded px-2 py-1 border-b-2 border-red-500 text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    Tests
-                  </h3>
-                  <div className="space-y-3">
-                    {patientDetail.tests.map((test) => (
-                      <div
-                        key={test.id}
-                        className="p-3 border rounded-md dark:border-gray-600 bg-red-50 dark:bg-red-900 shadow-sm"
-                      >
-                        <p className="text-gray-800 dark:text-gray-200">
-                          <span className="font-semibold">Type:</span> {test.test_type} | <span className="font-semibold">Date:</span> {formatDate(test.test_date)}
-                        </p>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold">Result:</span> {test.test_result}
-                        </p>
-                      </div>
-                    ))}
+                  <div className="mt-2 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-semibold">Status:</span>&nbsp;
+                    <span className={`${
+                      appt.status === "completed" 
+                        ? "text-green-600 dark:text-green-400" 
+                        : appt.status === "cancelled"
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-yellow-600 dark:text-yellow-400"
+                    } font-medium`}>
+                      {appt.status}
+                    </span>
                   </div>
+                  {appt.doctor && (
+                    <div className="mt-2 flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="font-semibold">Doctor:</span>&nbsp;
+                      <span>{appt.doctor.name} <span className="text-gray-500 dark:text-gray-400">(Dept: {appt.doctor.specialisation})</span></span>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* Treatments */}
-              {patientDetail.treatments && patientDetail.treatments.length > 0 && (
-                <div>
-                  <h3 className="inline-block bg-indigo-200 dark:bg-indigo-700 rounded px-2 py-1 border-b-2 border-indigo-500 text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    Treatments
-                  </h3>
-                  <div className="space-y-3">
-                    {patientDetail.treatments.map((treat) => (
-                      <div
-                        key={treat.id}
-                        className="p-3 border rounded-md dark:border-gray-600 bg-indigo-50 dark:bg-indigo-900 shadow-sm"
-                      >
-                        <p className="text-gray-800 dark:text-gray-200">
-                          <span className="font-semibold">Drug:</span> {treat.drug} | <span className="font-semibold">Dosage:</span> {treat.dosage}
-                        </p>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold">Date:</span> {formatDate(treat.treatment_date)} | <span className="font-semibold">Prescribed by:</span> {treat.prescribed_by}
-                        </p>
-                        <p className="text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold">Remarks:</span> {treat.remarks}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Reports */}
-              {patientDetail.reports && patientDetail.reports.length > 0 && (
-                <div>
-                  <h3 className="inline-block bg-blue-200 dark:bg-blue-700 rounded px-2 py-1 border-b-2 border-blue-500 text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    Reports
-                  </h3>
-                  <div className="space-y-3">
-                    {patientDetail.reports.map((rep) => (
-                      <div
-                        key={rep.id}
-                        className="p-3 border rounded-md dark:border-gray-600 bg-blue-50 dark:bg-blue-900 shadow-sm"
-                      >
-                        <p className="text-gray-800 dark:text-gray-200">
-                          <span className="font-semibold">Title:</span> {rep.title}
-                        </p>
-                        <a
-                          href={rep.report_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-                        >
-                          View Report
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
-          ) : (
-            <div className="flex justify-center items-center py-8">
-              <Spinner size="lg" />
+          </div>
+        )}
+
+        {/* Admissions with enhanced styling */}
+        {patientDetail.admissions && patientDetail.admissions.length > 0 && (
+          <div className="transform transition-all duration-300 hover:translate-y-1">
+            <h3 className="flex items-center mb-4 text-xl font-semibold">
+              <div className="p-2 bg-gradient-to-r from-yellow-400 to-amber-500 dark:from-yellow-600 dark:to-amber-700 rounded-lg text-white mr-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <span className="bg-gradient-to-r from-yellow-100 to-amber-200 dark:from-yellow-800 dark:to-amber-900 px-3 py-1 rounded-lg">
+                Admissions
+              </span>
+            </h3>
+            <div className="space-y-3">
+              {patientDetail.admissions.map((adm) => (
+                <div
+                  key={adm.id}
+                  className="p-4 border-l-4 border-yellow-500 dark:border-yellow-400 rounded-lg bg-gradient-to-r from-yellow-50 to-white dark:from-yellow-900 dark:to-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10" />
+                      </svg>
+                      <span className="font-semibold">Admission:</span>&nbsp;
+                      <span>{formatDate(adm.admission_date)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                      </svg>
+                      <span className="font-semibold">Discharge:</span>&nbsp;
+                      <span>{formatDate(adm.discharge_date) || "Not discharged"}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="flex items-start">
+                      <svg className="w-4 h-4 mr-2 mt-1 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <div>
+                        <span className="font-semibold">Notes:</span>&nbsp;
+                        <span className="text-gray-700 dark:text-gray-300">{adm.notes}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {adm.room && (
+                    <div className="mt-2 flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <span className="font-semibold">Room:</span>&nbsp;
+                      <span>{adm.room.room_type} <span className="text-gray-500 dark:text-gray-400">(Total: {adm.room.total_count}, Occupied: {adm.room.occupied_count})</span></span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Tests with enhanced styling */}
+        {patientDetail.tests && patientDetail.tests.length > 0 && (
+          <div className="transform transition-all duration-300 hover:translate-y-1">
+            <h3 className="flex items-center mb-4 text-xl font-semibold">
+              <div className="p-2 bg-gradient-to-r from-red-400 to-red-600 dark:from-red-600 dark:to-red-800 rounded-lg text-white mr-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547" />
+                </svg>
+              </div>
+              <span className="bg-gradient-to-r from-red-100 to-red-200 dark:from-red-800 dark:to-red-900 px-3 py-1 rounded-lg">
+                Tests
+              </span>
+            </h3>
+            <div className="space-y-3">
+              {patientDetail.tests.map((test) => (
+                <div
+                  key={test.id}
+                  className="p-4 border-l-4 border-red-500 dark:border-red-400 rounded-lg bg-gradient-to-r from-red-50 to-white dark:from-red-900 dark:to-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span className="font-semibold">Type:</span>&nbsp;
+                      <span>{test.test_type}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" />
+                      <span className="font-semibold">Date:</span>&nbsp;
+                      <span>{formatDate(test.test_date)}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold">Result:</span>&nbsp;
+                      <span className="text-gray-700 dark:text-gray-300">{test.test_result}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Treatments with enhanced styling */}
+        {patientDetail.treatments && patientDetail.treatments.length > 0 && (
+          <div className="transform transition-all duration-300 hover:translate-y-1">
+            <h3 className="flex items-center mb-4 text-xl font-semibold">
+              <div className="p-2 bg-gradient-to-r from-indigo-400 to-indigo-600 dark:from-indigo-600 dark:to-indigo-800 rounded-lg text-white mr-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <span className="bg-gradient-to-r from-indigo-100 to-indigo-200 dark:from-indigo-800 dark:to-indigo-900 px-3 py-1 rounded-lg">
+                Treatments
+              </span>
+            </h3>
+            <div className="space-y-3">
+              {patientDetail.treatments.map((treat) => (
+                <div
+                  key={treat.id}
+                  className="p-4 border-l-4 border-indigo-500 dark:border-indigo-400 rounded-lg bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-900 dark:to-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <span className="font-semibold">Drug:</span>&nbsp;
+                      <span>{treat.drug}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold">Dosage:</span>&nbsp;
+                      <span>{treat.dosage}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                      <span className="font-semibold">Date:</span>&nbsp;
+                      <span>{formatDate(treat.treatment_date)}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span className="font-semibold">Prescribed by:</span>&nbsp;
+                      <span>{treat.prescribed_by}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="flex items-start">
+                      <svg className="w-4 h-4 mr-2 mt-1 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <div>
+                        <span className="font-semibold">Remarks:</span>&nbsp;
+                        <span className="text-gray-700 dark:text-gray-300">{treat.remarks}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reports with enhanced styling */}
+        {patientDetail.reports && patientDetail.reports.length > 0 && (
+          <div className="transform transition-all duration-300 hover:translate-y-1">
+            <h3 className="flex items-center mb-4 text-xl font-semibold">
+              <div className="p-2 bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-600 dark:to-blue-800 rounded-lg text-white mr-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <span className="bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 px-3 py-1 rounded-lg">
+                Reports
+              </span>
+            </h3>
+            <div className="space-y-3">
+              {patientDetail.reports.map((rep) => (
+                <div
+                  key={rep.id}
+                  className="p-4 border-l-4 border-blue-500 dark:border-blue-400 rounded-lg bg-gradient-to-r from-blue-50 to-white dark:from-blue-900 dark:to-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-semibold">Title:</span>&nbsp;
+                      <span>{rep.title}</span>
+                    </div>
+                    <a
+                      href={rep.report_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                    >
+                      View Report
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+    ) : (
+      <div className="flex justify-center items-center h-full">
+        <p className="text-gray-500 dark:text-gray-400">No patient details available.</p>
+      </div>
+    )}
+  </div>
+</div>
+
     </div>
   );
 }

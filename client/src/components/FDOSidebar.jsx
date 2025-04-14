@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 // src/components/FDOSidebar.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   HiHome,
@@ -16,7 +16,7 @@ import {
   HiLogout,
   HiMenu,
 } from "react-icons/hi";
-import { ChevronLeft, ChevronRight, Link2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Link2, MessageCircle } from "lucide-react";
 
 // Define sidebar groups with their menu items
 const sidebarGroups = [
@@ -33,7 +33,7 @@ const sidebarGroups = [
   {
     title: "Others",
     items: [
-      { text: "Payment", path: "/fdo/payment", icon: <HiCurrencyDollar /> },
+      { text: "Messages", path: "/fdo/messages", icon: <MessageCircle /> },
       { text: "Widgets", path: "/fdo/widgets", icon: <HiPuzzle /> },
     ],
   },
@@ -54,6 +54,12 @@ const FDOSidebar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const toggleSidebar = () => setIsOpen(!isOpen);
   const toggleMobileSidebar = () => setMobileOpen(!mobileOpen);
+
+   useEffect(() => {
+      if (location.pathname === "/fdo/messages") {
+        setIsOpen(false);
+      }
+    }, [location]);
 
   return (
 

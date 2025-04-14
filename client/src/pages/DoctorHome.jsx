@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { TrendingUp, AlertCircle } from "lucide-react";
+import { TrendingUp, AlertCircle, RefreshCw } from "lucide-react";
 import SideBar_Doctor from "../components/SideBar_Doctor";
 import Profile_Doctor from "../components/Profile_Doctor";
 // Recharts imports for area chart
@@ -15,6 +15,12 @@ import {
   Legend,
 } from "recharts";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import Backdrop from "@mui/material/Backdrop";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import CustomSpinner from "../components/CustomSpinner";
 
 // Dummy chart data remains unchanged
 const lineData = [
@@ -52,12 +58,17 @@ const percentIncrease = Math.round(
   ((totalPresentYear - totalLastYear) / totalLastYear) * 100
 );
 
+const MySwal = withReactContent(Swal);
+
 const DoctorHome = () => {
   const { currentUser } = useSelector((state) => state.user);
+  const navigate = useNavigate();
 
+  // State variables
+  const [isVisible, setIsVisible] = useState(false);
+  const [globalLoading, setGlobalLoading] = useState(true);
   // Live status state; backend returns a Boolean (true => Live, false => Offline)
   const [sessionStatus, setSessionStatus] = useState(false);
-
   // Appointment requests state – fetched from backend
   const [appointmentRequests, setAppointmentRequests] = useState([]);
   // Initialize selectedDate with the system current date formatted as YYYY-MM-DD
@@ -66,18 +77,18 @@ const DoctorHome = () => {
   );
   // Toggle showing limited or all appointments
   const [showAllAppointments, setShowAllAppointments] = useState(false);
-
   // Monthly performance metrics
   const [monthlyAccepted, setMonthlyAccepted] = useState(0);
   const [monthlyNew, setMonthlyNew] = useState(0);
-
   // Recent Patients state; expects updated response from /api/doctor/recent-patients
   const [recentPatients, setRecentPatients] = useState([]);
-
   // Other state variables
   const maxAppointments = 150;
   const [bookedAppointments, setBookedAppointments] = useState(60);
   const [currentTab, setCurrentTab] = useState("Dashboard");
+  // New state to track per-appointment update loading
+  const [updatingStatus, setUpdatingStatus] = useState({});
+  
   // Get current month and year
   const currentDateObj = new Date();
   const currentMonth = currentDateObj.getMonth() + 1; // January is 0; we need 1-based
@@ -97,11 +108,10 @@ const DoctorHome = () => {
     "December",
   ];
 
-  // New state to track per-appointment update loading
-  const [updatingStatus, setUpdatingStatus] = useState({});
-
-  // Fetch live status, appointments and recent patients when currentUser is available
   useEffect(() => {
+    setIsVisible(true);
+    setGlobalLoading(true);
+    
     if (currentUser && currentUser.id) {
       // Fetch live status
       fetch("/api/doctor/get-live-status", {
@@ -113,7 +123,17 @@ const DoctorHome = () => {
         .then((data) => {
           setSessionStatus(data.live_status);
         })
-        .catch((err) => console.error("Error fetching live status:", err));
+        .catch((err) => {
+          console.error("Error fetching live status:", err);
+          MySwal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to fetch live status. Please try again.",
+            customClass: {
+              popup: 'animate__animated animate__fadeInDown'
+            }
+          });
+        });
 
       // Fetch all appointments
       fetch("/api/doctor/get-all-appointments", {
@@ -124,8 +144,20 @@ const DoctorHome = () => {
         .then((res) => res.json())
         .then((data) => {
           setAppointmentRequests(data.appointments || []);
+          setGlobalLoading(false);
         })
-        .catch((err) => console.error("Error fetching appointments:", err));
+        .catch((err) => {
+          console.error("Error fetching appointments:", err);
+          MySwal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to fetch appointments. Please try again.",
+            customClass: {
+              popup: 'animate__animated animate__fadeInDown'
+            }
+          });
+          setGlobalLoading(false);
+        });
 
       // Fetch recent patients
       fetch("/api/doctor/recent-patients", {
@@ -141,44 +173,70 @@ const DoctorHome = () => {
             setRecentPatients(data.patients);
           }
         })
-        .catch((err) => console.error("Error fetching recent patients:", err));
+        .catch((err) => {
+          console.error("Error fetching recent patients:", err);
+          MySwal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to fetch recent patients. Please try again.",
+            customClass: {
+              popup: 'animate__animated animate__fadeInDown'
+            }
+          });
+        });
+
+      // Fetch monthly accepted appointments
+      fetch("/api/doctor/count-monthly-appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctorId: currentUser.id,
+          month: currentMonth,
+          year: currentYear,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setMonthlyAccepted(data.acceptedAppointments);
+        })
+        .catch((err) => {
+          console.error("Error fetching monthly appointments:", err);
+          MySwal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to fetch monthly accepted appointments. Please try again.",
+            customClass: {
+              popup: 'animate__animated animate__fadeInDown'
+            }
+          });
+        });
+
+      // Fetch monthly new appointments
+      fetch("/api/doctor/count-monthly-appointments/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctorId: currentUser.id,
+          month: currentMonth,
+          year: currentYear,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setMonthlyNew(data.acceptedAppointmentsWithNewPatients);
+        })
+        .catch((err) => {
+          console.error("Error fetching monthly new appointments:", err);
+          MySwal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to fetch monthly new appointments. Please try again.",
+            customClass: {
+              popup: 'animate__animated animate__fadeInDown'
+            }
+          });
+        });
     }
-
-    // Fetch monthly accepted appointments
-    fetch("/api/doctor/count-monthly-appointments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        doctorId: currentUser.id,
-        month: currentMonth,
-        year: currentYear,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setMonthlyAccepted(data.acceptedAppointments);
-      })
-      .catch((err) =>
-        console.error("Error fetching monthly appointments:", err)
-      );
-
-    // Fetch monthly new appointments
-    fetch("/api/doctor/count-monthly-appointments/new", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        doctorId: currentUser.id,
-        month: currentMonth,
-        year: currentYear,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setMonthlyNew(data.acceptedAppointmentsWithNewPatients);
-      })
-      .catch((err) =>
-        console.error("Error fetching monthly new appointments:", err)
-      );
   }, [currentUser, currentMonth, currentYear]);
 
   // Toggle live status by calling backend endpoint
@@ -193,11 +251,37 @@ const DoctorHome = () => {
       if (response.ok) {
         const result = await response.json();
         setSessionStatus(result.live_status);
+        // Show success notification
+        MySwal.fire({
+          icon: "success",
+          title: result.live_status ? "You are now LIVE" : "You are now OFFLINE",
+          timer: 2000,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'animate__animated animate__fadeInDown'
+          }
+        });
       } else {
         console.error("Failed to update live status");
+        MySwal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to update status. Please try again.",
+          customClass: {
+            popup: 'animate__animated animate__fadeInDown'
+          }
+        });
       }
     } catch (error) {
       console.error("Error updating live status", error);
+      MySwal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Network error while updating status. Please try again.",
+        customClass: {
+          popup: 'animate__animated animate__fadeInDown'
+        }
+      });
     }
   };
 
@@ -226,13 +310,26 @@ const DoctorHome = () => {
           app.id === appointmentId ? { ...app, status: newStatus } : app
         )
       );
+      // Show success notification
+      MySwal.fire({
+        icon: "success",
+        title: `Appointment ${newStatus}!`,
+        text: `The appointment has been ${newStatus} successfully.`,
+        timer: 2000,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'animate__animated animate__fadeInDown'
+        }
+      });
     } catch (error) {
       console.error("Error updating appointment status:", error);
-      const MySwal = withReactContent(Swal);
       MySwal.fire({
         icon: "error",
         title: "Error",
         text: error.message || "Failed to update appointment status.",
+        customClass: {
+          popup: 'animate__animated animate__fadeInDown'
+        }
       });
     } finally {
       setUpdatingStatus(prev => ({ ...prev, [appointmentId]: false }));
@@ -245,6 +342,15 @@ const DoctorHome = () => {
 
   const handleDecline = (appointmentId) => {
     updateAppointment(appointmentId, "declined");
+  };
+
+  const handleRefresh = () => {
+    // Add transition effect before reload
+    document.body.classList.add('page-transition');
+    setTimeout(() => {
+      document.body.classList.remove('page-transition');
+      window.location.reload();
+    }, 500);
   };
 
   // Filter appointments by selected date (comparing ISO date strings)
@@ -281,16 +387,69 @@ const DoctorHome = () => {
 
   // Fixed average consultation time.
   const avgConsultationTime = "15 mins";
+  
+  // Container animations
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.3,
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: 'spring', stiffness: 100 }
+    }
+  };
+
+  const cardVariants = {
+    hover: {
+      scale: 1.02,
+      boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.15)",
+      transition: { type: "spring", stiffness: 300 }
+    }
+  };
+
+  if (globalLoading) {
+    return (
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={true}
+      >
+        <div className="flex flex-col items-center">
+          <CustomSpinner />
+          <p className="mt-4 text-white font-medium animate-pulse">
+            Loading dashboard data...
+          </p>
+        </div>
+      </Backdrop>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar (if used) */}
+    <motion.div 
+      className="flex min-h-screen bg-gradient-to-br from-gray-50 to-sky-50 dark:from-gray-900 dark:to-gray-800"
+      initial="hidden"
+      animate={isVisible ? "visible" : "hidden"}
+      variants={containerVariants}
+    >
+      {/* Sidebar can be enabled if needed */}
       {/* <SideBar_Doctor currentTab={currentTab} setCurrentTab={setCurrentTab} /> */}
 
       {/* Main Content */}
       <div className="flex-1 p-6 overflow-y-auto">
         {/* Top Header */}
-        <div className="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg mb-6 shadow-xl flex justify-between items-center hover:shadow-slate-500">
+        <motion.div 
+          className="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg mb-6 shadow-xl flex justify-between items-center hover:shadow-slate-500"
+          variants={itemVariants}
+        >
           <div>
             <h2 className="text-xl text-gray-800 dark:text-gray-200">
               Hello Dr. {currentUser?.name || "Doctor"}
@@ -299,21 +458,38 @@ const DoctorHome = () => {
               Have a nice working day!
             </p>
           </div>
-          <button
-            onClick={handleStatusToggle}
-            className={`px-4 py-2 text-white rounded-lg shadow-2xl ${
-              sessionStatus
-                ? "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700"
-                : "bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700"
-            }`}
-          >
-            {sessionStatus ? "Go Offline" : "Go Live"}
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <motion.button
+              className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg transition-colors duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRefresh}
+            >
+              <RefreshCw size={16} />
+              <span>Refresh</span>
+            </motion.button>
+            <motion.button
+              onClick={handleStatusToggle}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-4 py-2 text-white rounded-lg shadow-2xl ${
+                sessionStatus
+                  ? "bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700"
+                  : "bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700"
+              }`}
+            >
+              {sessionStatus ? "Go Offline" : "Go Live"}
+            </motion.button>
+          </div>
+        </motion.div>
 
         <div className="grid grid-cols-12 gap-6">
           {/* Patient Trend (Area Chart) */}
-          <div className="col-span-9 bg-white dark:bg-gray-800 rounded-lg p-8 shadow-2xl dark:shadow-slate-700 hover:shadow-slate-600">
+          <motion.div 
+            className="col-span-9 bg-white dark:bg-gray-800 rounded-lg p-8 shadow-2xl dark:shadow-slate-700 hover:shadow-slate-600"
+            variants={itemVariants}
+            whileHover="hover"
+          >
             <div className="flex items-center mb-4">
               <h3 className="font-bold text-gray-800 dark:text-gray-200">
                 Patient Trend
@@ -376,89 +552,130 @@ const DoctorHome = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </motion.div>
 
           {/* Profile Card */}
-          <div className="col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow-2xl dark:shadow-slate-700 hover:shadow-slate-600">
+          <motion.div 
+            className="col-span-3 bg-white dark:bg-gray-800 rounded-lg shadow-2xl dark:shadow-slate-700 hover:shadow-slate-600"
+            variants={itemVariants}
+            whileHover="hover"
+          >
             <Profile_Doctor 
               bookedAppointments={bookedAppointments}
               maxAppointments={maxAppointments}
             />
-          </div>
+          </motion.div>
 
           {/* Appointment Requests Section */}
-          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
+          <motion.div 
+            className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600"
+            variants={itemVariants}
+            whileHover="hover"
+          >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold rounded-lg px-1 py-[2px] bg-sky-400 text-white dark:bg-sky-800">
                 Appointment Requests
               </h3>
               <span
                 onClick={() => setShowAllAppointments((prev) => !prev)}
-                className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 cursor-pointer rounded-2xl px-1"
+                className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 cursor-pointer rounded-2xl px-2 py-1 transition-all duration-300 hover:bg-blue-200 dark:hover:bg-blue-800"
               >
                 {showAllAppointments ? "Show Less" : "See All"}
               </span>
             </div>
             <div className="space-y-2">
-              {appointmentsToDisplay.map((req, idx) => (
-                <div
-                  key={req.id}
-                  className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
-                >
-                  <div>
-                    <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center">
-                      {req.patient_name || "Patient Name"}
-                      {req.emergency && (
-                        <span className="ml-2 text-red-500 flex items-center">
-                          <AlertCircle size={16} className="mr-1" />
-                          Emergency
-                        </span>
+              {appointmentsToDisplay.length === 0 ? (
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                  No appointment requests available.
+                </div>
+              ) : (
+                appointmentsToDisplay.map((req, idx) => (
+                  <motion.div
+                    key={req.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
+                  >
+                    <div>
+                      <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                        {req.patient_name || "Patient Name"}
+                        {req.emergency && (
+                          <span className="ml-2 text-red-500 flex items-center">
+                            <AlertCircle size={16} className="mr-1" />
+                            Emergency
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400">
+                        {new Date(req.appointment_date).toLocaleString()}
+                      </div>
+                      {req.reason && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          Reason: {req.reason}
+                        </div>
                       )}
                     </div>
-                    <div className="text-gray-500 dark:text-gray-400">
-                      {new Date(req.appointment_date).toLocaleString()}
-                    </div>
-                    {req.reason && (
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Reason: {req.reason}
+                    {req.status === "pending" ? (
+                      <div className="flex items-center space-x-2">
+                        <motion.button
+                          onClick={() => handleAccept(req.id)}
+                          className="bg-sky-300 dark:bg-sky-600 text-black dark:text-white px-3 py-1 rounded"
+                          disabled={updatingStatus[req.id]}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {updatingStatus[req.id] ? 
+                            <span className="animate-spin">
+                              <svg className="h-5 w-5 text-black dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                              </svg>
+                            </span> : 
+                            "Accept"
+                          }
+                        </motion.button>
+                        <motion.button
+                          onClick={() => handleDecline(req.id)}
+                          className="bg-red-400 dark:bg-red-600 text-black dark:text-white px-3 py-1 rounded"
+                          disabled={updatingStatus[req.id]}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {updatingStatus[req.id] ? 
+                            <span className="animate-spin">
+                              <svg className="h-5 w-5 text-black dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                              </svg>
+                            </span> : 
+                            "Decline"
+                          }
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <div
+                        className={`px-2 py-1 rounded ${
+                          req.status === "accepted"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                        }`}
+                      >
+                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </div>
                     )}
-                  </div>
-                  {req.status === "pending" ? (
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleAccept(req.id)}
-                        className="bg-sky-300 dark:bg-sky-600 text-black dark:text-white px-3 py-1 rounded"
-                        disabled={updatingStatus[req.id]}
-                      >
-                        {updatingStatus[req.id] ? <span className="animate-spin"><svg className="h-5 w-5 text-black dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg></span> : "Accept"}
-                      </button>
-                      <button
-                        onClick={() => handleDecline(req.id)}
-                        className="bg-red-400 dark:bg-red-600 text-black dark:text-white px-3 py-1 rounded"
-                        disabled={updatingStatus[req.id]}
-                      >
-                        {updatingStatus[req.id] ? <span className="animate-spin"><svg className="h-5 w-5 text-black dark:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg></span> : "Decline"}
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      className={`px-2 py-1 rounded ${
-                        req.status === "accepted"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                      }`}
-                    >
-                      {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                    </div>
-                  )}
-                </div>
-              ))}
+                  </motion.div>
+                ))
+              )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Appointments with Date Filter */}
-          <div className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600">
+          <motion.div 
+            className="col-span-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl dark:shadow-slate-700 hover:shadow-slate-600"
+            variants={itemVariants}
+            whileHover="hover"
+          >
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold bg-sky-400 rounded-lg px-1 py-[2px] text-white dark:bg-sky-800">
                 Appointments
@@ -470,38 +687,47 @@ const DoctorHome = () => {
                 className="border border-gray-300 dark:border-gray-700 p-1 rounded text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800"
               />
             </div>
-            {filteredAppointments.length === 0 ? (
-              <div className="text-gray-500 dark:text-gray-400">
-                No appointments for this date.
-              </div>
-            ) : (
-              filteredAppointments.map((apt) => (
-                <div
-                  key={apt.id}
-                  className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
-                >
-                  <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center">
-                    {apt.patient_name || "Patient Name"}
-                    {apt.emergency && (
-                      <span className="ml-2 text-red-500 flex items-center">
-                        <AlertCircle size={16} className="mr-1" />
-                        Emergency
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-gray-500 dark:text-gray-400">
-                    {new Date(apt.appointment_date).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
+            <div className="max-h-60 overflow-y-auto">
+              {filteredAppointments.length === 0 ? (
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                  No appointments for this date.
                 </div>
-              ))
-            )}
-          </div>
+              ) : (
+                filteredAppointments.map((apt, idx) => (
+                  <motion.div
+                    key={apt.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex justify-between items-center border-b py-2 border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                      {apt.patient_name || "Patient Name"}
+                      {apt.emergency && (
+                        <span className="ml-2 text-red-500 flex items-center">
+                          <AlertCircle size={16} className="mr-1" />
+                          Emergency
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400">
+                      {new Date(apt.appointment_date).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          </motion.div>
 
           {/* Recent Patients Section */}
-          <div className="col-span-8 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
+          <motion.div 
+            className="col-span-8 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600"
+            variants={itemVariants}
+            whileHover="hover"
+          >
             <h3 className="font-bold mb-4 text-gray-800 dark:text-gray-200">
               Recent Patients
             </h3>
@@ -520,17 +746,17 @@ const DoctorHome = () => {
               <tbody>
                 {recentPatients.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="p-2 text-gray-500 dark:text-gray-400">
+                    <td colSpan="4" className="p-2 text-center text-gray-500 dark:text-gray-400">
                       No recent patients available.
                     </td>
                   </tr>
                 ) : (
-                  recentPatients.map((patient) => (
+                  recentPatients.map((patient, idx) => (
                     <tr
-                      key={patient.id}
+                      key={patient.id || idx}
                       className="border-b border-gray-200 dark:border-gray-700"
                     >
-                      <td className="p-2 text-gray-800 dark:text-gray-200 flex items-center">
+                      <td className="p-2 flex items-center text-gray-800 dark:text-gray-200">
                         {patient.patientInfo?.name || patient.name || "N/A"}
                         {patient.emergency && (
                           <span className="ml-2 text-red-500 flex items-center">
@@ -557,10 +783,14 @@ const DoctorHome = () => {
                 )}
               </tbody>
             </table>
-          </div>
+          </motion.div>
 
           {/* Daily Performance and Metrics */}
-          <div className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600">
+          <motion.div 
+            className="col-span-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg dark:shadow-slate-700 hover:shadow-slate-600"
+            variants={itemVariants}
+            whileHover="hover"
+          >
             <div className="mb-4">
               <h3 className="font-bold text-gray-800 dark:text-gray-200">
                 Monthly Performance
@@ -600,11 +830,10 @@ const DoctorHome = () => {
                 <span className="font-bold">{doctorEfficiency}%</span>
               </p>
             </div>
-          </div>
-
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

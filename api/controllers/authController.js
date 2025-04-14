@@ -304,10 +304,11 @@ export const signin = async (req, res, next) => {
     if (error || !data) {
       return next(errorHandler(404, "User not found"));
     }
-    console.log(data);
+    console.log("hii ");
 
     // If passwords are hashed, use bcryptjs.compareSync(password, data.password)
     if (data.password !== password||data.role!==role||data.username!==username) {
+      console.log("creditional issue");
       return next(errorHandler(404, "User not found"));
     }
 

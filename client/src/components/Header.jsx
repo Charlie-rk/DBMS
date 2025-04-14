@@ -89,9 +89,9 @@ export default function Header() {
               <Navbar.Link active={path === "/"} as={"div"}>
                 <Link to="/">Home</Link>
               </Navbar.Link>
-              <Navbar.Link active={path === "/request"} as={"div"}>
+              {/* <Navbar.Link active={path === "/request"} as={"div"}>
                 <Link to="/request">All request</Link>
-              </Navbar.Link>
+              </Navbar.Link> */}
               <Navbar.Link active={path === "/about"} as={"div"}>
                 <Link to="/about">About</Link>
               </Navbar.Link>
@@ -100,12 +100,12 @@ export default function Header() {
                   <MdOutlineHelp className="text-2xl mr-1" /> Help
                 </Link>
               </Navbar.Link>
-              <Navbar.Link active={path === "/notification"} as={"div"}>
+              {/* <Navbar.Link active={path === "/notification"} as={"div"}>
                 <Link to="/notification" className="flex items-center">
                   <IoNotificationsCircleSharp className="text-2xl mr-1" />{" "}
                   Notification
                 </Link>
-              </Navbar.Link>
+              </Navbar.Link> */}
             </Navbar.Collapse>
 
             <div className="flex items-center gap-2">

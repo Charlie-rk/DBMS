@@ -63,10 +63,10 @@ export default function SignIn() {
     setOtp(e.target.value.trim());
   };
   
-  useEffect(()=>{
-    const notify = () => toast.success("🤗🤗 Welcome to SignIn Page 🤗🤗");
-    notify();
-  },[])
+  // useEffect(()=>{
+  //   const notify = () => toast.success("🤗🤗 Welcome to SignIn Page 🤗🤗");
+  //   notify();
+  // },[])
 
   const generateOtp = async () => {
     if (!formData.email) {
@@ -155,8 +155,8 @@ export default function SignIn() {
     const secretMap = {
       Admin: "admin123",
       "Front Desk Operator": "fdo123",
-      "Entry Data Operator": "edo123",
-      Doctor: "doc123",  // New role added for Doctor
+      "Data Entry Operator": "edo123",
+      "doctor": "doc123",  // New role added for Doctor
     };
     if (secretKey !== secretMap[role]) {
       MySwal.fire({
@@ -342,7 +342,7 @@ export default function SignIn() {
                 <input
                   type="radio"
                   name="role"
-                  value="Entry Data Operator"
+                  value="Data Entry Operator"
                   onChange={handleChange}
                   className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
                   required

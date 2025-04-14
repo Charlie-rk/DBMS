@@ -364,7 +364,7 @@ function AppointmentPage() {
                   {slotData.map((slotItem) => (
                     <div
                       key={slotItem.slot}
-                      className="mb-4 border p-2 rounded"
+                      className="mb-4 border p-2 rounded bg-slate-200"
                     >
                       <p className="text-gray-800 dark:text-gray-200">
                         Slot: {slotItem.slot.replace('slot', '')}
@@ -388,6 +388,7 @@ function AppointmentPage() {
                         <Button
                           onClick={() => handleSlotSelect(slotItem)}
                           outline
+                           className="bg-gradient-to-r from-green-300 to-green-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
                         >
                           Select this Slot
                         </Button>
