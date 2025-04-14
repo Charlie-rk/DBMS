@@ -111,7 +111,7 @@ export default function AllEDO() {
       setOperators(operators.filter((op) => op.username !== opUsername));
       setShowDeleteModal(false);
     } catch (error) {
-      console.error("Error deleting operator:", error);
+      // console.error("Error deleting operator:", error);
       MySwal.fire({
         icon: "error",
         title: "Error deleting operator!",
@@ -158,7 +158,7 @@ export default function AllEDO() {
       });
       setShowMessageModal(false);
     } catch (error) {
-      console.error("Error sending message:", error);
+      // console.error("Error sending message:", error);
       MySwal.fire({
         icon: "error",
         title: "Message Sending Failed!",

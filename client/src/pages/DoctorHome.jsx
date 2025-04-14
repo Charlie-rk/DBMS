@@ -124,7 +124,7 @@ const DoctorHome = () => {
           setSessionStatus(data.live_status);
         })
         .catch((err) => {
-          console.error("Error fetching live status:", err);
+          // console.error("Error fetching live status:", err);
           MySwal.fire({
             icon: "error",
             title: "Error",
@@ -147,7 +147,7 @@ const DoctorHome = () => {
           setGlobalLoading(false);
         })
         .catch((err) => {
-          console.error("Error fetching appointments:", err);
+          // console.error("Error fetching appointments:", err);
           MySwal.fire({
             icon: "error",
             title: "Error",
@@ -174,7 +174,7 @@ const DoctorHome = () => {
           }
         })
         .catch((err) => {
-          console.error("Error fetching recent patients:", err);
+          // console.error("Error fetching recent patients:", err);
           MySwal.fire({
             icon: "error",
             title: "Error",
@@ -200,7 +200,7 @@ const DoctorHome = () => {
           setMonthlyAccepted(data.acceptedAppointments);
         })
         .catch((err) => {
-          console.error("Error fetching monthly appointments:", err);
+          // console.error("Error fetching monthly appointments:", err);
           MySwal.fire({
             icon: "error",
             title: "Error",
@@ -226,7 +226,7 @@ const DoctorHome = () => {
           setMonthlyNew(data.acceptedAppointmentsWithNewPatients);
         })
         .catch((err) => {
-          console.error("Error fetching monthly new appointments:", err);
+          // console.error("Error fetching monthly new appointments:", err);
           MySwal.fire({
             icon: "error",
             title: "Error",
@@ -262,7 +262,7 @@ const DoctorHome = () => {
           }
         });
       } else {
-        console.error("Failed to update live status");
+        // console.error("Failed to update live status");
         MySwal.fire({
           icon: "error",
           title: "Error",
@@ -273,7 +273,7 @@ const DoctorHome = () => {
         });
       }
     } catch (error) {
-      console.error("Error updating live status", error);
+      // console.error("Error updating live status", error);
       MySwal.fire({
         icon: "error",
         title: "Error",

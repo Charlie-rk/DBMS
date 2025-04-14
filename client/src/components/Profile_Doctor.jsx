@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 
 const Profile_Doctor = ({ bookedAppointments, maxAppointments }) => {
   const { currentUser } = useSelector((state) => state.user);
-  console.log(currentUser);
+  // console.log(currentUser);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center h-full">

@@ -94,8 +94,8 @@ export default function DashProfile() {
   };
 
   const handleSubmit = async (e) => {
-    console.log("sending the data");
-    console.log(formData);
+    // console.log("sending the data");
+    // console.log(formData);
     e.preventDefault();
     setUpdateUserError(null);
     setUpdateUserSuccess(null);
@@ -108,7 +108,7 @@ export default function DashProfile() {
     if (imageFileUploading) {
       setImageFileUploadError("Please wait for image to upload");
     }
-    console.log("here image uploaded")
+    // console.log("here image uploaded")
 
     try {
       dispatch(updateStart());
@@ -141,13 +141,13 @@ export default function DashProfile() {
       const data = await res.json();
       if (!res.ok) {
         dispatch(signoutFailure(data.message));
-        console.log(data.message);
+        // console.log(data.message);
       } else {
         dispatch(signoutSuccess());
       }
     } catch (error) {
       dispatch(signoutFailure(error.message));
-      console.log(error.message);
+      // console.log(error.message);
     }
   };
 

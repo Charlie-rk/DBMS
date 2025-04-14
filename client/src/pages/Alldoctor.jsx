@@ -130,7 +130,7 @@ export default function Alldoctor() {
       setDoctors(doctors.filter((doc) => doc.username !== docUsername));
       setShowDeleteModal(false);
     } catch (error) {
-      console.error("Error deleting doctor:", error);
+      // console.error("Error deleting doctor:", error);
       MySwal.fire({
         icon: "error",
         title: "Error deleting doctor!",
@@ -158,7 +158,7 @@ export default function Alldoctor() {
         subject: messageSubject,
         message: messageContent,
       };
-       console.log(payload);
+      //  console.log(payload);
 
       const response = await fetch("/api/user/send-notification", {
         method: "POST",

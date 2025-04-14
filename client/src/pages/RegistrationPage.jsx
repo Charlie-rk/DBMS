@@ -65,7 +65,7 @@ function RegistrationPage() {
       });
 
       const data = await response.json();
-      console.log(data);
+      // console.log(data);
 
       if (!response.ok) {
         // If the response status is not ok, show error alert with message from backend or a default error.

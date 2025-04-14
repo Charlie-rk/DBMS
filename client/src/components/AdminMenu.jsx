@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { Card, Badge, Dropdown, Table } from "flowbite-react";
 import { Bed, Users, UserPlus, UserCheck, TrendingUp, RefreshCw, BarChart3, PieChart } from "lucide-react";
@@ -37,7 +38,7 @@ const AdminMenu = () => {
         setGlobalLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching patients:", error);
+        // console.error("Error fetching patients:", error);
         MySwal.fire({
           icon: "error",
           title: "Error",
@@ -66,7 +67,7 @@ const AdminMenu = () => {
         setPatientsLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching recent patients:", error);
+        // console.error("Error fetching recent patients:", error);
         MySwal.fire({
           icon: "error",
           title: "Error",

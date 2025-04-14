@@ -36,12 +36,12 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import PrintTest from './pages/PrintTest';
+
 
 const MySwal = withReactContent(Swal);
 export default function App() {
   const { currentUser } = useSelector((state) => state.user);
-  console.log(currentUser);
+  // console.log(currentUser);
 
   // Determine which dashboard to render based on user role
   const getDashboardComponent = () => {
@@ -68,21 +68,21 @@ export default function App() {
       });
 
       socket.on('connect', () => {
-        console.log('Connected to socket server with ID:', socket.id);
+        // console.log('Connected to socket server with ID:', socket.id);
         // Emit the register event with the current user's username.
         socket.emit('register', currentUser.username);
-        console.log(`Sent register event for user: ${currentUser.username}`);
+        // console.log(`Sent register event for user: ${currentUser.username}`);
       });
 
       // Optionally, listen for any socket events (e.g., notifications)
       socket.on('notification', (data) => {
-        console.log('Received notification:', data);
+        // console.log('Received notification:', data);
         // Handle the notification as needed, for example updating your redux state.
       });
 
    // Socket listener for emergency appointment alert
 socket.on("emergencyAppointment", (appointment) => {
-  console.log("Received emergency appointment alert", appointment);
+  // console.log("Received emergency appointment alert", appointment);
   MySwal.fire({
     icon: "warning",
     title: "Emergency Appointment Alert",
@@ -96,7 +96,7 @@ socket.on("emergencyAppointment", (appointment) => {
       // Cleanup the socket connection when the component unmounts or the user changes.
       return () => {
         socket.disconnect();
-        console.log('Socket disconnected');
+        // console.log('Socket disconnected');
       };
     }
   }, [currentUser]);
@@ -112,7 +112,7 @@ socket.on("emergencyAppointment", (appointment) => {
         <Route path="/" element={ currentUser ? getDashboardComponent() : <SignIn /> } />
         <Route path="/about" element={<About />} />
         <Route path="/help" element={<Help />} />
-        <Route path="/print" element={<PrintTest />} />
+
         <Route path="/sign-in" element={<SignIn />} />
         <Route element={<PrivateRoute />}>
           {/* Protected Routes */}

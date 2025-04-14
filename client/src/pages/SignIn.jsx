@@ -2,7 +2,6 @@
 import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import OAuth from "../components/OAuth";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { HiMail } from "react-icons/hi";
@@ -207,7 +206,7 @@ export default function SignIn() {
       }
       setLoading(false);
       if (res.ok) {
-        console.log(res);
+        // console.log(res);
         // navigate("/sign-in");
         dispatch(signoutSuccess())
         dispatch(signInSuccess(data));
@@ -223,7 +222,7 @@ export default function SignIn() {
         if (data.role === "Admin") {
           navigate("/admin");
         }
-        console.log(data);
+        // console.log(data);
       }
     } catch (error) {
       setErrorMessage(error.message);

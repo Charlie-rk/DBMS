@@ -127,7 +127,7 @@ export default function AllPatient() {
         prepareChartData(data.patients);
       }
     } catch (error) {
-      console.error("Error fetching patients:", error);
+      // console.error("Error fetching patients:", error);
       MySwal.fire({
         icon: "error",
         title: "Error",
@@ -157,7 +157,7 @@ export default function AllPatient() {
       setPatientDetail(data.history);
       setShowDetailPanel(true); // Show the slide-over panel
     } catch (error) {
-      console.error("Error fetching patient history:", error);
+      // console.error("Error fetching patient history:", error);
       MySwal.fire({
         icon: "error",
         title: "Error",

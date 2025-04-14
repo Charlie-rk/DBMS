@@ -45,9 +45,9 @@ export default function ChatPage() {
     });
 
     newSocket.on("connect", () => {
-      console.log("Socket connected with id:", newSocket.id);
+      // console.log("Socket connected with id:", newSocket.id);
       newSocket.emit("register", usernameForApi);
-      console.log(`Emitted 'register' for user: ${usernameForApi}`);
+      // console.log(`Emitted 'register' for user: ${usernameForApi}`);
     });
 
     // Listen for new message notifications
@@ -80,7 +80,7 @@ export default function ChatPage() {
     setSocket(newSocket);
 
     return () => {
-      console.log("Cleaning up socket connection");
+      // console.log("Cleaning up socket connection");
       newSocket.disconnect();
     };
   }, [usernameForApi, selectedPartner]);
@@ -98,7 +98,7 @@ export default function ChatPage() {
       });
       if (!response.ok) throw new Error("Failed to fetch conversation list");
       const data = await response.json();
-      console.log("Fetched conversation list:", data);
+      // console.log("Fetched conversation list:", data);
       setConversationList(data);
     } catch (err) {
       console.error("Error fetching conversation list:", err);
@@ -127,7 +127,7 @@ export default function ChatPage() {
       });
       if (!response.ok) throw new Error("Failed to fetch messages");
       const data = await response.json();
-      console.log("Fetched conversation messages:", data);
+      // console.log("Fetched conversation messages:", data);
       setMessages(data);
 
       // Mark messages addressed to the current user and are unread as read
@@ -162,7 +162,7 @@ export default function ChatPage() {
       });
       if (!response.ok) throw new Error("Failed to fetch partner info");
       const data = await response.json();
-      console.log("Fetched partner info:", data);
+      // console.log("Fetched partner info:", data);
       setPartnerInfo(data);
     } catch (err) {
       console.error("Error fetching partner info:", err);
@@ -191,11 +191,11 @@ export default function ChatPage() {
         throw new Error(errData.error || "Failed to send message");
       }
       const newMsg = await response.json();
-      console.log("Message sent:", newMsg);
+      // console.log("Message sent:", newMsg);
       setMessages((prev) => [...prev, newMsg]);
       setNewMessage("");
     } catch (error) {
-      console.error("Error sending message:", error);
+      // console.error("Error sending message:", error);
       alert("Failed to send message");
     }
   };
@@ -237,7 +237,7 @@ export default function ChatPage() {
       });
       if (!response.ok) throw new Error("Failed to update reaction");
       setReactions((prev) => ({ ...prev, [msgId]: reaction }));
-      console.log(`Reaction for message ${msgId} set to ${reaction}`);
+      // console.log(`Reaction for message ${msgId} set to ${reaction}`);
     } catch (err) {
       console.error("Error updating reaction:", err);
     }

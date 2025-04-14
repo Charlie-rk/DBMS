@@ -19,7 +19,7 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
 
   // Dummy function to send form data to a backend endpoint
   const sendFormData = async (data) => {
-    console.log(data);
+    // console.log(data);
     const response = await fetch("/api/admin/register", {
       method: "POST",
       headers: {
@@ -31,7 +31,7 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
       throw new Error("Network response was not ok");
     }
     const result = await response.json();
-    console.log("Success:", result);
+    // console.log("Success:", result);
     return result;
   };
 
@@ -142,7 +142,7 @@ const MultiStepForm = ({ steps, initialValue, SuccessPage }) => {
       // If successful, update the submission state
       setHasSubmitted(true);
     } catch (error) {
-      console.error("Error submitting form data:", error);
+      // console.error("Error submitting form data:", error);
       // Server error alert if backend responds with error
       MySwal.fire({
         icon: "error",
