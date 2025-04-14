@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
@@ -37,10 +38,13 @@ export default function ChatPage() {
   //------------------------------------------------------------------------------
   // 1. ESTABLISH SOCKET CONNECTION & LISTEN TO EVENTS
   //------------------------------------------------------------------------------
+
+  const backendUrl ='https://dbms-upbd.onrender.com';
+  const localUrl='http://localhost:3000';
   useEffect(() => {
     if (!usernameForApi) return;
 
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io(backendUrl, {
       transports: ["websocket"],
     });
 
