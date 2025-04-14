@@ -188,9 +188,9 @@ export default function SignIn() {
     // if (!formData.email.endsWith("@iitbbs.ac.in")) {
     //   return setErrorMessage("Please use a valid Institute Email Id.");
     // }
-    // if (!otpVerified || !secretVerified) {
-    //   return setErrorMessage("Please verify your email OTP and secret key.");
-    // }
+    if (!otpVerified || !secretVerified) {
+      return setErrorMessage("Please verify your email OTP and secret key.");
+    }
     try {
       setLoading(true);
       setErrorMessage(null);
