@@ -32,16 +32,15 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import AllPatient from './pages/AllPatient';
 // Import socket.io client
 import { io } from 'socket.io-client';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
-
 const MySwal = withReactContent(Swal);
+
 export default function App() {
   const { currentUser } = useSelector((state) => state.user);
-  // console.log(currentUser);
 
   // Determine which dashboard to render based on user role
   const getDashboardComponent = () => {
@@ -68,35 +67,35 @@ export default function App() {
       });
 
       socket.on('connect', () => {
-        // console.log('Connected to socket server with ID:', socket.id);
-        // Emit the register event with the current user's username.
         socket.emit('register', currentUser.username);
-        // console.log(`Sent register event for user: ${currentUser.username}`);
       });
 
       // Optionally, listen for any socket events (e.g., notifications)
       socket.on('notification', (data) => {
-        // console.log('Received notification:', data);
-        // Handle the notification as needed, for example updating your redux state.
+        // Handle the notification as needed
       });
 
-   // Socket listener for emergency appointment alert
-socket.on("emergencyAppointment", (appointment) => {
-  // console.log("Received emergency appointment alert", appointment);
-  MySwal.fire({
-    icon: "warning",
-    title: "Emergency Appointment Alert",
-    text: `Emergency Appointment scheduled for Patient ID: ${appointment.patient_id}. Please check immediately!`,
-    showCloseButton: true,
-    confirmButtonText: "Close"
-  });
-});
-  
+      // Socket listener for emergency appointment alert
+      socket.on("emergencyAppointment", (appointment) => {
+        MySwal.fire({
+          icon: "warning",
+          title: "Emergency Appointment Alert",
+          text: `Emergency Appointment scheduled for Patient ID: ${appointment.patient_id}. Please check immediately!`,
+          showCloseButton: true,
+          confirmButtonText: "Close"
+        });
+      });
 
-      // Cleanup the socket connection when the component unmounts or the user changes.
+      // Add window beforeunload event to disconnect socket on page reload/close.
+      const handleBeforeUnload = () => {
+        if(socket) socket.disconnect();
+      };
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      // Cleanup the socket connection and event listener when the component unmounts or user changes.
       return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         socket.disconnect();
-        // console.log('Socket disconnected');
       };
     }
   }, [currentUser]);
@@ -107,12 +106,10 @@ socket.on("emergencyAppointment", (appointment) => {
       <Header />
       <BackToTop />
       <ToastContainer />
-      <Routes>  
-      {/* </> */}
+      <Routes>
         <Route path="/" element={ currentUser ? getDashboardComponent() : <SignIn /> } />
         <Route path="/about" element={<About />} />
         <Route path="/help" element={<Help />} />
-
         <Route path="/sign-in" element={<SignIn />} />
         <Route element={<PrivateRoute />}>
           {/* Protected Routes */}
