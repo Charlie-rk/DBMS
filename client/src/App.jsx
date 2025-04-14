@@ -62,6 +62,8 @@ export default function App() {
   // Initialize Socket.IO connection when currentUser is available
   useEffect(() => {
     if (currentUser && currentUser.username) {
+      console.log(currentUser);
+
       const socket = io('http://localhost:3000', {
         // You can add options here if needed (e.g., withCredentials, transports)
       });

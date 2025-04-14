@@ -98,6 +98,7 @@ io.on('connection', (socket) => {
 
   // Register event – client emits this after connecting
   socket.on('register', (username) => {
+    console.log("username - > ",username);
     if (username) {
       userSocketMap[username] = userSocketMap[username] || [];
       userSocketMap[username].push(socket.id);
