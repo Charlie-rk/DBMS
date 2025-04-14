@@ -58,13 +58,16 @@ export default function App() {
         return <SignIn />; // Fallback if role isn't recognized
     }
   };
+  
+  const backendUrl ='https://dbms-upbd.onrender.com';
+  const localUrl='http://localhost:3000';
 
   // Initialize Socket.IO connection when currentUser is available
   useEffect(() => {
     if (currentUser && currentUser.username) {
       console.log(currentUser);
 
-      const socket = io('http://localhost:3000', {
+      const socket = io(backendUrl, {
         // You can add options here if needed (e.g., withCredentials, transports)
       });
 
