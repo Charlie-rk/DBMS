@@ -272,10 +272,10 @@ export default function SignIn() {
               />
             </div>
             <div className="relative">
-              <Label value="Your Institute Email id" />
+              <Label value="Your  Email id" />
               <TextInput
                 type="email"
-                placeholder="22cs01**@iitbbs.ac.in"
+                placeholder="xyz**@gmail.com"
                 id="email"
                 onChange={handleChange}
               />

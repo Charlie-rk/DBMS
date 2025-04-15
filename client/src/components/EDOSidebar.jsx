@@ -12,7 +12,7 @@ import {
   HiMenu,
 } from "react-icons/hi";
 
-import { ChevronLeft, Link2 } from "lucide-react";
+import { ChevronLeft, Link2, MessageCircle } from "lucide-react";
 
 const sidebarGroups = [
   {
@@ -46,6 +46,16 @@ const sidebarGroups = [
         text: "View Reports",
         path: "/deo/view-reports",
         icon: <HiEye size={20} />,
+      },
+    ],
+  },
+  {
+    title: "Applications",
+    items: [
+      {
+        text: "Message",
+        path: "/deo/messages",
+        icon: <MessageCircle size={20} />,
       },
     ],
   },

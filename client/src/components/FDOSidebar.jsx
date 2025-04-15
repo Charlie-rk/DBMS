@@ -80,7 +80,7 @@ const FDOSidebar = () => {
     
      {/* Desktop Sidebar */}
      <div
-  className={`flex flex-col h-screen text-blue-900 dark:text-blue-300 bg-sky-100 dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
+  className={`flex flex-col h-full text-blue-900 dark:text-blue-300 bg-sky-100 dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
     isOpen ? "w-64" : "w-20"
   } hidden md:flex `}
 >

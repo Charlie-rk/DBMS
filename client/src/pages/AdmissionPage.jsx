@@ -191,55 +191,69 @@ function AdmissionPage() {
           <CustomSpinner />
         </Backdrop>
       )}
-      {/* Room Summary Section */}
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-2">Room Summary</h3>
-        <div className="flex items-center mb-4">
-          <Filter className="w-5 h-5 mr-2 text-blue-500" />
-          <select
-            value={departmentFilter}
-            onChange={handleDepartmentFilterChange}
-            className="border border-gray-300 dark:border-gray-700 p-2 rounded"
+{/* Room Summary Section */}
+<div className="mb-6">
+  <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Room Summary</h3>
+  <div className="flex items-center mb-4">
+    <Filter className="w-5 h-5 mr-2 text-blue-500" />
+    <select
+      value={departmentFilter}
+      onChange={handleDepartmentFilterChange}
+      className="border border-gray-300 dark:border-gray-700 p-2 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+    >
+      <option value=" " className="dark:bg-gray-700 dark:text-gray-100">
+        Select Department
+      </option>
+      {departments.map((dept, index) => (
+        <option key={index} value={dept} className="dark:bg-gray-700 dark:text-gray-100">
+          {dept}
+        </option>
+      ))}
+    </select>
+  </div>
+  {departmentFilter ? (
+    loadingRooms ? (
+      <p className="text-gray-800 dark:text-gray-200">Loading room summary...</p>
+    ) : filteredRooms.length > 0 ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-100 dark:bg-gray-800 p-4 rounded">
+        {filteredRooms.map((room) => (
+          <div
+            key={room.room_id}
+            className="p-4 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded shadow"
           >
-            <option value="">Select Department</option>
-            {departments.map((dept, index) => (
-              <option key={index} value={dept}>{dept}</option>
-            ))}
-          </select>
-        </div>
-        {departmentFilter ? (
-          loadingRooms ? (
-            <p>Loading room summary...</p>
-          ) : (
-            filteredRooms.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-100 ">
-                {filteredRooms.map((room) => (
-                  <div key={room.room_id} className="p-4 border border-gray-300 dark:border-gray-700 rounded shadow">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold">{room.department_name}</span>
-                      <span className="text-sm text-gray-600">{room.room_type}</span>
-                    </div>
-                    <div className="text-sm">
-                      <p>Total Rooms: {room.total_count}</p>
-                      <p>Occupied: {room.occupied_count}</p>
-                      <p>Available: {room.available_rooms}</p>
-                    </div>
-                    <Button onClick={() => handleSelectRoom(room)}  outline 
-                     className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800 mt-2"
-                      >
-                      Select Room
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p>No rooms available for the selected department.</p>
-            )
-          )
-        ) : (
-          <p>Please select a department (or enter a valid Patient ID) to view available rooms.</p>
-        )}
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-semibold text-gray-800 dark:text-gray-200">
+                {room.department_name}
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {room.room_type}
+              </span>
+            </div>
+            <div className="text-sm text-gray-800 dark:text-gray-200">
+              <p>Total Rooms: {room.total_count}</p>
+              <p>Occupied: {room.occupied_count}</p>
+              <p>Available: {room.available_rooms}</p>
+            </div>
+            <Button
+              onClick={() => handleSelectRoom(room)}
+              outline
+              className="mt-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+            >
+              Select Room
+            </Button>
+          </div>
+        ))}
       </div>
+    ) : (
+      <p className="text-gray-800 dark:text-gray-200">No rooms available for the selected department.</p>
+    )
+  ) : (
+    <p className="text-gray-800 dark:text-gray-200">
+      Please select a department (or enter a valid Patient ID) to view available rooms.
+    </p>
+  )}
+</div>
+
 
       {/* Admission Form Section */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">

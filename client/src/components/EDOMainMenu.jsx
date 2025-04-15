@@ -6,6 +6,7 @@ import TestDataEntryPage from "../pages/TestDataEntryPage";
 import TreatmentDataEntryPage from "../pages/TreatmentDataEntryPage";
 import UploadReportsPage from "../pages/UploadReportsPage";
 import ViewReportsPage from "../pages/ViewReportsPage";
+import Message from "../pages/Message"
 
 const EDOMainMenu = () => {
   return (
@@ -16,6 +17,7 @@ const EDOMainMenu = () => {
         <Route path="/treatment-entry" element={<TreatmentDataEntryPage />} />
         <Route path="/upload-report" element={<UploadReportsPage />} />
         <Route path="/view-reports" element={<ViewReportsPage />} />
+        <Route path="/messages" element={<Message/>} />
       </Routes>
     </main>
   );

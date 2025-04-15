@@ -23,6 +23,7 @@ import userRoute from './routes/userRoute.js';
 import deoRoute from './routes/deoRoute.js';
 import { createNotificationTable } from './models/notificationModel.js';
 // import { verifyToken } from './utilis/verifyUser';
+import './controllers/doctorEmailScheduler.js';
 
 
 import http from 'http';
