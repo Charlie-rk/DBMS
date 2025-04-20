@@ -111,8 +111,8 @@ export default function Alldoctor() {
   // Delete doctor handler using the API endpoint
   const handleDelete = async (docUsername) => {
     try {
-      const response = await fetch("/api/deo/delete-user", {
-        method: "POST",
+      const response = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: docUsername }),
       });

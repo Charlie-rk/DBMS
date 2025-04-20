@@ -315,6 +315,7 @@ export async function fetchUser(req, res, next) {
   
 // controllers/userController.js
 export async function deleteUser(req, res, next) {
+  console.log("deleting");
   const { username } = req.body;
   console.log(username);
 
