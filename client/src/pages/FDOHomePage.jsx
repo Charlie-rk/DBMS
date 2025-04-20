@@ -106,7 +106,7 @@ export default function FDOHomePage() {
 
   return (
     <motion.div 
-      className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-lg shadow-lg"
+      className="hover:shadow-slate-500 dark:shadow-slate-700 bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-lg shadow-lg"
       initial="hidden"
       animate={isVisible ? "visible" : "hidden"}
       variants={containerVariants}
@@ -133,7 +133,7 @@ export default function FDOHomePage() {
       >
         {/* Total Patients */}
         <motion.div 
-          className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white relative overflow-hidden"
+          className="bg-gradient-to-br  from-blue-500 to-blue-600 p-6 rounded-xl text-white relative overflow-hidden"
           variants={cardVariants}
           whileHover="hover"
         >
@@ -238,7 +238,7 @@ export default function FDOHomePage() {
 
       {/* Recent Activities */}
       <motion.div 
-        className="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-md"
+        className="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-md hover:shadow-slate-800"
         variants={itemVariants}
       >
         <div className="flex items-center justify-between mb-4">

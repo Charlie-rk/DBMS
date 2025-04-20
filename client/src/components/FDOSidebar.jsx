@@ -28,13 +28,14 @@ const sidebarGroups = [
       { text: "Appointment", path: "/fdo/appointment", icon: <HiCalendar /> },
       { text: "Admission", path: "/fdo/admission", icon: <HiPlusCircle /> },
       { text: "Discharge", path: "/fdo/discharge", icon: <HiCheckCircle /> },
+      { text: "Appointment Status", path: "/fdo/status", icon: <HiPuzzle /> },
     ],
   },
   {
     title: "Others",
     items: [
       { text: "Messages", path: "/fdo/messages", icon: <MessageCircle /> },
-      { text: "Widgets", path: "/fdo/widgets", icon: <HiPuzzle /> },
+     
     ],
   },
   {

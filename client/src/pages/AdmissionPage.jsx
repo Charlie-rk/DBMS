@@ -256,7 +256,7 @@ function AdmissionPage() {
 
 
       {/* Admission Form Section */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-slate-600 dark:shadow-slate-800">
         <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Admit Patient</h3>
         {selectedRoom && (
           <div className="mb-4 p-4 border border-green-400 rounded bg-green-50 text-green-800">

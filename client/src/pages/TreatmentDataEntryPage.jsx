@@ -160,7 +160,7 @@ export default function TreatmentDataEntryPage() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-slate-600">
       <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
         Treatment Data Entry
       </h2>

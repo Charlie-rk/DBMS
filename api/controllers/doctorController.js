@@ -286,6 +286,8 @@ export async function fetchRecentPatientsByDoctor(req, res, next) {
   }
 }
 
+
+
 export async function getAllAppointmentsByDoctor(req, res, next) {
   const { doctorId } = req.body;
   // console.log(doctorId);

@@ -6,11 +6,22 @@ import { motion } from 'framer-motion';
 import { MdNotifications } from 'react-icons/md';
 
 export default function EDOHomePage() {
-  const [recentUpdates, setRecentUpdates] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const { currentUser } = useSelector((state) => state.user);
   const username = currentUser.username;
+
+  // recent‑activities state
+  const [recentUpdates, setRecentUpdates] = useState([]);
+  const [updatesLoading, setUpdatesLoading] = useState(false);
+  const [updatesError, setUpdatesError] = useState(null);
+
+  // entry‑counts state
+  const [counts, setCounts] = useState({
+    testsCount: 0,
+    treatmentsCount: 0,
+    reportsCount: 0,
+  });
+  const [countsLoading, setCountsLoading] = useState(false);
+  const [countsError, setCountsError] = useState(null);
 
   // Animation variants
   const containerVariants = {
@@ -38,9 +49,10 @@ export default function EDOHomePage() {
     }
   };
 
+  // Fetch recent activities
   useEffect(() => {
     async function fetchRecentUpdates() {
-      setLoading(true);
+      setUpdatesLoading(true);
       try {
         const response = await fetch('/api/user/recent-activities', {
           method: 'POST',
@@ -49,28 +61,54 @@ export default function EDOHomePage() {
         });
         const data = await response.json();
         if (response.ok) {
-          // Format each update's time using the created_at field.
           const updatesWithTime = data.activities.map((update) => {
             const dateObj = new Date(update.created_at);
             const formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return { ...update, formattedTime };
           });
           setRecentUpdates(updatesWithTime);
+          setUpdatesError(null);
         } else {
-          setError(data.error || 'Failed to fetch recent updates.');
+          setUpdatesError(data.error || 'Failed to fetch recent updates.');
         }
       } catch (err) {
-        setError('Network error while fetching recent updates.');
+        setUpdatesError('Network error while fetching recent updates.');
       } finally {
-        setLoading(false);
+        setUpdatesLoading(false);
       }
     }
     fetchRecentUpdates();
   }, [username]);
 
+  // Fetch entry counts
+  useEffect(() => {
+    async function fetchCounts() {
+      setCountsLoading(true);
+      try {
+        const res = await fetch('/api/deo/entry-count');
+        const data = await res.json();
+        if (res.ok) {
+          setCounts({
+            testsCount: data.testsCount,
+            treatmentsCount: data.treatmentsCount,
+            reportsCount: data.reportsCount,
+          });
+          setCountsError(null);
+        } else {
+          setCountsError(data.error || 'Failed to fetch entry counts.');
+        }
+      } catch (err) {
+        setCountsError('Network error while fetching entry counts.');
+      } finally {
+        setCountsLoading(false);
+      }
+    }
+    fetchCounts();
+  }, []);
+
   return (
     <motion.div 
-      className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-lg shadow-lg"
+      className="bg-gradient-to-br hover:shadow-slate-700 from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 p-6 rounded-lg shadow-lg"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
@@ -81,7 +119,7 @@ export default function EDOHomePage() {
           DEO Home
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Welcome, {currentUser.username}! Here’s an overview of your dashboard.
+          Welcome, {username}! Here’s an overview of your dashboard.
         </p>
       </motion.div>
 
@@ -101,7 +139,12 @@ export default function EDOHomePage() {
           <div className="relative z-10 text-center">
             <FaVial className="text-4xl mb-4" />
             <h3 className="text-xl font-semibold mb-1">Tests Updated</h3>
-            <p className="text-3xl font-bold">48</p>
+            <p className="text-3xl font-bold">
+              {countsLoading ? '…' : counts.testsCount}
+            </p>
+            {countsError && (
+              <p className="text-xs text-red-200 mt-1">Error</p>
+            )}
           </div>
         </motion.div>
 
@@ -116,7 +159,12 @@ export default function EDOHomePage() {
           <div className="relative z-10 text-center">
             <FaStethoscope className="text-4xl mb-4" />
             <h3 className="text-xl font-semibold mb-1">Treatments Logged</h3>
-            <p className="text-3xl font-bold">37</p>
+            <p className="text-3xl font-bold">
+              {countsLoading ? '…' : counts.treatmentsCount}
+            </p>
+            {countsError && (
+              <p className="text-xs text-red-200 mt-1">Error</p>
+            )}
           </div>
         </motion.div>
 
@@ -131,7 +179,12 @@ export default function EDOHomePage() {
           <div className="relative z-10 text-center">
             <FaFileAlt className="text-4xl mb-4" />
             <h3 className="text-xl font-semibold mb-1">Reports Uploaded</h3>
-            <p className="text-3xl font-bold">21</p>
+            <p className="text-3xl font-bold">
+              {countsLoading ? '…' : counts.reportsCount}
+            </p>
+            {countsError && (
+              <p className="text-xs text-red-200 mt-1">Error</p>
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -141,22 +194,23 @@ export default function EDOHomePage() {
         className="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-md"
         variants={itemVariants}
       >  
-          <div className="flex items-center">
-                    <MdNotifications className="text-2xl text-indigo-600 dark:text-indigo-400 mr-2" />
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                      Recent Activities
-                    </h3>
-                  </div>
-        {loading ? (
-          <div className="flex justify-center py-8">
+        <div className="flex items-center mb-4 hover:shadow-slate-600">
+          <MdNotifications className="text-2xl text-indigo-600 dark:text-indigo-400 mr-2" />
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+            Recent Activities
+          </h3>
+        </div>
+
+        {updatesLoading ? (
+          <div className="flex justify-center py-8 hover:shadow-slate-600">
             <motion.div 
-              className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full"
+              className="w-16 h-16 border-4  border-blue-200 border-t-blue-600 rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
           </div>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
+        ) : updatesError ? (
+          <p className="text-red-500">{updatesError}</p>
         ) : recentUpdates.length > 0 ? (
           <ul className="divide-y divide-gray-300 dark:divide-gray-600">
             {recentUpdates.map((update, index) => (

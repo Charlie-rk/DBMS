@@ -1302,3 +1302,60 @@ export async function getDepartmentExtremes(req, res, next) {
     next(err);
   }
 }
+
+
+/**
+ * Get all appointments (no doctor filter)
+ * Route: GET /appointments/all
+ */
+export async function getAllAppointments(req, res, next) {
+  try {
+    // Fetch every appointment, with an exact row count
+    const { data: appointments, error: appointmentError, count } = await supabase
+      .from('appointments')
+      .select('*', { count: 'exact' });
+
+    if (appointmentError) {
+      return res.status(500).json({ error: appointmentError.message });
+    }
+
+    // If there are none, return empty array + zero count
+    if (!appointments || appointments.length === 0) {
+      return res.status(200).json({ appointments: [], count: 0 });
+    }
+
+    // Gather all unique patient IDs
+    const patientIds = [...new Set(appointments.map(app => app.patient_id))];
+
+    // Fetch those patients’ names
+    const { data: patients, error: patientError } = await supabase
+      .from('patients')
+      .select('id, name')
+      .in('id', patientIds);
+
+    if (patientError) {
+      return res.status(500).json({ error: patientError.message });
+    }
+
+    // Build lookup map patient_id → name
+    const patientMap = {};
+    patients.forEach(p => {
+      patientMap[p.id] = p.name;
+    });
+
+    // Merge patient_name into each appointment
+    const appointmentsWithPatientNames = appointments.map(app => ({
+      ...app,
+      patient_name: patientMap[app.patient_id] || null
+    }));
+
+    // Respond with full list plus count
+    return res.status(200).json({
+      appointments: appointmentsWithPatientNames,
+      count
+    });
+  } catch (err) {
+    console.error("Error in getAllAppointments:", err);
+    next(err);
+  }
+}

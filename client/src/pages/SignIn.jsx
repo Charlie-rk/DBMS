@@ -4,24 +4,17 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { HiMail } from "react-icons/hi";
-import { FaCheckCircle } from "react-icons/fa"; // Import verification icon
+import { FaCheckCircle } from "react-icons/fa";
 import Backdrop from "@mui/material/Backdrop";
-import CircularProgress from "@mui/material/CircularProgress";
-import AOS from "aos";
-import "aos/dist/aos.css";
 import CustomSpinner from "../components/CustomSpinner";
 
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import {
   signInStart,
   signInSuccess,
   signInFailure,
   signoutSuccess,
 } from '../redux/user/userSlice';
-
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 export default function SignIn() {
   const [formData, setFormData] = useState({
@@ -40,7 +33,7 @@ export default function SignIn() {
   const [otpTimer, setOtpTimer] = useState(0);
   const [otpVerified, setOtpVerified] = useState(false);
 
-  // Secret key state (verified independently)
+  // Secret key state
   const [secretVerified, setSecretVerified] = useState(false);
 
   const navigate = useNavigate();
@@ -54,18 +47,21 @@ export default function SignIn() {
       setFormData({ ...formData, role: selectedRole });
       await triggerSecretKeyModal(selectedRole);
     } else {
-      setFormData({ ...formData, [id]: value.trim() });
+      const newValue = value.trim();
+      setFormData({ ...formData, [id]: newValue });
+
+      // Reset OTP state on email change
+      if (id === 'email') {
+        setOtpVerified(false);
+        setOtpSent(false);
+        setGeneratedOtp(null);
+        setOtpTimer(0);
+        setErrorMessage(null);
+      }
     }
   };
 
-  const handleOtpChange = (e) => {
-    setOtp(e.target.value.trim());
-  };
-  
-  // useEffect(()=>{
-  //   const notify = () => toast.success("🤗🤗 Welcome to SignIn Page 🤗🤗");
-  //   notify();
-  // },[])
+  const handleOtpChange = (e) => setOtp(e.target.value.trim());
 
   const generateOtp = async () => {
     if (!formData.email) {
@@ -86,7 +82,6 @@ export default function SignIn() {
         setLoading(false);
         return;
       }
-      // Assume backend returns the OTP in data.otp for demo purposes.
       setGeneratedOtp(data.otp);
       setOtpSent(true);
       setOtpTimer(30);
@@ -107,7 +102,8 @@ export default function SignIn() {
 
   const verifyOtp = async () => {
     if (!otp) {
-      return setErrorMessage("Please enter the OTP.");
+      setErrorMessage("Please enter the OTP.");
+      return;
     }
     setLoading(true);
     try {
@@ -118,12 +114,13 @@ export default function SignIn() {
       });
       const data = await res.json();
       if (!res.ok) {
+        setErrorMessage(data.message || "OTP verification failed.");
         setLoading(false);
-        return setErrorMessage(data.message || "OTP verification failed.");
+        return;
       }
       setOtpVerified(true);
-      setLoading(false);
       setErrorMessage(null);
+      setLoading(false);
       MySwal.fire({
         icon: "success",
         title: "OTP Verified Successfully!",
@@ -132,12 +129,12 @@ export default function SignIn() {
       });
     } catch (error) {
       setLoading(false);
+      setErrorMessage("Error verifying OTP: " + error.message);
       MySwal.fire({
         icon: "error",
         title: "Error verifying OTP",
         text: error.message,
       });
-      setErrorMessage("Error verifying OTP: " + error.message);
     }
   };
 
@@ -155,7 +152,7 @@ export default function SignIn() {
       Admin: "admin123",
       "Front Desk Operator": "fdo123",
       "Data Entry Operator": "edo123",
-      "doctor": "doc123",  // New role added for Doctor
+      doctor: "doc123",
     };
     if (secretKey !== secretMap[role]) {
       MySwal.fire({
@@ -163,7 +160,6 @@ export default function SignIn() {
         title: "Wrong Secret Key",
         text: "Please enter the correct secret key!",
       });
-      setSecretVerified(false);
     } else {
       setSecretVerified(true);
       MySwal.fire({
@@ -177,52 +173,46 @@ export default function SignIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !formData.username ||
-      !formData.email ||
-      !formData.password ||
-      !formData.role
-    ) {
-      return setErrorMessage("Please fill out all fields.");
+    if (!formData.username || !formData.email || !formData.password || !formData.role) {
+      setErrorMessage("Please fill out all fields.");
+      return;
     }
-    // if (!formData.email.endsWith("@iitbbs.ac.in")) {
-    //   return setErrorMessage("Please use a valid Institute Email Id.");
-    // }
     if (!otpVerified || !secretVerified) {
-      return setErrorMessage("Please verify your email OTP and secret key.");
+      setErrorMessage("Please verify your email OTP and secret key.");
+      return;
     }
+    setLoading(true);
+    setErrorMessage(null);
     try {
-      setLoading(true);
-      setErrorMessage(null);
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if (data.success === false) {
+      if (!res.ok || data.success === false) {
+        setErrorMessage(data.message || "Sign-in failed.");
         setLoading(false);
-        return setErrorMessage(data.message);
+        return;
       }
+      dispatch(signoutSuccess());
+      dispatch(signInSuccess(data));
       setLoading(false);
-      if (res.ok) {
-        // console.log(res);
-        // navigate("/sign-in");
-        dispatch(signoutSuccess())
-        dispatch(signInSuccess(data));
-        if (data.role === "Front Desk Operator") {
+      switch (data.role) {
+        case "Front Desk Operator":
           navigate("/fdo");
-        }
-        if (data.role === "doctor") {  // Updated condition for Doctor role
+          break;
+        case "doctor":
           navigate("/doctor");
-        }
-        if (data.role === "Data Entry Operator") {
+          break;
+        case "Data Entry Operator":
           navigate("/deo");
-        }
-        if (data.role === "Admin") {
+          break;
+        case "Admin":
           navigate("/admin");
-        }
-        // console.log(data);
+          break;
+        default:
+          break;
       }
     } catch (error) {
       setErrorMessage(error.message);
@@ -235,9 +225,8 @@ export default function SignIn() {
       {loading && (
         <Backdrop
           sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={true}
+          open
         >
-          {/* <CircularProgress color="inherit" /> */}
           <CustomSpinner />
         </Backdrop>
       )}
@@ -259,7 +248,7 @@ export default function SignIn() {
           </p>
         </div>
 
-        {/* Right Sign Up Form */}
+        {/* Right Sign In Form */}
         <div className="flex-1">
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
@@ -272,16 +261,15 @@ export default function SignIn() {
               />
             </div>
             <div className="relative">
-              <Label value="Your  Email id" />
+              <Label value="Your Email id" />
               <TextInput
                 type="email"
                 placeholder="xyz**@gmail.com"
                 id="email"
                 onChange={handleChange}
               />
-              {/* Conditionally render based on OTP verification */}
               {otpVerified ? (
-                <span className="absolute right-2 top-10 text-green-600 px-1 ">
+                <span className="absolute right-2 top-10 text-green-600 px-1">
                   <FaCheckCircle size={24} />
                 </span>
               ) : (
@@ -322,57 +310,23 @@ export default function SignIn() {
                 onChange={handleChange}
               />
             </div>
-            <div className="mb-[-10px]">
-              <p className="font-bold">Role</p>
-            </div>
-            <div className="flex items-start mb-5">
-              <div className="flex items-center h-5">
-                <input
-                  type="radio"
-                  name="role"
-                  value="Front Desk Operator"
-                  onChange={handleChange}
-                  className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
-                  required
-                />
-                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Front Desk Operator
+            <p className="font-bold">Role</p>
+            <div className="flex items-center gap-4">
+              {['Front Desk Operator','Data Entry Operator','Admin','doctor'].map(role => (
+                <label key={role} className="flex items-center"> 
+                  <input
+                    type="radio"
+                    name="role"
+                    value={role}
+                    onChange={handleChange}
+                    required
+                    className="w-4 h-4 border-gray-300 rounded focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
+                  />
+                  <span className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+                    {role === 'doctor' ? 'Doctor' : role}
+                  </span>
                 </label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="Data Entry Operator"
-                  onChange={handleChange}
-                  className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
-                  required
-                />
-                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Data Entry Operator
-                </label>
-                <input
-                  type="radio"
-                  name="role"
-                  value="Admin"
-                  onChange={handleChange}
-                  className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
-                  required
-                />
-                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Admin
-                </label>
-                {/* New radio button for Doctor */}
-                <input
-                  type="radio"
-                  name="role"
-                  value="doctor"
-                  onChange={handleChange}
-                  className="ml-3 w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600"
-                  required
-                />
-                <label className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                  Doctor
-                </label>
-              </div>
+              ))}
             </div>
             <Button
               gradientDuoTone="purpleToBlue"
@@ -389,7 +343,7 @@ export default function SignIn() {
               )}
             </Button>
           </form>
-          <div className="flex gap-2 text-sm mt-5 dark:text-gray-300">
+          <div className="text-sm mt-5 dark:text-gray-300">
             <span>Your health, our promise.</span>
           </div>
           {errorMessage && (

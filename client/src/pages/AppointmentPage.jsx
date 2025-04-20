@@ -5,6 +5,17 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { useSelector } from 'react-redux';
 
+import { 
+  Clock, 
+  Users, 
+  CheckCircle, 
+  PauseCircle, 
+  Calendar, 
+  Home, 
+  AlertCircle,
+  CheckSquare,
+  ArrowRight
+} from 'lucide-react';
 const MySwal = withReactContent(Swal);
 
 function AppointmentPage() {
@@ -24,6 +35,14 @@ function AppointmentPage() {
   const [showModal, setShowModal] = useState(false);
   const [schedulingLoading, setSchedulingLoading] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
+
+  // inside AppointmentPage, before your return:
+const slotTimes = {
+  slot1: '9 AM – 12 PM',
+  slot2: '2 PM – 5 PM',
+  slot3: '6 PM – 10 PM',
+};
+
 
   // Fetch doctor info from backend.
   useEffect(() => {
@@ -49,6 +68,7 @@ function AppointmentPage() {
       })
         .then((res) => res.json())
         .then((data) => {
+          console.log(data)
           const slotsArray = Object.keys(data).map((key) => ({
             slot: key,
             ...data[key],
@@ -203,7 +223,7 @@ function AppointmentPage() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-slate-600 dark:shadow-slate-900">
       <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
         Schedule Appointment
       </h2>
@@ -324,95 +344,180 @@ function AppointmentPage() {
       </form>
 
       {/* Modal for available slots (only for non-emergency appointments) */}
+      {/* Modal for available slots (only for non-emergency appointments) */}
       {!appointmentData.emergency && (
-        <Modal
-          show={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedSlot(null);
-            setAppointmentNumber(null);
-          }}
-        >
-          <Modal.Header>Available Slots</Modal.Header>
-          <Modal.Body>
-            {slotData ? (
-              selectedSlot ? (
-                <div>
-                  <p className="mb-2 text-gray-800 dark:text-gray-200">
-                    You selected slot:{" "}
-                    <strong>{selectedSlot.slot.replace('slot', '')}</strong>
-                  </p>
-                  {selectedSlot.room_type && (
-                    <p className="mb-2 text-gray-800 dark:text-gray-200">
-                      Room Type: <strong>{selectedSlot.room_type}</strong>
-                    </p>
-                  )}
-                  <p className="mb-2 text-gray-800 dark:text-gray-200">
-                    Total appointments: {selectedSlot.total}
-                  </p>
-                  <p className="mb-2 text-gray-800 dark:text-gray-200">
-                    Already booked (accepted + pending):{" "}
-                    {selectedSlot.accepted + selectedSlot.pending}
-                  </p>
-                  <p className="mb-2 text-gray-800 dark:text-gray-200">
-                    Your appointment number will be:{" "}
-                    <strong>{appointmentNumber}</strong>
-                  </p>
+  <Modal
+    show={showModal}
+    onClose={() => {
+      setShowModal(false);
+      setSelectedSlot(null);
+      setAppointmentNumber(null);
+    }}
+    className="dark:bg-gray-800"
+  >
+    {/* Header */}
+    <Modal.Header className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white flex items-center">
+      <Calendar className="mr-2 text-blue-500 dark:text-blue-400" size={20} />
+      Available Slots
+    </Modal.Header>
+
+    {/* Body */}
+    <Modal.Body className="bg-white dark:bg-gray-800">
+      {slotData ? (
+        selectedSlot ? (
+          <div className="p-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-700 dark:to-gray-600 rounded-lg shadow-sm">
+            <div className="mb-4 text-xl font-semibold text-blue-600 dark:text-blue-300 flex items-center">
+              <CheckSquare className="mr-2" size={24} />
+              Slot Selection Summary
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center text-gray-800 dark:text-gray-200">
+                <Clock className="mr-2 text-blue-500 dark:text-blue-400" size={20} />
+                <span className="font-medium">Selected Slot:</span>
+                <span className="ml-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded-full text-blue-800 dark:text-blue-100 font-semibold">
+                  {selectedSlot.slot.replace('slot', '')}
+                </span>
+              </div>
+              
+              <div className="flex items-center text-gray-800 dark:text-gray-200">
+                <Clock className="mr-2 text-blue-500 dark:text-blue-400" size={20} />
+                <span className="font-medium">Time:</span>
+                <span className="ml-2 font-semibold">{slotTimes[selectedSlot.slot]}</span>
+              </div>
+              
+              {selectedSlot.room_type && (
+                <div className="flex items-center text-gray-800 dark:text-gray-200">
+                  <Home className="mr-2 text-blue-500 dark:text-blue-400" size={20} />
+                  <span className="font-medium">Room Type:</span>
+                  <span className="ml-2 font-semibold">{selectedSlot.room_type}</span>
                 </div>
-              ) : (
-                <div>
-                  {slotData.map((slotItem) => (
-                    <div
-                      key={slotItem.slot}
-                      className="mb-4 border p-2 rounded bg-slate-200"
-                    >
-                      <p className="text-gray-800 dark:text-gray-200">
-                        Slot: {slotItem.slot.replace('slot', '')}
-                      </p>
-                      {slotItem.room_type && (
-                        <p className="text-gray-800 dark:text-gray-200">
-                          Room Type: {slotItem.room_type}
-                        </p>
-                      )}
-                      <p className="text-gray-800 dark:text-gray-200">
-                        Total appointments: {slotItem.total}
-                      </p>
-                      <p className="text-gray-800 dark:text-gray-200">
-                        Already booked:{" "}
-                        {slotItem.accepted + slotItem.pending}
-                      </p>
-                      <p className="text-gray-800 dark:text-gray-200">
-                        Available: {slotItem.available}
-                      </p>
-                      <div className="mt-2">
-                        <Button
-                          onClick={() => handleSlotSelect(slotItem)}
-                          outline
-                           className="bg-gradient-to-r from-green-300 to-green-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
-                        >
-                          Select this Slot
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <div>Loading slots...</div>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            {selectedSlot && (
-              <Button
-                onClick={confirmAppointment}
-                className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800"
+              )}
+              
+              <div className="flex items-center text-gray-800 dark:text-gray-200">
+                <Users className="mr-2 text-blue-500 dark:text-blue-400" size={20} />
+                <span className="font-medium">Total Capacity:</span>
+                <span className="ml-2 font-semibold">{selectedSlot.total}</span>
+              </div>
+              
+              <div className="flex items-center text-gray-800 dark:text-gray-200">
+                <CheckCircle className="mr-2 text-green-500 dark:text-green-400" size={20} />
+                <span className="font-medium">Accepted:</span>
+                <span className="ml-2 font-semibold">{selectedSlot.accepted}</span>
+              </div>
+              
+              <div className="flex items-center text-gray-800 dark:text-gray-200">
+                <PauseCircle className="mr-2 text-yellow-500 dark:text-yellow-300" size={20} />
+                <span className="font-medium">Pending:</span>
+                <span className="ml-2 font-semibold">{selectedSlot.pending}</span>
+              </div>
+              
+              <div className="flex items-center text-gray-800 dark:text-gray-200">
+                <Users className="mr-2 text-purple-500 dark:text-purple-300" size={20} />
+                <span className="font-medium">Already Booked:</span>
+                <span className="ml-2 font-semibold">{selectedSlot.accepted + selectedSlot.pending}</span>
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center text-blue-800 dark:text-blue-100">
+                <AlertCircle className="mr-2 text-blue-600 dark:text-blue-300" size={20} />
+                <span className="font-medium">Your appointment number will be:</span>
+                <span className="ml-2 px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-blue-800 dark:text-blue-100 font-bold">
+                  {appointmentNumber}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {slotData.map((slotItem) => (
+              <div
+                key={slotItem.slot}
+                className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
               >
-                Confirm Appointment
-              </Button>
-            )}
-          </Modal.Footer>
-        </Modal>
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-600 dark:from-blue-600 dark:to-cyan-700 py-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-white font-bold">
+                      <Clock className="mr-2" size={18} />
+                      Slot {slotItem.slot.replace('slot', '')}
+                    </div>
+                    <div className="text-white text-sm font-medium px-2 py-1 bg-black bg-opacity-20 rounded-full">
+                      {slotTimes[slotItem.slot]}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-white dark:bg-gray-700">
+                  <div className="space-y-2">
+                    {slotItem.room_type && (
+                      <div className="flex items-center text-gray-700 dark:text-gray-200">
+                        <Home className="mr-2 text-gray-500 dark:text-gray-300" size={16} />
+                        <span>Room: {slotItem.room_type}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center text-gray-700 dark:text-gray-200">
+                      <Users className="mr-2 text-gray-500 dark:text-gray-300" size={16} />
+                      <span>Capacity: {slotItem.total}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-gray-700 dark:text-gray-200">
+                      <CheckCircle className="mr-2 text-green-500 dark:text-green-400" size={16} />
+                      <span>Accepted: {slotItem.accepted}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-gray-700 dark:text-gray-200">
+                      <PauseCircle className="mr-2 text-yellow-500 dark:text-yellow-300" size={16} />
+                      <span>Pending: {slotItem.pending}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-gray-700 dark:text-gray-200">
+                      <Users className="mr-2 text-gray-500 dark:text-gray-300" size={16} />
+                      <span>Booked: {slotItem.accepted + slotItem.pending}</span>
+                    </div>
+                    
+                    <div className="flex items-center font-medium text-green-600 dark:text-green-400">
+                      <CheckCircle className="mr-2" size={16} />
+                      <span>Available: {slotItem.available}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <Button
+                      onClick={() => handleSlotSelect(slotItem)}
+                      outline
+                      className="w-full bg-gradient-to-r from-green-400 to-green-500 dark:from-green-500 dark:to-green-600 text-white hover:bg-gradient-to-bl focus:ring-green-300 dark:focus:ring-green-800 flex items-center justify-center"
+                    >
+                      <span>Select this Slot</span>
+                      <ArrowRight className="ml-2" size={16} />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        <div className="flex items-center justify-center p-8 text-gray-800 dark:text-white">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400 mr-3"></div>
+          Loading slots...
+        </div>
       )}
+    </Modal.Body>
+
+    {/* Footer */}
+    <Modal.Footer className="bg-white dark:bg-gray-900">
+      {selectedSlot && (
+        <Button
+          onClick={confirmAppointment}
+          className="bg-gradient-to-r from-cyan-500 to-blue-500 dark:from-cyan-600 dark:to-blue-600 text-white hover:bg-gradient-to-bl focus:ring-cyan-300 dark:focus:ring-cyan-800 flex items-center"
+        >
+          <CheckSquare className="mr-2" size={18} />
+          Confirm Appointment
+        </Button>
+      )}
+    </Modal.Footer>
+  </Modal>
+)}
     </div>
   );
 }

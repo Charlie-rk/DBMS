@@ -148,3 +148,38 @@ export async function viewReports(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Get entry counts
+ * Route: GET /deo/entry-counts
+ */
+export async function getEntryCounts(req, res, next) {
+  try {
+    // fire all three count‐queries in parallel
+    const [testsRes, treatmentsRes, reportsRes] = await Promise.all([
+      supabase
+        .from('tests')
+        .select('*', { head: true, count: 'exact' }),
+      supabase
+        .from('treatments')
+        .select('*', { head: true, count: 'exact' }),
+      supabase
+        .from('reports')
+        .select('*', { head: true, count: 'exact' }),
+    ]);
+
+    // check for errors on each
+    if (testsRes.error) throw testsRes.error;
+    if (treatmentsRes.error) throw treatmentsRes.error;
+    if (reportsRes.error) throw reportsRes.error;
+
+    // return the three counts
+    res.status(200).json({
+      testsCount: testsRes.count,
+      treatmentsCount: treatmentsRes.count,
+      reportsCount: reportsRes.count,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
