@@ -88,6 +88,9 @@ const DoctorHome = () => {
   const [currentTab, setCurrentTab] = useState("Dashboard");
   // New state to track per-appointment update loading
   const [updatingStatus, setUpdatingStatus] = useState({});
+   // **NEW**: gender distribution
+   const [maleCount, setMaleCount] = useState(0);
+   const [femaleCount, setFemaleCount] = useState(0);
   
   // Get current month and year
   const currentDateObj = new Date();
@@ -236,7 +239,43 @@ const DoctorHome = () => {
             }
           });
         });
-    }
+        fetch("/api/doctor/gender-distribution", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ doctorId: currentUser.id }),
+        })
+          .then((res) => res.json())
+          .then(({ maleCount, femaleCount }) => {
+            setMaleCount(maleCount);
+            setFemaleCount(femaleCount);
+          })
+          .catch((err) => {
+            console.error("Error fetching gender distribution:", err);
+          });
+
+          fetch("/api/doctor/count-monthly-appointments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              doctorId: currentUser.id,
+              month: currentMonth,
+              year: currentYear,
+            }),
+          })
+          .then((res) => res.json())
+          .then((data) => {
+            console.log(data);
+            setBookedAppointments(data.acceptedAppointments);
+          })
+          .catch((err) => {
+            console.log(err);
+            MySwal.fire({
+              icon: "error",
+              title: "Error",
+              text: "Failed to fetch monthly accepted appointments. Please try again.",
+            });
+          });
+       }
   }, [currentUser, currentMonth, currentYear]);
 
   // Toggle live status by calling backend endpoint
@@ -560,9 +599,11 @@ const DoctorHome = () => {
             variants={itemVariants}
             whileHover="hover"
           >
-            <Profile_Doctor 
+            <Profile_Doctor
               bookedAppointments={bookedAppointments}
               maxAppointments={maxAppointments}
+              maleCount={maleCount}           // new
+              femaleCount={femaleCount}       // new
             />
           </motion.div>
 

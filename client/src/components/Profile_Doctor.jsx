@@ -3,9 +3,22 @@
 import React from "react";
 import { useSelector } from "react-redux";
 
-const Profile_Doctor = ({ bookedAppointments, maxAppointments }) => {
+const Profile_Doctor = ({
+  bookedAppointments,
+  maxAppointments,
+  maleCount,      // new
+  femaleCount,    // new
+}) => {
   const { currentUser } = useSelector((state) => state.user);
-  // console.log(currentUser);
+
+  // Compute gender percentages
+  const totalGender = maleCount + femaleCount;
+  const malePercent = totalGender
+    ? Math.round((maleCount / totalGender) * 100)
+    : 0;
+  const femalePercent = totalGender
+    ? 100 - malePercent
+    : 0;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center h-full">
@@ -61,9 +74,13 @@ const Profile_Doctor = ({ bookedAppointments, maxAppointments }) => {
                   d="M13 2h3m0 0v3m0-3l-4 4m-4 2a5 5 0 11-4 8.06m8-8.06a5 5 0 018 4"
                 />
               </svg>
-              <span className="font-bold text-gray-700 dark:text-gray-300">63%</span>
+              <span className="font-bold text-gray-700 dark:text-gray-300">
+                {malePercent}%
+              </span>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Male Patients</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Male Patients
+            </div>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center space-x-1">
@@ -81,9 +98,13 @@ const Profile_Doctor = ({ bookedAppointments, maxAppointments }) => {
                   d="M12 14l9-9m-9 9L3 5m9 9v5m0 0h3m-3 0H9"
                 />
               </svg>
-              <span className="font-bold text-gray-700 dark:text-gray-300">37%</span>
+              <span className="font-bold text-gray-700 dark:text-gray-300">
+                {femalePercent}%
+              </span>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Female Patients</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Female Patients
+            </div>
           </div>
         </div>
       </div>
