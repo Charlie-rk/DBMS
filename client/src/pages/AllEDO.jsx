@@ -92,8 +92,8 @@ export default function AllEDO() {
   // Delete operator handler using the API endpoint
   const handleDelete = async (opUsername) => {
     try {
-      const response = await fetch("/api/deo/delete-user", {
-        method: "POST",
+      const response = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: opUsername }),
       });
