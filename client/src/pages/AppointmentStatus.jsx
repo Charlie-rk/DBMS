@@ -55,6 +55,8 @@ export default function AppointmentStatus() {
         const res = await fetch('/api/fdo/get-all-appointment');
         const data = await res.json();
         if (res.ok) {
+          console.log(data.appointments);
+
           setAppointments(data.appointments);
           // compute counts in one pass
           const statusCount = { accepted: 0, pending: 0, declined: 0 };
@@ -78,10 +80,23 @@ export default function AppointmentStatus() {
     fetchAppointments();
   }, []);
 
-  // helper to format date/time
-  const formatDate = iso => new Date(iso).toLocaleDateString();
-  const formatTime = iso =>
-    new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+ // in your component file, replace your helpers with:
+
+// always format date as UTC
+const formatDate = iso =>
+  new Date(iso).toLocaleDateString('en-GB', {
+    timeZone: 'UTC'
+  });
+
+// always format time as UTC HH:mm
+const formatTime = iso =>
+  new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
+  });
+
 
   // derive filtered list
   const filteredAppointments = appointments

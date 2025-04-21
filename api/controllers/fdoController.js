@@ -56,13 +56,13 @@ async function handleEmergencyAppointmentExtra(appointment, email) {
     `,
   };
 
-  // transporter.sendMail(mailOptions, (error, info) => {
-  //   if (error) {
-  //     console.error('Error sending emergency email:', error);
-  //   } else {
-  //     console.log('Emergency email sent:', info.response);
-  //   }
-  // });
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending emergency email:', error);
+    } else {
+      console.log('Emergency email sent:', info.response);
+    }
+  });
 }
 
 
