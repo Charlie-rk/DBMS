@@ -1,178 +1,134 @@
-Hospital Management System
-Overview
+# 🏥 Hospital Management System
 
-This project is a comprehensive Hospital Management System (HMS) designed to streamline hospital operations, enhance patient care, and provide robust analytics for administrators, doctors, front desk operators, and data entry operators. The system supports role-based access, multi-factor authentication, and modern dashboards tailored to each user group
+![Version](https://img.shields.io/badge/version-1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-.
-Features
-Authentication & Security
+## 📋 Overview
 
-    Multi-field login (username, email, password) with OTP verification for enhanced security
+This comprehensive Hospital Management System (HMS) streamlines hospital operations, enhances patient care, and provides robust analytics for administrators, doctors, front desk operators, and data entry operators. The system features role-based access, multi-factor authentication, and modern dashboards tailored to each user group.
 
-    .
+## ✨ Key Features
 
-    Role selection at login ensures users access only their permitted dashboards and features.
+### 🔐 Authentication & Security
 
-    Secure password and access management; audit trails for sensitive actions.
+- **Multi-field login** with username, email, password, and OTP verification
+- **Role-based access control** ensuring users access only permitted features
+- **Secure password management** and detailed audit trails for sensitive actions
 
-User Roles & Dashboards
-Role	Key Functions
-Admin	User/department management, analytics, messaging, resource tracking, security, billing
-.
-Doctor	View/manage appointments, patient histories, prescribe treatments, performance analytics
-.
-Front Desk Operator	Patient registration, appointment scheduling, admissions/discharges, notifications, billing
-.
-Data Entry Operator	Enter test/treatment data, upload/view reports, audit records, message staff
-.
-Core Modules
-1. Patient Management
+### 👥 User Roles & Dashboards
 
-    Register new or returning patients, capturing demographics and contact info.
+| Role | Key Functions |
+|------|--------------|
+| **👑 Admin** | User/department management, analytics, messaging, resource tracking, security, billing |
+| **👨‍⚕️ Doctor** | View/manage appointments, patient histories, prescribe treatments, performance analytics |
+| **🖥️ Front Desk** | Patient registration, appointment scheduling, admissions/discharges, notifications, billing |
+| **📝 Data Entry** | Enter test/treatment data, upload/view reports, audit records, message staff |
 
-    Unique patient ID assignment, age calculation, and status tracking (registered, admitted, discharged)
+## 🧩 Core Modules
 
-    .
+### 🧑‍🤝‍🧑 Patient Management
 
-    Patient journey is fully traceable via records of appointments, admissions, treatments, and reports.
+- Register new or returning patients with full demographics and contact information
+- Unique patient ID assignment with automatic age calculation
+- Complete patient journey tracking across appointments, admissions, treatments, and reports
 
-2. Appointment & Admission
+### 📅 Appointment & Admission
 
-    Schedule appointments with real-time doctor and room availability.
+- **Intelligent scheduling** with real-time doctor and room availability checks
+- Emergency case flagging with priority queue management
+- Room assignment by category (Executive, Premium, Basic) with occupancy tracking
 
-    Emergency flagging and slot selection with queue management.
+### 👨‍⚕️ Doctor Operations
 
-    Admit/discharge patients, assign rooms (Executive, Premium, Basic), and update occupancy
+- **Analytics dashboard** showing patient trends, appointment statistics, and efficiency metrics
+- Appointment management with accept/decline functionality
+- Comprehensive patient history access and prescription management
 
-    .
+### 📊 Data Entry & Reporting
 
-3. Doctor Operations
+- Streamlined diagnostic test result entry and treatment documentation
+- Report management system with PDF upload capability
+- Detailed audit logging for all data modifications
 
-    Dashboard with patient trends, appointment stats, gender/age distribution, and efficiency metrics.
+### 📈 Analytics & Reporting
 
-    Accept/decline appointment requests, manage emergency cases.
+- **Real-time statistics** for beds, doctors, patients, and admissions/discharges
+- Interactive charts for urgency distribution, patient flow, and departmental performance
+- Recent activity tracking with detailed drill-down capabilities
 
-    Access comprehensive patient records, prescribe tests/treatments, and receive system notifications
+### 💬 Messaging & Notifications
 
-    .
+- Secure internal communication between staff members
+- Automated notifications for appointments, test results, and emergencies
+- Comprehensive communication logs for audit purposes
 
-4. Data Entry & Reporting
+## 🗄️ Database Schema
 
-    Enter diagnostic test results, treatment details, and upload PDF reports.
+```
+Users ─────┐
+           │
+Patients ──┼── Appointments ── Treatments
+           │       │
+Doctors ───┘       │
+           │       │
+Departments┼── Admissions ──── Rooms
+           │       │
+Reports ───┼── Diagnostic Tests
+           │
+Audit Logs ┘
+```
 
-    View and manage all uploaded reports; maintain audit logs for corrections.
+## 🔌 API Endpoints
 
-    Dashboard shows counts of tests, treatments, and reports
+### Authentication
+- `/signin` - User authentication with OTP
 
-    .
+### Admin
+- `/admin/register` - Register new users
+- `/admin/rooms` - Room availability
+- `/admin/doctors` - Doctor availability
+- `/admin/patients` - Patient analytics
 
-5. Analytics & Reporting
+### Front Desk
+- `/fdo/register-patient` - Register new patient
+- `/fdo/schedule-appointment` - Book appointment
+- `/fdo/admit` - Admit patient
+- `/fdo/discharge` - Discharge patient
 
-    Real-time stats: beds, doctors, patients, admissions/discharges, gender/age breakdown
+### Doctor
+- `/doctor/details` - Doctor profile and stats
+- `/doctor/appointments/daily` - Today's appointments
 
-    .
+### Data Entry
+- `/edo/test-entry` - Enter diagnostic data
+- `/edo/treatment-entry` - Log treatments
+- `/edo/upload-report` - Upload reports
+- `/edo/reports` - View all reports
 
-    Urgency pie charts (urgent/moderate/low), daily/monthly flow graphs, department-wise analytics.
+## 💻 UI Highlights
 
-    Recent patient activity tables and detailed drill-downs for admin/doctor review.
+- **Modern, responsive dashboards** customized for each role
+- **User-friendly forms** with step-by-step validation
+- **Real-time resource monitoring** with visual indicators
+- **Interactive charts** for data visualization
+- **Secure navigation** with profile management
 
-6. Messaging & Notifications
+## 🚀 Getting Started
 
-    Secure internal messaging between staff (admin, doctors, FDO, DEO).
+1. Clone the repository: `git clone https://github.com/yourusername/hospital-management-system.git`
+2. Install dependencies: `npm install`
+3. Configure database using provided schema
+4. Set up environment variables for authentication and storage
+5. Start the application: `npm start`
+6. Access admin dashboard to create initial users
 
-    Automated notifications for appointments, test results, emergencies, and discharge updates.
+## 🤝 Contribution & Support
 
-    Communication logs for audit and follow-up.
+Contributions are welcome! Please submit issues or pull requests through our GitHub repository.
 
-Database Schema (Key Entities)
+For support, refer to the in-app Help section or contact the admin team at support@hms.example.com.
 
-    User: UserID, username, password, email, role, etc.
+---
 
-    Patient: PatientID, name, age, gender, contact, address, status.
-
-    Doctor: DoctorID, name, specialization, experience, qualification, department.
-
-    Appointment: AppointmentID, date, time, doctorID, patientID, status.
-
-    Admission/Discharge: AdmissionID, date, patientID, roomID, discharge date.
-
-    Room: RoomID, type, available/total capacity.
-
-    Treatment: TreatmentID, description, date, doctor, patient.
-
-    Diagnostic Test: TestID, type, result, date, patientID.
-
-    Report: ReportID, patientID, title, PDF link, date.
-
-    Department: DeptID, name, doctor count, room breakdown.
-
-    Audit Logs: For tracking corrections and critical changes.
-
-API Endpoints (Sample)
-
-    /signin – User authentication with OTP.
-
-    /admin/register – Register new users (doctors, operators, etc.).
-
-    /admin/rooms – Get available/total room counts by type.
-
-    /admin/doctors – Doctor availability by specialization.
-
-    /admin/patients – Patient analytics (old/new, gender, flow).
-
-    /fdo/register-patient – Register new patient.
-
-    /fdo/schedule-appointment – Book appointment.
-
-    /fdo/admit – Admit patient and assign room.
-
-    /fdo/discharge – Discharge patient.
-
-    /doctor/details – Get doctor profile and stats.
-
-    /doctor/appointments/daily – List today’s appointments.
-
-    /edo/test-entry – Enter diagnostic test data.
-
-    /edo/treatment-entry – Log treatment details.
-
-    /edo/upload-report – Upload PDF report.
-
-    /edo/reports – View all uploaded reports.
-
-UI Highlights
-
-    Modern, responsive dashboards for each role with quick stats, recent activity, and actionable insights
-
-    .
-
-    Stepwise registration and appointment forms with validation and progress indicators.
-
-    Real-time resource cards for beds, doctors, patients, and admissions.
-
-    Interactive charts for urgency, demographics, and trends.
-
-    Secure, user-friendly navigation with profile and settings management.
-
-Getting Started
-
-    Clone the repository and install dependencies.
-
-    Configure the database using the provided schema.
-
-    Set up environment variables for mailer, authentication, and storage.
-
-    Run backend and frontend servers as per documentation.
-
-    Register users and assign roles via the admin dashboard.
-
-    Begin managing hospital operations through the role-based dashboards.
-
-Contribution & Support
-
-    Contributions are welcome! Please submit issues or pull requests for enhancements and bug fixes.
-
-    For support, refer to the in-app Help section or contact the admin team.
-
-Your health, our promise.
-A modern, secure, and efficient solution for hospital management.
+> ### *Your health, our promise.*
+> *A modern, secure, and efficient solution for hospital management.*
