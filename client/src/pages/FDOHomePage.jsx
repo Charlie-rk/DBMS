@@ -146,14 +146,14 @@ export default function FDOHomePage() {
             </h3>
             <div className="flex items-center">
               <span className="text-3xl font-bold">{stats.totalPatients}</span>
-              <motion.span 
+              {/* <motion.span 
                 className="ml-2 text-sm bg-blue-200 text-blue-800 px-2 py-1 rounded-full"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 1, type: "spring" }}
               >
                 <MdTrendingUp className="inline mr-1" />+5%
-              </motion.span>
+              </motion.span> */}
             </div>
           </div>
         </motion.div>
