@@ -16,6 +16,7 @@ if (!SUPABASE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -24,6 +25,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
 /**
  * Send a welcome email to the newly registered user.
  * @param {Object} user - The user object containing registration details.
@@ -31,7 +33,8 @@ const transporter = nodemailer.createTransport({
  */
 
 export async function sendWelcomeEmail(user, secretKey) {
-  console.log("user ",user);
+  console.log("user ",user[0]);
+  console.log("user email ",user[0].email);
   // Build the HTML content for the email
   const htmlContent = `
   <!DOCTYPE html>
@@ -55,23 +58,23 @@ export async function sendWelcomeEmail(user, secretKey) {
             </tr>
             <tr>
               <td style="padding: 8px;">Name</td>
-              <td style="padding: 8px;">${user.name}</td>
+              <td style="padding: 8px;">${user[0].name}</td>
             </tr>
             <tr>
               <td style="padding: 8px;">Username</td>
-              <td style="padding: 8px;">${user.username}</td>
+              <td style="padding: 8px;">${user[0].username}</td>
             </tr>
             <tr>
               <td style="padding: 8px;">Email</td>
-              <td style="padding: 8px;">${user.email}</td>
+              <td style="padding: 8px;">${user[0].email}</td>
             </tr>
             <tr>
               <td style="padding: 8px;">Role</td>
-              <td style="padding: 8px;">${user.role}</td>
+              <td style="padding: 8px;">${user[0].role}</td>
             </tr>
             <tr>
               <td style="padding: 8px;">Password</td>
-              <td style="padding: 8px;">${user.password}</td>
+              <td style="padding: 8px;">${user[0].password}</td>
             </tr>
             <tr>
               <td style="padding: 8px;">Secret Key</td>
@@ -102,7 +105,7 @@ export async function sendWelcomeEmail(user, secretKey) {
   // Configure the mail options
   const mailOptions = {
     from: 'rustampavri1275@gmail.com',
-    to: user.email,
+    to: user[0].email,
     subject: "Welcome to We go - Registration Successful",
     html: htmlContent,
   };
@@ -242,10 +245,15 @@ export async function registerUser(req, res, next) {
       .from("users")
       .insert(newUser)
       .select("*");
+     console.log("hii1");
+     console.log("hii1");
+     if (error) {
+       console.error("Supabase insertion error:", error);
+       throw error;
+     }
+     console.log("hii2");
+    console.log("hii2");
 
-    if (error) {
-      throw error;
-    }
 
     sendWelcomeEmail(data, "<Your-role>123");
     console.log("Insertion result:", data);
