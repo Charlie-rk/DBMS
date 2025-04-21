@@ -3,6 +3,8 @@
 ![Version](https://img.shields.io/badge/version-1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+🌐 **Website:** [https://dbms-upbd.onrender.com/sign-in](https://dbms-upbd.onrender.com/sign-in)
+
 ## 📋 Overview
 
 This comprehensive Hospital Management System (HMS) streamlines hospital operations, enhances patient care, and provides robust analytics for administrators, doctors, front desk operators, and data entry operators. The system features role-based access, multi-factor authentication, and modern dashboards tailored to each user group.
