@@ -325,10 +325,10 @@ const DoctorHome = () => {
   };
 
   // Utility: Format date to locale-specific string.
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString();
-  };
+  // const formatDate = (dateStr) => {
+  //   if (!dateStr) return "";
+  //   return new Date(dateStr).toLocaleDateString();
+  // };
 
   // Update appointment status using appointment ID (with loader)
   const updateAppointment = async (appointmentId, newStatus) => {
@@ -402,6 +402,21 @@ const DoctorHome = () => {
   const sortedAppointments = appointmentRequests.slice().sort((a, b) => {
     const priority = { pending: 1, accepted: 2, declined: 3 };
     return (priority[a.status] || 4) - (priority[b.status] || 4);
+  });
+
+  // always format date as UTC
+const formatDate = iso =>
+  new Date(iso).toLocaleDateString('en-GB', {
+    timeZone: 'UTC'
+  });
+
+// always format time as UTC HH:mm
+const formatTime = iso =>
+  new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'UTC'
   });
 
   // Decide how many appointments to show based on toggle state
@@ -649,7 +664,7 @@ const DoctorHome = () => {
                         )}
                       </div>
                       <div className="text-gray-500 dark:text-gray-400">
-                        {new Date(req.appointment_date).toLocaleString()}
+                      {formatDate(req.appointment_date)} at {formatTime(req.appointment_date)}
                       </div>
                       {req.reason && (
                         <div className="text-sm text-gray-500 dark:text-gray-400">
